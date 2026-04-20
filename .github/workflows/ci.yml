@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+        env:
+          # Build must work without real keys; runtime code checks env at request time.
+          APPLE_TEAM_ID: ''
+          APPLE_KEY_ID: ''
+          APPLE_MAPKIT_PRIVATE_KEY: ''
+          NEXT_PUBLIC_APPLE_MAPKIT_ORIGIN: https://workin.cafe

@@ -1,0 +1,200 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import { Icon } from '@/components/icons/Icon';
+import { type DemoPlace } from '@/lib/demo/paris-places';
+import { categoryMeta } from '@/lib/categories';
+import { brandLogoFor } from '@/lib/brand-logos';
+import { CitySwitcher } from '@/components/layout/CitySwitcher';
+import { useCity, CITIES } from '@/lib/store/city';
+
+type Tab = 'places' | 'leaderboard';
+
+function normalize(s: string) {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+export function PlaceSidebar({
+  places,
+  selectedId,
+  onSelect,
+}: {
+  places: DemoPlace[];
+  selectedId: string | null;
+  onSelect: (place: DemoPlace) => void;
+}) {
+  const [tab, setTab] = useState<Tab>('places');
+  const [query, setQuery] = useState('');
+  const city = useCity((s) => s.city);
+  const cityLabel = CITIES[city].label;
+
+  const shownPlaces = useMemo(() => {
+    const q = normalize(query.trim());
+    if (!q) return places;
+    return places.filter(
+      (p) => normalize(p.name).includes(q) || normalize(p.address).includes(q),
+    );
+  }, [places, query]);
+
+  return (
+    <aside className="hidden md:flex h-full w-[320px] shrink-0 flex-col border-r border-[var(--surface-border)] bg-white/70 backdrop-blur-ios">
+      <div className="flex items-center justify-between px-5 pt-5">
+        <div className="flex items-center gap-2">
+          <Icon name="Coffee" weight="fill" size={22} className="text-[var(--text-primary)]" />
+          <div className="text-[17px] font-semibold text-[var(--text-primary)]">Work in Cafe</div>
+        </div>
+        <CitySwitcher />
+      </div>
+
+      <div className="mt-4 flex gap-1 px-5">
+        <TabPill label="Places" active={tab === 'places'} onClick={() => setTab('places')} />
+        <TabPill
+          label="Leaderboard"
+          active={tab === 'leaderboard'}
+          onClick={() => setTab('leaderboard')}
+        />
+      </div>
+
+      {tab === 'places' && (
+        <div className="mt-3 px-5">
+          <div className="flex items-center gap-2 rounded-xl bg-sys-gray-6 px-3 py-2">
+            <Icon name="MagnifyingGlass" size={16} className="text-[var(--text-secondary)]" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search places"
+              className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                className="flex h-5 w-5 items-center justify-center rounded-full bg-sys-gray-4 text-white"
+                aria-label="Clear"
+              >
+                <Icon name="X" size={10} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-3 flex-1 overflow-y-auto px-2 pb-4">
+        {tab === 'places' ? (
+          shownPlaces.length === 0 ? (
+            <div className="flex flex-col items-center justify-center pt-16 text-center">
+              <Icon name="MagnifyingGlass" size={32} className="text-sys-gray-3 mb-2" />
+              <div className="text-[13px] text-[var(--text-secondary)]">
+                No places match your filters
+              </div>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-0.5">
+              {shownPlaces.map((place) => (
+                <li key={place.id}>
+                  <PlaceRow
+                    place={place}
+                    selected={selectedId === place.id}
+                    onClick={() => onSelect(place)}
+                  />
+                </li>
+              ))}
+            </ul>
+          )
+        ) : (
+          <div className="flex flex-col items-center justify-center pt-16 text-center">
+            <Icon name="Medal" size={32} className="text-sys-gray-3 mb-2" />
+            <div className="text-[13px] text-[var(--text-secondary)]">
+              Leaderboard coming soon
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-[var(--surface-border)] px-5 py-3 text-[11px] text-[var(--text-secondary)]">
+        {shownPlaces.length} of {places.length} places · {cityLabel} demo
+      </div>
+    </aside>
+  );
+}
+
+function TabPill({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition ${
+        active
+          ? 'bg-[var(--text-primary)] text-white'
+          : 'bg-sys-gray-6 text-[var(--text-secondary)] hover:bg-sys-gray-5'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function PlaceRow({
+  place,
+  selected,
+  onClick,
+}: {
+  place: DemoPlace;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  const meta = categoryMeta(place.category);
+  const brand = brandLogoFor(place.name);
+  const bg = brand?.bg ?? meta.color;
+  const fg = brand?.fg ?? '#fff';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
+        selected ? 'bg-accent-tint' : 'hover:bg-sys-gray-6'
+      }`}
+    >
+      <div
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full shadow-bubble"
+        style={{ background: bg, color: fg }}
+      >
+        {brand ? (
+          <span className={`font-bold tracking-tight ${brand.initials.length === 1 ? 'text-[15px]' : 'text-[11px]'}`}>
+            {brand.initials}
+          </span>
+        ) : (
+          <Icon name={meta.icon} size={18} />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div
+          className={`truncate text-[14px] font-semibold leading-tight ${
+            selected ? 'text-accent' : 'text-[var(--text-primary)]'
+          }`}
+        >
+          {place.name}
+        </div>
+        <div className="mt-0.5 truncate text-[12px] text-[var(--text-secondary)]">
+          {place.address} · {place.neighborhood}
+        </div>
+      </div>
+      <div className="shrink-0 text-right">
+        <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+          {place.rating.toFixed(1)}
+        </div>
+        <div className="text-[10px] text-[var(--text-secondary)]">
+          {place.review_count} rev
+        </div>
+      </div>
+    </button>
+  );
+}

@@ -1,0 +1,27 @@
+import type { Metadata, Viewport } from 'next';
+import './globals.css';
+import { Toaster } from '@/components/ui/Toaster';
+
+export const metadata: Metadata = {
+  title: 'Work in Cafe',
+  description: 'Find places to work or study outside the home — map-first, Apple-native.',
+  applicationName: 'Work in Cafe',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#F2EDE3',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Toaster />
+      </body>
+    </html>
+  );
+}
