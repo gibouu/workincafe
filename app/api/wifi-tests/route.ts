@@ -1,12 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import {
+  getRequestActor,
+  insertWithDemoFlag,
+  resolvePlaceIdForActor,
+} from '@/lib/auth/request-actor';
 import { isWithin } from '@/app/api/_shared/geo-check';
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { db, user, isDemo } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
   const body = (await request.json().catch(() => null)) as {
@@ -20,10 +21,12 @@ export async function POST(request: NextRequest) {
   } | null;
   if (!body?.place_id) return NextResponse.json({ error: 'place_id required' }, { status: 400 });
 
-  const { data: place, error: pErr } = await supabase
+  const placeId = await resolvePlaceIdForActor(db, body.place_id, isDemo);
+
+  const { data: place, error: pErr } = await db
     .from('places')
     .select('lat, lng')
-    .eq('id', body.place_id)
+    .eq('id', placeId)
     .maybeSingle();
   if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 });
   if (!place) return NextResponse.json({ error: 'place not found' }, { status: 404 });
@@ -38,29 +41,30 @@ export async function POST(request: NextRequest) {
 
   // Rate limit: 1 per place per user per hour
   const hourAgo = new Date(Date.now() - 3600 * 1000).toISOString();
-  const { count } = await supabase
+  const { count } = await db
     .from('wifi_tests')
     .select('id', { head: true, count: 'exact' })
     .eq('user_id', user.id)
-    .eq('place_id', body.place_id)
+    .eq('place_id', placeId)
     .gte('created_at', hourAgo);
   if ((count ?? 0) >= 1) {
     return NextResponse.json({ error: 'one Wi-Fi test per place per hour' }, { status: 429 });
   }
 
-  const { data, error } = await supabase
-    .from('wifi_tests')
-    .insert({
-      place_id: body.place_id,
+  const { data, error } = await insertWithDemoFlag(
+    db,
+    'wifi_tests',
+    {
+      place_id: placeId,
       user_id: user.id,
       download_mbps: body.download_mbps ?? null,
       upload_mbps: body.upload_mbps ?? null,
       ping_ms: body.ping_ms ?? null,
       connection_type: body.connection_type ?? null,
       geo_verified: geoVerified,
-    })
-    .select('id')
-    .maybeSingle();
+    },
+    isDemo,
+  );
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ id: data?.id, geo_verified: geoVerified });

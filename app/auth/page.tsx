@@ -6,8 +6,13 @@ import { createClient } from '@/lib/supabase/client';
 import { Icon } from '@/components/icons/Icon';
 
 export default function AuthPage() {
-  const [loading, setLoading] = useState<'google' | 'apple' | null>(null);
+  const [loading, setLoading] = useState<'google' | 'apple' | 'demo' | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const getSafeNext = () => {
+    const next = new URLSearchParams(window.location.search).get('next') ?? '/profile';
+    return next.startsWith('/') && !next.startsWith('//') ? next : '/profile';
+  };
 
   const signIn = async (provider: 'google' | 'apple') => {
     setLoading(provider);
@@ -23,6 +28,27 @@ export default function AuthPage() {
       if (authError) throw authError;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign-in failed');
+      setLoading(null);
+    }
+  };
+
+  const signInDemo = async () => {
+    setLoading('demo');
+    setError(null);
+    try {
+      const resp = await fetch('/api/auth/demo', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ next: getSafeNext() }),
+      });
+      const body = (await resp.json().catch(() => ({}))) as {
+        error?: string;
+        redirectTo?: string;
+      };
+      if (!resp.ok) throw new Error(body.error ?? 'Demo sign-in failed');
+      window.location.assign(body.redirectTo ?? '/profile');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Demo sign-in failed');
       setLoading(null);
     }
   };
@@ -68,6 +94,20 @@ export default function AuthPage() {
               className={loading === 'google' ? 'animate-spin' : ''}
             />
             <span>Continue with Google</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={signInDemo}
+            disabled={loading !== null}
+            className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--surface-border)] bg-white/80 py-3.5 text-[15px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60 transition"
+          >
+            <Icon
+              name={loading === 'demo' ? 'CircleNotch' : 'UserCircle'}
+              size={18}
+              className={loading === 'demo' ? 'animate-spin' : ''}
+            />
+            <span>Continue in demo mode</span>
           </button>
 
           {error && (

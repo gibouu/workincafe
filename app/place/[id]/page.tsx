@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { findPlace } from '@/lib/store/city';
+import { findPlace } from '@/lib/demo/cities';
 import { categoryMeta } from '@/lib/categories';
 import { Icon } from '@/components/icons/Icon';
 import { NoiseHeatmap } from '@/components/card/NoiseHeatmap';

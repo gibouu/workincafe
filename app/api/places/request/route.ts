@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getRequestActor, insertWithDemoFlag } from '@/lib/auth/request-actor';
 
 const PARIS_BBOX = { minLat: 48.815, maxLat: 48.902, minLng: 2.224, maxLng: 2.470 };
 const TORONTO_BBOX = { minLat: 43.58, maxLat: 43.86, minLng: -79.64, maxLng: -79.12 };
@@ -18,10 +18,7 @@ function inCity(lat: number, lng: number) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { db, user, isDemo } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
   const body = (await request.json().catch(() => null)) as {
@@ -43,9 +40,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { data, error } = await supabase
-    .from('place_requests')
-    .insert({
+  const { data, error } = await insertWithDemoFlag(
+    db,
+    'place_requests',
+    {
       submitted_by: user.id,
       name: body.name.trim(),
       lat: body.lat,
@@ -53,9 +51,9 @@ export async function POST(request: NextRequest) {
       address: body.address?.trim() || null,
       category_suggestion: (body.category as never) ?? null,
       notes: body.notes?.trim() || null,
-    })
-    .select('id')
-    .maybeSingle();
+    },
+    isDemo,
+  );
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ id: data?.id });

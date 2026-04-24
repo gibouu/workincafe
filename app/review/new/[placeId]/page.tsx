@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { findPlace } from '@/lib/store/city';
+import { findPlace } from '@/lib/demo/cities';
 import { ReviewForm } from '@/components/review/ReviewForm';
 
 export default async function NewReviewPage({

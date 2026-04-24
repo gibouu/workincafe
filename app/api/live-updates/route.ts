@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import {
+  getRequestActor,
+  insertWithDemoFlag,
+  resolvePlaceIdForActor,
+} from '@/lib/auth/request-actor';
 import { isWithin } from '@/app/api/_shared/geo-check';
 import type { NoiseLevel, SeatingAvailability, TemperatureLevel } from '@/types/database';
 
@@ -8,10 +12,7 @@ const SEATING: SeatingAvailability[] = ['plenty', 'some', 'full'];
 const TEMP: TemperatureLevel[] = ['cold', 'comfortable', 'warm', 'hot'];
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { db, user, isDemo } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
   const body = (await request.json().catch(() => null)) as {
@@ -24,10 +25,12 @@ export async function POST(request: NextRequest) {
   } | null;
   if (!body?.place_id) return NextResponse.json({ error: 'place_id required' }, { status: 400 });
 
-  const { data: place, error: pErr } = await supabase
+  const placeId = await resolvePlaceIdForActor(db, body.place_id, isDemo);
+
+  const { data: place, error: pErr } = await db
     .from('places')
     .select('lat, lng')
-    .eq('id', body.place_id)
+    .eq('id', placeId)
     .maybeSingle();
   if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 });
   if (!place) return NextResponse.json({ error: 'place not found' }, { status: 404 });
@@ -41,17 +44,18 @@ export async function POST(request: NextRequest) {
   const pickEnum = <T extends string>(v: string | undefined, allowed: T[]): T | null =>
     v && (allowed as string[]).includes(v) ? (v as T) : null;
 
-  const { data, error } = await supabase
-    .from('live_updates')
-    .insert({
-      place_id: body.place_id,
+  const { data, error } = await insertWithDemoFlag(
+    db,
+    'live_updates',
+    {
+      place_id: placeId,
       user_id: user.id,
       noise_level: pickEnum(body.noise_level, NOISE),
       seating_availability: pickEnum(body.seating_availability, SEATING),
       temperature: pickEnum(body.temperature, TEMP),
-    })
-    .select('id')
-    .maybeSingle();
+    },
+    isDemo,
+  );
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ id: data?.id });

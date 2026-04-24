@@ -13,6 +13,7 @@ export function SignOutButton() {
     setLoading(true);
     const supabase = createClient();
     await supabase.auth.signOut();
+    await fetch('/api/auth/demo', { method: 'DELETE' }).catch(() => null);
     router.replace('/auth');
     router.refresh();
   };

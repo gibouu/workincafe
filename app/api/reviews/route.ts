@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import {
+  getRequestActor,
+  insertWithDemoFlag,
+  resolvePlaceIdForActor,
+} from '@/lib/auth/request-actor';
 import { isWithin } from '@/app/api/_shared/geo-check';
 
 interface Body {
@@ -19,10 +23,7 @@ interface Body {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { db, user, isDemo } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
   const body = (await request.json().catch(() => null)) as Body | null;
@@ -33,10 +34,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'verified_lat/verified_lng required' }, { status: 400 });
   }
 
-  const { data: place, error: pErr } = await supabase
+  const placeId = await resolvePlaceIdForActor(db, body.place_id, isDemo);
+
+  const { data: place, error: pErr } = await db
     .from('places')
     .select('lat, lng')
-    .eq('id', body.place_id)
+    .eq('id', placeId)
     .maybeSingle();
   if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 });
   if (!place) return NextResponse.json({ error: 'place not found' }, { status: 404 });
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
   // Anti-abuse: 5 reviews/user/day max
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const { count: todayCount } = await supabase
+  const { count: todayCount } = await db
     .from('reviews')
     .select('id', { head: true, count: 'exact' })
     .eq('user_id', user.id)
@@ -64,10 +67,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'daily review limit reached' }, { status: 429 });
   }
 
-  const { data, error } = await supabase
-    .from('reviews')
-    .insert({
-      place_id: body.place_id,
+  const { data, error } = await insertWithDemoFlag(
+    db,
+    'reviews',
+    {
+      place_id: placeId,
       user_id: user.id,
       overall_rating: body.overall_rating,
       wifi_rating: body.wifi_rating ?? null,
@@ -82,9 +86,9 @@ export async function POST(request: NextRequest) {
       geo_verified: true,
       verified_lat: body.verified_lat,
       verified_lng: body.verified_lng,
-    })
-    .select('id')
-    .maybeSingle();
+    },
+    isDemo,
+  );
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ id: data?.id });

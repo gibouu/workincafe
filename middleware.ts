@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { getDemoSessionFromRequest } from '@/lib/demo/auth';
 
 const PROTECTED_PREFIXES = ['/profile', '/review/new', '/admin'];
 
@@ -32,11 +33,12 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const demoSession = user ? null : await getDemoSessionFromRequest(request);
 
   const { pathname } = request.nextUrl;
   const isProtected = PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
-  if (isProtected && !user) {
+  if (isProtected && !user && !demoSession) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth';
     url.searchParams.set('next', pathname);

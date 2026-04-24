@@ -1,14 +1,15 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import {
+  getRequestActor,
+  resolvePlaceIdForActor,
+  upsertWithDemoFlag,
+} from '@/lib/auth/request-actor';
 
-export async function GET() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+export async function GET(request: NextRequest) {
+  const { db, user } = await getRequestActor(request);
   if (!user) return NextResponse.json({ favorites: [] });
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('favorites')
     .select('place_id, created_at')
     .eq('user_id', user.id)
@@ -18,34 +19,33 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { db, user, isDemo } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
   const body = (await request.json().catch(() => null)) as { place_id?: string } | null;
   if (!body?.place_id) return NextResponse.json({ error: 'place_id required' }, { status: 400 });
+  const placeId = await resolvePlaceIdForActor(db, body.place_id, isDemo);
 
-  const { error } = await supabase
-    .from('favorites')
-    .upsert({ user_id: user.id, place_id: body.place_id }, { onConflict: 'user_id,place_id' });
+  const { error } = await upsertWithDemoFlag(
+    db,
+    'favorites',
+    { user_id: user.id, place_id: placeId },
+    { onConflict: 'user_id,place_id' },
+    isDemo,
+  );
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { db, user } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
   const placeId = searchParams.get('place_id');
   if (!placeId) return NextResponse.json({ error: 'place_id required' }, { status: 400 });
 
-  const { error } = await supabase
+  const { error } = await db
     .from('favorites')
     .delete()
     .eq('user_id', user.id)

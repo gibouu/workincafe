@@ -1,23 +1,31 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { Icon } from '@/components/icons/Icon';
 import { SignOutButton } from '@/components/auth/SignOutButton';
 import { ProfileTabs } from '@/components/profile/ProfileTabs';
+import { DEMO_SESSION_COOKIE, verifyDemoSessionToken } from '@/lib/demo/auth';
 
 export default async function ProfilePage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const cookieStore = await cookies();
+  const demoSession = user
+    ? null
+    : await verifyDemoSessionToken(cookieStore.get(DEMO_SESSION_COOKIE)?.value);
 
-  if (!user) redirect('/auth');
+  if (!user && !demoSession) redirect('/auth');
 
   const name =
-    (user.user_metadata?.full_name as string | undefined) ??
-    (user.user_metadata?.name as string | undefined) ??
-    user.email ??
+    (user?.user_metadata?.full_name as string | undefined) ??
+    (user?.user_metadata?.name as string | undefined) ??
+    user?.email ??
+    demoSession?.name ??
     'Traveller';
+  const email = user?.email ?? demoSession?.email ?? null;
 
   return (
     <div className="min-h-dvh bg-[var(--map-bg)]">
@@ -39,8 +47,13 @@ export default async function ProfilePage() {
             <Icon name="UserCircle" size={64} weight="regular" />
           </div>
           <div className="mt-4 text-[22px] font-semibold text-[var(--text-primary)]">{name}</div>
-          {user.email && (
-            <div className="mt-1 text-[13px] text-[var(--text-secondary)]">{user.email}</div>
+          {email && (
+            <div className="mt-1 text-[13px] text-[var(--text-secondary)]">{email}</div>
+          )}
+          {demoSession && (
+            <div className="mt-3 rounded-full bg-accent-amber-tint px-3 py-1 text-[12px] font-medium text-accent-amber">
+              Demo mode
+            </div>
           )}
         </div>
 

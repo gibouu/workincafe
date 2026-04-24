@@ -43,6 +43,7 @@ type UserRow = {
   home_city: string | null;
   is_admin: boolean;
   is_banned: boolean;
+  is_demo: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -64,6 +65,7 @@ type PlaceRow = {
   osm_tags: Json | null;
   featured: boolean;
   normalized_name_hash: string | null;
+  is_demo: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -74,6 +76,7 @@ type PlaceSourceRefRow = {
   normalized_name_hash: string | null;
   source: PlaceSource;
   external_id: string;
+  is_demo: boolean;
   synced_at: string;
 };
 
@@ -90,6 +93,7 @@ type PlaceRequestRow = {
   reviewed_by: string | null;
   reviewed_at: string | null;
   rejection_reason: string | null;
+  is_demo: boolean;
   created_at: string;
 };
 
@@ -115,6 +119,7 @@ type ReviewRow = {
   day_of_week: number | null;
   upvotes_count: number;
   is_hidden: boolean;
+  is_demo: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -129,6 +134,7 @@ type CheckinRow = {
   studying_until: string | null;
   hour_of_day: number | null;
   day_of_week: number | null;
+  is_demo: boolean;
   created_at: string;
 };
 
@@ -141,6 +147,7 @@ type WifiTestRow = {
   ping_ms: number | null;
   connection_type: string | null;
   geo_verified: boolean;
+  is_demo: boolean;
   created_at: string;
 };
 
@@ -154,12 +161,14 @@ type DecibelSampleRow = {
   device_model: string | null;
   hour_of_day: number | null;
   day_of_week: number | null;
+  is_demo: boolean;
   created_at: string;
 };
 
 type FavoriteRow = {
   user_id: string;
   place_id: string;
+  is_demo: boolean;
   created_at: string;
 };
 
@@ -172,6 +181,7 @@ type LiveUpdateRow = {
   temperature: TemperatureLevel | null;
   hour_of_day: number | null;
   day_of_week: number | null;
+  is_demo: boolean;
   created_at: string;
 };
 
@@ -185,6 +195,7 @@ type FlaggedReviewRow = {
   resolved_by: string | null;
   resolved_at: string | null;
   resolution: string | null;
+  is_demo: boolean;
   created_at: string;
 };
 
