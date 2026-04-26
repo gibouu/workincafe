@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { getDemoSessionFromRequest } from '@/lib/demo/auth';
 
-const PROTECTED_PREFIXES = ['/profile', '/review/new', '/admin'];
+const PROTECTED_PREFIXES = ['/profile', '/admin'];
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 

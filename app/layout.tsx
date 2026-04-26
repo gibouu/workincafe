@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/Toaster';
+import { BottomBar } from '@/components/bottom-bar/BottomBar';
 
 export const metadata: Metadata = {
   title: 'Work in Cafe',
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         {children}
+        <BottomBar />
         <Toaster />
       </body>
     </html>

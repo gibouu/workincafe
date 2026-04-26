@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Icon, type PhosphorIconName } from '@/components/icons/Icon';
 import { categoryMeta } from '@/lib/categories';
 import { useToasts } from '@/lib/store/toasts';
@@ -14,6 +14,12 @@ import type {
   LightingBucket,
 } from '@/lib/demo/paris-places';
 import { VitalsTile } from '@/components/card/VitalsTile';
+import { NoiseHeatmap } from '@/components/card/NoiseHeatmap';
+import { ReviewList } from '@/components/review/ReviewList';
+import { AllReviewsSheet } from '@/components/review/AllReviewsSheet';
+import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
+import { reviewsForPlace } from '@/lib/demo/reviews';
+import { formatStayLimit } from '@/lib/format/stay-limit';
 
 const WIFI_ICON: Record<WifiBucket, PhosphorIconName> = {
   fast: 'WifiHigh',
@@ -67,6 +73,10 @@ export function PlaceCardBody({
   onClose: () => void;
   showHero?: boolean;
 }) {
+  const [allReviewsOpen, setAllReviewsOpen] = useState(false);
+  const [liveUpdateOpen, setLiveUpdateOpen] = useState(false);
+  const allReviews = useMemo(() => reviewsForPlace(place.id, 5), [place.id]);
+  const previewReviews = useMemo(() => allReviews.slice(0, 3), [allReviews]);
   const [favorite, setFavorite] = useState(() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -105,31 +115,13 @@ export function PlaceCardBody({
     }).catch(() => null);
   };
 
-  const checkIn = () => {
-    showToast(`Checked in at ${place.name}`);
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        void fetch('/api/checkins', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            place_id: place.id,
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          }),
-        }).catch(() => null);
-      },
-      () => null,
-      { enableHighAccuracy: true, timeout: 8000 },
-    );
-  };
+  const liveReview = () => setLiveUpdateOpen(true);
 
   return (
-    <div className="flex flex-col max-h-full">
+    <div className="flex flex-1 min-h-0 flex-col">
       {showHero && (
         <div
-          className="relative h-[60px] w-full flex items-center justify-center rounded-t-3xl md:rounded-t-2xl"
+          className="relative h-[60px] w-full shrink-0 flex items-center justify-center rounded-t-3xl md:rounded-t-2xl"
           style={{
             background: `linear-gradient(180deg, ${meta.color} 0%, ${meta.color}00 100%)`,
           }}
@@ -187,7 +179,7 @@ export function PlaceCardBody({
 
         <div className="mt-3 flex gap-2">
           <ChipButton icon="PencilSimple" label="Review" href={`/review/new/${place.id}`} />
-          <ChipButton icon="MapPinLine" label="Check in" onClick={checkIn} />
+          <ChipButton icon="MapPinLine" label="Live review" onClick={liveReview} />
           <ChipButton
             icon="Heart"
             iconWeight={favorite ? 'fill' : 'regular'}
@@ -196,6 +188,10 @@ export function PlaceCardBody({
             highlighted={favorite}
           />
         </div>
+        <p className="mt-2 text-[11px] leading-snug text-[var(--text-tertiary)]">
+          A live review describes what&apos;s happening right now. A full review describes a visit.
+          You can post again later when conditions change.
+        </p>
 
         <div className="mt-5">
           <div className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">
@@ -217,8 +213,8 @@ export function PlaceCardBody({
             />
             <VitalsTile
               icon="Clock"
-              label="Table-time"
-              value={`${place.tabletime_hours}h+`}
+              label="Stay limit"
+              value={formatStayLimit(place.tabletime_hours)}
             />
           </div>
         </div>
@@ -233,14 +229,51 @@ export function PlaceCardBody({
           </div>
         </div>
 
+        <div className="mt-6">
+          <div className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">
+            Noise by hour
+          </div>
+          <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-3 shadow-card">
+            <NoiseHeatmap place={place} />
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+              Reviews ({place.review_count})
+            </div>
+            <button
+              type="button"
+              onClick={() => setAllReviewsOpen(true)}
+              className="text-[12px] font-medium text-accent hover:underline"
+            >
+              See all reviews
+            </button>
+          </div>
+          <ReviewList reviews={previewReviews} />
+        </div>
+
         <Link
-          href={`/place/${place.id}`}
-          className="mt-4 flex items-center justify-between rounded-2xl border border-[var(--surface-border)] bg-white px-4 py-3 text-[13px] font-medium text-[var(--text-primary)] hover:bg-sys-gray-6 transition"
+          href={`/review/new/${place.id}`}
+          className="mt-4 flex items-center justify-center gap-2 rounded-2xl border border-[var(--surface-border)] bg-white px-4 py-3 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 transition"
         >
-          <span>View full profile</span>
-          <Icon name="ArrowRight" size={16} />
+          <Icon name="PencilSimple" size={16} />
+          <span>Leave a review</span>
         </Link>
       </div>
+
+      <AllReviewsSheet
+        place={place}
+        reviews={allReviews}
+        open={allReviewsOpen}
+        onOpenChange={setAllReviewsOpen}
+      />
+      <LiveUpdateSheet
+        place={liveUpdateOpen ? place : null}
+        open={liveUpdateOpen}
+        onOpenChange={setLiveUpdateOpen}
+      />
     </div>
   );
 }

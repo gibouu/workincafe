@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Where to look first
+
+Before re-grepping the codebase, check:
+
+- **[`ARCHITECTURE.md`](ARCHITECTURE.md)** — flat index of routes, API routes, stores, UI surfaces, auth flow, and demo-vs-live data rules. Read this when you need "where does X live?".
+- **[`docs/conventions.md`](docs/conventions.md)** — invariants that, if violated locally, create global bugs (Phosphor `'use client'`, category visuals source of truth, demo fallback contract, supercluster `[lng, lat]`, single-card-body rule, etc.). Read this before refactors.
+- **[`docs/supabase-auth-setup.md`](docs/supabase-auth-setup.md)** — operator runbook for enabling Google + Apple in Supabase. Read this only when wiring auth providers.
+- **[`docs/outstanding.md`](docs/outstanding.md)** — living list of unfinished work and decisions to make. Update when deferring or shipping.
+- **[`workin-cafe-build-spec.md`](workin-cafe-build-spec.md)** — canonical product spec. Source of truth for MVP scope and decisions.
+
+When you discover a load-bearing rule, add it to `docs/conventions.md` instead of leaving it implicit. When you add a new route / API / store / surface, update the relevant table in `ARCHITECTURE.md`.
+
 ## Project: Work in Cafe
 
 Map-first PWA at `workin.cafe` for finding places to work or study — cafés, bakeries, libraries, coworking, hotel lobbies, restaurants. Next.js 15 App Router + Apple MapKit JS + Supabase + PostGIS, Phosphor Icons, `vaul` drawers. Two launch cities: Paris + Toronto. The canonical design + decisions document is **`workin-cafe-build-spec.md`** — treat it as the source of truth for what ships in MVP and what's deferred.
@@ -66,7 +78,7 @@ Four small stores, each in `lib/store/`:
 
 ### Auth flow
 
-Middleware (`middleware.ts`) protects `/profile`, `/review/new`, `/admin`. Only Google + Apple OAuth (decision D6 in spec). `/auth/callback` exchanges the code. **No email/password, no magic link** — don't add them.
+Middleware (`middleware.ts`) protects `/profile` and `/admin`. **`/review/new` is intentionally NOT protected** — submit-time auth handles it: signed-out users can fill the form, and the API returns 401 only at submit, at which point the client saves the draft via `lib/auth/pending-submit.ts`, redirects to `/auth?next=...&submit=...`, and replays the submission after OAuth. Same pattern for live updates and check-ins (the "Live review" CTA on a place card). Only Google + Apple OAuth (decision D6 in spec). `/auth/callback` exchanges the code and validates `next` is a relative path. **No email/password, no magic link** — don't add them.
 
 ### Measurements: real, not stubs
 

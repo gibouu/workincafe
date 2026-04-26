@@ -8,8 +8,6 @@ import { brandLogoFor } from '@/lib/brand-logos';
 import { CitySwitcher } from '@/components/layout/CitySwitcher';
 import { useCity, CITIES } from '@/lib/store/city';
 
-type Tab = 'places' | 'leaderboard';
-
 function normalize(s: string) {
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
@@ -18,12 +16,15 @@ export function PlaceSidebar({
   places,
   selectedId,
   onSelect,
+  onOpenFilter,
+  filterCount = 0,
 }: {
   places: DemoPlace[];
   selectedId: string | null;
   onSelect: (place: DemoPlace) => void;
+  onOpenFilter?: () => void;
+  filterCount?: number;
 }) {
-  const [tab, setTab] = useState<Tab>('places');
   const [query, setQuery] = useState('');
   const city = useCity((s) => s.city);
   const cityLabel = CITIES[city].label;
@@ -46,99 +47,70 @@ export function PlaceSidebar({
         <CitySwitcher />
       </div>
 
-      <div className="mt-4 flex gap-1 px-5">
-        <TabPill label="Places" active={tab === 'places'} onClick={() => setTab('places')} />
-        <TabPill
-          label="Leaderboard"
-          active={tab === 'leaderboard'}
-          onClick={() => setTab('leaderboard')}
-        />
+      <div className="mt-4 flex items-center gap-2 px-5">
+        <div className="flex flex-1 items-center gap-2 rounded-xl bg-sys-gray-6 px-3 py-2">
+          <Icon name="MagnifyingGlass" size={16} className="text-[var(--text-secondary)]" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search places"
+            className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="flex h-5 w-5 items-center justify-center rounded-full bg-sys-gray-4 text-white"
+              aria-label="Clear"
+            >
+              <Icon name="X" size={10} />
+            </button>
+          )}
+        </div>
+        {onOpenFilter && (
+          <button
+            type="button"
+            onClick={onOpenFilter}
+            aria-label="Filter"
+            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6 transition"
+          >
+            <Icon name="SlidersHorizontal" size={16} />
+            {filterCount > 0 && (
+              <span className="pointer-events-none absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold text-white">
+                {filterCount}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
-      {tab === 'places' && (
-        <div className="mt-3 px-5">
-          <div className="flex items-center gap-2 rounded-xl bg-sys-gray-6 px-3 py-2">
-            <Icon name="MagnifyingGlass" size={16} className="text-[var(--text-secondary)]" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search places"
-              className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
-            />
-            {query && (
-              <button
-                type="button"
-                onClick={() => setQuery('')}
-                className="flex h-5 w-5 items-center justify-center rounded-full bg-sys-gray-4 text-white"
-                aria-label="Clear"
-              >
-                <Icon name="X" size={10} />
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
       <div className="mt-3 flex-1 overflow-y-auto px-2 pb-4">
-        {tab === 'places' ? (
-          shownPlaces.length === 0 ? (
-            <div className="flex flex-col items-center justify-center pt-16 text-center">
-              <Icon name="MagnifyingGlass" size={32} className="text-sys-gray-3 mb-2" />
-              <div className="text-[13px] text-[var(--text-secondary)]">
-                No places match your filters
-              </div>
-            </div>
-          ) : (
-            <ul className="flex flex-col gap-0.5">
-              {shownPlaces.map((place) => (
-                <li key={place.id}>
-                  <PlaceRow
-                    place={place}
-                    selected={selectedId === place.id}
-                    onClick={() => onSelect(place)}
-                  />
-                </li>
-              ))}
-            </ul>
-          )
-        ) : (
+        {shownPlaces.length === 0 ? (
           <div className="flex flex-col items-center justify-center pt-16 text-center">
-            <Icon name="Medal" size={32} className="text-sys-gray-3 mb-2" />
+            <Icon name="MagnifyingGlass" size={32} className="text-sys-gray-3 mb-2" />
             <div className="text-[13px] text-[var(--text-secondary)]">
-              Leaderboard coming soon
+              No places match your filters
             </div>
           </div>
+        ) : (
+          <ul className="flex flex-col gap-0.5">
+            {shownPlaces.map((place) => (
+              <li key={place.id}>
+                <PlaceRow
+                  place={place}
+                  selected={selectedId === place.id}
+                  onClick={() => onSelect(place)}
+                />
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
       <div className="border-t border-[var(--surface-border)] px-5 py-3 text-[11px] text-[var(--text-secondary)]">
-        {shownPlaces.length} of {places.length} places · {cityLabel} demo
+        {shownPlaces.length} of {places.length} places · {cityLabel}
       </div>
     </aside>
-  );
-}
-
-function TabPill({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-3 py-1.5 text-[13px] font-medium transition ${
-        active
-          ? 'bg-[var(--text-primary)] text-white'
-          : 'bg-sys-gray-6 text-[var(--text-secondary)] hover:bg-sys-gray-5'
-      }`}
-    >
-      {label}
-    </button>
   );
 }
 

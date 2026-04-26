@@ -19,10 +19,12 @@ export default function AuthPage() {
     setError(null);
     try {
       const supabase = createClient();
+      const next = getSafeNext();
+      const callback = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: callback,
         },
       });
       if (authError) throw authError;

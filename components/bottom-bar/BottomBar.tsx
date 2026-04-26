@@ -1,44 +1,55 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Icon, type PhosphorIconName } from '@/components/icons/Icon';
-import { SearchBar } from '@/components/search/SearchBar';
-import type { DemoPlace } from '@/lib/demo/paris-places';
+import { useLayout } from '@/lib/store/layout';
 
-type SlotKey = 'profile' | 'home' | 'partners';
+type SlotKey = 'profile' | 'work' | 'meetups';
 
-export function BottomBar({ onSelectPlace }: { onSelectPlace: (p: DemoPlace) => void }) {
-  const [active, setActive] = useState<SlotKey>('home');
+const HIDDEN_PREFIXES = ['/welcome', '/auth', '/review/new'];
+
+export function BottomBar() {
   const router = useRouter();
+  const pathname = usePathname() ?? '/';
+  const cardOpen = useLayout((s) => s.cardOpen);
+  if (HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return null;
+  }
+  // On mobile, the place card drawer covers the screen — keep the bar out of the way.
+  // On desktop, the card is a side panel, so the bar stays.
+  const active: SlotKey = pathname.startsWith('/profile')
+    ? 'profile'
+    : pathname.startsWith('/waitlist')
+      ? 'meetups'
+      : 'work';
 
   return (
-    <div className="pointer-events-none absolute bottom-5 left-0 right-0 z-30 flex items-end justify-center gap-3 px-4">
+    <div
+      className={`pointer-events-none fixed bottom-5 left-0 right-0 z-30 items-end justify-center px-4 ${
+        cardOpen ? 'hidden md:flex' : 'flex'
+      }`}
+    >
       <div className="pointer-events-auto flex h-16 items-center gap-1 rounded-[32px] border border-[var(--surface-border)] bg-[var(--surface)] px-2 backdrop-blur-ios shadow-float">
         <Slot
           icon="UserCircle"
           label="Profile"
           active={active === 'profile'}
-          onClick={() => {
-            setActive('profile');
-            router.push('/profile');
-          }}
+          onClick={() => router.push('/profile')}
         />
         <Slot
           icon="Coffee"
-          label="Cafés"
-          active={active === 'home'}
-          onClick={() => setActive('home')}
+          label="Work spots"
+          active={active === 'work'}
+          onClick={() => router.push('/')}
         />
         <Slot
           icon="UsersThree"
-          label="Partners"
+          label="Meetups"
+          active={active === 'meetups'}
           onClick={() => router.push('/waitlist/partners')}
           soon
         />
       </div>
-
-      <SearchBar onSelect={onSelectPlace} />
     </div>
   );
 }
@@ -61,7 +72,7 @@ function Slot({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex h-full min-w-[80px] flex-col items-center justify-center gap-0.5 rounded-[28px] px-3 transition hover:bg-white/50 ${
+      className={`relative flex h-full min-w-[88px] flex-col items-center justify-center gap-0.5 rounded-[28px] px-3 transition hover:bg-white/50 ${
         active ? 'text-accent' : muted ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'
       }`}
     >

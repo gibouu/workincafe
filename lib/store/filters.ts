@@ -34,17 +34,10 @@ export interface FilterState {
   activeCount: () => number;
 }
 
-const DEFAULT_CATEGORIES: PlaceCategory[] = [
-  'cafe',
-  'bakery',
-  'library',
-  'coworking',
-  'hotel',
-  'restaurant',
-];
-
+// Empty set means "no category filter" — all categories visible.
+// Selecting one or more chips narrows the map to those.
 export const useFilters = create<FilterState>((set, get) => ({
-  categories: new Set(DEFAULT_CATEGORIES),
+  categories: new Set<PlaceCategory>(),
   openNow: false,
   outlets: false,
   outdoor: false,
@@ -72,7 +65,7 @@ export const useFilters = create<FilterState>((set, get) => ({
   setMaxDistanceKm: (maxDistanceKm) => set({ maxDistanceKm }),
   reset: () =>
     set({
-      categories: new Set(DEFAULT_CATEGORIES),
+      categories: new Set<PlaceCategory>(),
       openNow: false,
       outlets: false,
       outdoor: false,
@@ -86,7 +79,7 @@ export const useFilters = create<FilterState>((set, get) => ({
   activeCount: () => {
     const s = get();
     let n = 0;
-    if (s.categories.size !== DEFAULT_CATEGORIES.length) n++;
+    if (s.categories.size > 0) n++;
     if (s.openNow) n++;
     if (s.outlets) n++;
     if (s.outdoor) n++;

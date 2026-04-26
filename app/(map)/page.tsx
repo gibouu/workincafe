@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { consumePending } from '@/lib/auth/pending-submit';
+import { useToasts } from '@/lib/store/toasts';
 import { MapContainer, type MapHandle } from '@/components/map/MapContainer';
 import { PlaceCard } from '@/components/card/PlaceCard';
 import { FloatingPlaceCard } from '@/components/card/FloatingPlaceCard';
 import { TopRightControls } from '@/components/map/TopRightControls';
-import { BottomBar } from '@/components/bottom-bar/BottomBar';
 import { PlaceSidebar } from '@/components/layout/PlaceSidebar';
 import { CitySwitcher } from '@/components/layout/CitySwitcher';
 import { FilterSheet } from '@/components/filters/FilterSheet';
@@ -16,8 +18,20 @@ import { Icon } from '@/components/icons/Icon';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useLiveUpdatePrompt } from '@/hooks/useLiveUpdatePrompt';
 import { useFilters } from '@/lib/store/filters';
+import { useLayout } from '@/lib/store/layout';
 import { useCity, CITIES } from '@/lib/store/city';
 import type { DemoPlace } from '@/lib/demo/paris-places';
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
 
 export default function MapPage() {
   const [selectedPlace, setSelectedPlace] = useState<DemoPlace | null>(null);
@@ -27,6 +41,81 @@ export default function MapPage() {
   const [addPlaceCenter, setAddPlaceCenter] = useState<{ lat: number; lng: number } | null>(null);
   const mapRef = useRef<MapHandle>(null);
   const isDesktop = useMediaQuery('(min-width: 768px)');
+  const router = useRouter();
+  const showToast = useToasts((s) => s.show);
+  const setCardOpen = useLayout((s) => s.setCardOpen);
+  const [onboardChecked, setOnboardChecked] = useState(false);
+
+  useEffect(() => {
+    setCardOpen(selectedPlace !== null);
+  }, [selectedPlace, setCardOpen]);
+  useEffect(() => () => setCardOpen(false), [setCardOpen]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const seen = window.localStorage.getItem('wic:onboarded');
+      if (!seen) {
+        router.replace('/welcome');
+        return;
+      }
+    } catch {
+      // ignore
+    }
+    setOnboardChecked(true);
+  }, [router]);
+
+  // Replay any pending submission saved before login.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const submit = new URLSearchParams(window.location.search).get('submit');
+    if (!submit) return;
+
+    const stripParam = () => {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('submit');
+      window.history.replaceState(null, '', url.toString());
+    };
+
+    if (submit === 'checkin') {
+      const env = consumePending<{ place_id: string; lat: number; lng: number }>('checkin');
+      stripParam();
+      if (!env) return;
+      void fetch('/api/checkins', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(env.payload),
+      })
+        .then((r) => {
+          if (r.ok || r.status === 503 || r.status === 404) {
+            showToast('Live review posted');
+          } else {
+            showToast('Could not post live review', { tone: 'error' });
+          }
+        })
+        .catch(() => showToast('Could not post live review', { tone: 'error' }));
+      return;
+    }
+
+    if (submit === 'live-update') {
+      const env = consumePending<Record<string, unknown>>('live-update');
+      stripParam();
+      if (!env) return;
+      void fetch('/api/live-updates', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(env.payload),
+      })
+        .then((r) => {
+          if (r.ok || r.status === 503 || r.status === 404) {
+            showToast('Update shared');
+          } else {
+            showToast('Could not share update', { tone: 'error' });
+          }
+        })
+        .catch(() => showToast('Could not share update', { tone: 'error' }));
+    }
+  }, [showToast]);
 
   const city = useCity((s) => s.city);
   const cityMeta = CITIES[city];
@@ -37,7 +126,7 @@ export default function MapPage() {
 
   const visiblePlaces = useMemo(() => {
     return cityMeta.places.filter((p) => {
-      if (!filters.categories.has(p.category)) return false;
+      if (filters.categories.size > 0 && !filters.categories.has(p.category)) return false;
       if (filters.outlets && p.outlets === 'none') return false;
       if (filters.noise !== 'any' && p.noise !== filters.noise) return false;
       if (filters.wifi !== 'any' && p.wifi !== filters.wifi) return false;
@@ -52,6 +141,26 @@ export default function MapPage() {
     mapRef.current?.panTo(cityMeta.center.lat, cityMeta.center.lng);
     setSelectedPlace(null);
   }, [cityMeta.center.lat, cityMeta.center.lng]);
+
+  // On first onboard-checked render, ask the IP-geo endpoint and gently pan
+  // the map there if the result is reasonably close to the active city.
+  const ipPannedRef = useRef(false);
+  useEffect(() => {
+    if (!onboardChecked) return;
+    if (ipPannedRef.current) return;
+    ipPannedRef.current = true;
+
+    void fetch('/api/geo')
+      .then(async (r) => (r.status === 204 ? null : ((await r.json()) as { lat: number; lng: number })))
+      .then((g) => {
+        if (!g) return;
+        const dKm = haversineKm(g.lat, g.lng, cityMeta.center.lat, cityMeta.center.lng);
+        // Only nudge if the user is plausibly inside the city. Otherwise stay
+        // on the city's center so the demo data stays visible.
+        if (dKm < 80) mapRef.current?.panTo(g.lat, g.lng);
+      })
+      .catch(() => null);
+  }, [onboardChecked, cityMeta.center.lat, cityMeta.center.lng]);
 
   const handleSelectPlace = (place: DemoPlace) => {
     setSelectedPlace(place);
@@ -76,12 +185,18 @@ export default function MapPage() {
     );
   };
 
+  if (!onboardChecked) {
+    return <div className="h-full w-full bg-[var(--map-bg)]" />;
+  }
+
   return (
     <div className="flex h-full w-full">
       <PlaceSidebar
         places={visiblePlaces}
         selectedId={selectedPlace?.id ?? null}
         onSelect={handleSelectPlace}
+        onOpenFilter={() => setFilterOpen(true)}
+        filterCount={activeFilterCount}
       />
 
       <main className="relative flex-1 overflow-hidden">
@@ -96,6 +211,7 @@ export default function MapPage() {
           onGeolocate={handleGeolocate}
           geolocating={geolocating}
           filterCount={activeFilterCount}
+          showFilter={!isDesktop}
         />
 
         {!isDesktop && (
@@ -114,16 +230,13 @@ export default function MapPage() {
           <button
             type="button"
             onClick={handleOpenAddPlace}
-            className={`pointer-events-auto absolute z-30 flex items-center gap-2 rounded-full border border-[var(--surface-border)] bg-[var(--surface)] px-4 py-2 text-[13px] font-semibold text-[var(--text-primary)] shadow-float backdrop-blur-ios hover:bg-white transition ${
-              isDesktop ? 'bottom-5 right-5' : 'bottom-[96px] right-4'
-            }`}
+            aria-label="Add a place"
+            title="Add a place"
+            className="pointer-events-auto absolute bottom-[96px] right-4 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface)] text-[var(--text-primary)] shadow-float backdrop-blur-ios hover:bg-white transition"
           >
-            <Icon name="Plus" size={14} weight="bold" />
-            <span>Add a place</span>
+            <Icon name="Plus" size={16} weight="bold" />
           </button>
         )}
-
-        {!isDesktop && !selectedPlace && <BottomBar onSelectPlace={handleSelectPlace} />}
 
         <AttributionPill />
       </main>

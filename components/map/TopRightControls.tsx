@@ -8,24 +8,28 @@ export function TopRightControls({
   onGeolocate,
   geolocating,
   filterCount = 0,
+  showFilter = true,
 }: {
   onFilter?: () => void;
   onGeolocate?: () => void;
   geolocating?: boolean;
   filterCount?: number;
+  showFilter?: boolean;
 }) {
   return (
     <div className="pointer-events-none absolute top-4 right-4 z-30 flex flex-col gap-2">
-      <div className="relative">
-        <PillButton aria-label="Filter" onClick={onFilter}>
-          <Icon name="SlidersHorizontal" size={20} />
-        </PillButton>
-        {filterCount > 0 && (
-          <span className="pointer-events-none absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold text-white shadow">
-            {filterCount}
-          </span>
-        )}
-      </div>
+      {showFilter && onFilter && (
+        <div className="relative">
+          <PillButton aria-label="Filter" onClick={onFilter}>
+            <Icon name="SlidersHorizontal" size={20} />
+          </PillButton>
+          {filterCount > 0 && (
+            <span className="pointer-events-none absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold text-white shadow">
+              {filterCount}
+            </span>
+          )}
+        </div>
+      )}
       <PillButton aria-label="My location" onClick={onGeolocate}>
         <Icon
           name={geolocating ? 'CircleNotch' : 'NavigationArrow'}

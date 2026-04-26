@@ -26,21 +26,28 @@ function escapeHtml(s: string): string {
   );
 }
 
-function renderPlaceBubble(place: DemoPlace): string {
+function renderPlaceBubble(place: DemoPlace, size = 40): string {
   const meta = categoryMeta(place.category);
   const brand = brandLogoFor(place.name);
   const bg = brand?.bg ?? meta.color;
   const fg = brand?.fg ?? '#fff';
 
+  const iconSize = Math.round(size * 0.55);
+  const initialsFontSize = brand
+    ? brand.initials.length === 1
+      ? Math.round(size * 0.45)
+      : Math.round(size * 0.34)
+    : 0;
+
   const innerMarkup = brand
-    ? `<span style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;font-size:${brand.initials.length === 1 ? 17 : 13}px;font-weight:700;letter-spacing:-0.01em;color:${fg};">${escapeHtml(brand.initials)}</span>`
+    ? `<span style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;font-size:${initialsFontSize}px;font-weight:700;letter-spacing:-0.01em;color:${fg};">${escapeHtml(brand.initials)}</span>`
     : renderToStaticMarkup(
-        <Icon name={meta.icon} size={22} weight="regular" className="text-white" />,
+        <Icon name={meta.icon} size={iconSize} weight="regular" className="text-white" />,
       );
 
   return `
     <div style="
-      width:40px;height:40px;border-radius:9999px;
+      width:${size}px;height:${size}px;border-radius:9999px;
       background:${bg};
       border:2px solid #fff;
       box-shadow:0 1px 2px rgba(0,0,0,0.15),0 2px 4px rgba(0,0,0,0.10);
@@ -214,6 +221,8 @@ export const MapContainer = forwardRef<
     const rebuild = () => {
       const region = map.region;
       const zoom = Math.max(0, Math.min(22, Math.floor(zoomFromRegion(region))));
+      // Shrink pins when the user has zoomed far in; otherwise dense areas overlap.
+      const pinSize = zoom >= 18 ? 28 : zoom >= 16 ? 32 : 40;
       const halfLat = region.span.latitudeDelta / 2;
       const halfLng = region.span.longitudeDelta / 2;
       const bbox: [number, number, number, number] = [
@@ -253,21 +262,44 @@ export const MapContainer = forwardRef<
             { data: { clusterId, count } },
           );
           annotation.addEventListener('select', () => {
-            // Zoom in to the cluster's expansion zoom
-            const expansionZoom = Math.min(index.getClusterExpansionZoom(clusterId), 18);
-            const newDelta = 360 / Math.pow(2, expansionZoom);
-            if (mapkitRef.current && map.setRegionAnimated) {
-              const region = {
-                center: new mapkitRef.current.Coordinate(lat, lng),
-                span: { latitudeDelta: newDelta, longitudeDelta: newDelta },
-              };
-              try {
-                map.setRegionAnimated(region, true);
-              } catch {
-                // ignore
-              }
-            } else {
+            // Fit the cluster's bounding box so the user actually sees the places
+            // it represents. If the points are nearly co-located, fall back to a
+            // sensible minimum span so we don't max-zoom into nothing.
+            const leaves = index.getLeaves(clusterId, Infinity, 0) as PointFeature<PlaceProps>[];
+            if (!mapkitRef.current || !map.setRegionAnimated) {
               map.center = new mapkit.Coordinate(lat, lng);
+              return;
+            }
+            if (leaves.length === 0) return;
+
+            let minLat = Infinity;
+            let maxLat = -Infinity;
+            let minLng = Infinity;
+            let maxLng = -Infinity;
+            for (const leaf of leaves) {
+              const [lLng, lLat] = leaf.geometry.coordinates;
+              if (lLat < minLat) minLat = lLat;
+              if (lLat > maxLat) maxLat = lLat;
+              if (lLng < minLng) minLng = lLng;
+              if (lLng > maxLng) maxLng = lLng;
+            }
+
+            // Add ~30% padding around the bbox so pins aren't at the edge.
+            const latSpan = Math.max(maxLat - minLat, 0.0008) * 1.3;
+            const lngSpan = Math.max(maxLng - minLng, 0.0008) * 1.3;
+            const centerLat = (minLat + maxLat) / 2;
+            const centerLng = (minLng + maxLng) / 2;
+
+            try {
+              map.setRegionAnimated(
+                {
+                  center: new mapkitRef.current.Coordinate(centerLat, centerLng),
+                  span: { latitudeDelta: latSpan, longitudeDelta: lngSpan },
+                },
+                true,
+              );
+            } catch {
+              // ignore
             }
           });
           next.push(annotation);
@@ -279,7 +311,7 @@ export const MapContainer = forwardRef<
             coord,
             () => {
               const wrap = document.createElement('div');
-              wrap.innerHTML = renderPlaceBubble(place);
+              wrap.innerHTML = renderPlaceBubble(place, pinSize);
               return wrap.firstElementChild as HTMLElement;
             },
             {
