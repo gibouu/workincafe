@@ -69,7 +69,12 @@ async function seedCity(city: OsmCity) {
   console.log(`[osm] Querying Overpass for ${city} (~60-120s)…`);
   const resp = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    headers: {
+      'content-type': 'application/x-www-form-urlencoded',
+      // Overpass mirrors reject requests without a UA / Accept header.
+      'user-agent': 'workincafe-seed/0.1 (https://workin.cafe; ops@workin.cafe)',
+      accept: 'application/json',
+    },
     body: `data=${encodeURIComponent(query)}`,
   });
   if (!resp.ok) throw new Error(`Overpass ${resp.status}: ${await resp.text().catch(() => '')}`);
@@ -102,7 +107,11 @@ async function seedCity(city: OsmCity) {
       if (!tags.name || lat === undefined || lng === undefined) return null;
       const amenity = tags.amenity;
       const tourism = tags.tourism;
-      const category = amenity ? CATEGORY_MAP[amenity] : tourism === 'hotel' ? 'hotel' : 'other';
+      // CATEGORY_MAP[amenity] can be undefined for amenities outside our taxonomy
+      // (e.g. amenity=bar). Fall back to tourism=hotel mapping, then 'other'.
+      const category =
+        (amenity && CATEGORY_MAP[amenity]) ||
+        (tourism === 'hotel' ? 'hotel' : 'other');
       const address = [tags['addr:housenumber'], tags['addr:street']].filter(Boolean).join(' ');
       return {
         name: tags.name,

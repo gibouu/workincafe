@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "seed:paris": "tsx scripts/seed-osm.ts paris"
+    "seed:paris": "tsx --env-file=.env.local scripts/seed-osm.ts paris",
+    "seed:toronto": "tsx --env-file=.env.local scripts/seed-osm.ts toronto"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.7",
