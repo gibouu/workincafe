@@ -34,3 +34,17 @@ export function findPlace(id: string): DemoPlace | undefined {
     TORONTO_DEMO_PLACES.find((p) => p.id === id)
   );
 }
+
+export function currencySymbol(city: City): string {
+  switch (city) {
+    case 'paris':
+      return '€';
+    case 'toronto':
+      return 'C$';
+  }
+}
+
+export function cityForPlace(placeId: string): City {
+  if (TORONTO_DEMO_PLACES.some((p) => p.id === placeId)) return 'toronto';
+  return 'paris';
+}

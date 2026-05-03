@@ -73,6 +73,16 @@ If you added a new component that uses any of the following, it must be a client
 
 `/api/reviews` checks `isWithin(...)` against the place's stored coordinates server-side. Don't move the check client-only.
 
+## Ratings are 1–10 site-wide
+
+`reviews.*_rating` columns and the form sliders use a 1–10 integer scale (`005_review_v2.sql`). Pre-2026 rows stored on the original 1–5 scale are read **as-is** — they live in the lower half of the new range. Don't rescale legacy rows on read; if a precise mix ever matters, do a one-shot upscale in SQL.
+
+`lib/review/scoring.ts` is the single source of truth for `suggestOverall` (weighted mean) and `ratingFromMbps10` / `ratingFromDb10` mappings. Don't duplicate the formula client-side.
+
+## Speedtest upload payload must not be filled with `crypto.getRandomValues`
+
+Browsers cap `crypto.getRandomValues(view)` at 65536 bytes per call. The Wi-Fi speed test in `lib/measurement/speedtest.ts:uploadMbps` ships a 2 MB buffer — a single `getRandomValues(...)` call on it throws `QuotaExceededError`. The buffer is sent uncompressed (`octet-stream`, `cache-control: no-store`), so a zero-filled `Uint8Array(size)` measures throughput exactly the same. Don't reintroduce the random fill.
+
 ## Don't add filters without a collection point
 
 Every user-facing filter must have a structured way to be **collected** (review, quick-update, place request, owner claim, or admin) and a structured way to be **updated**. If you can't answer "where does this attribute come from?", the filter doesn't ship.

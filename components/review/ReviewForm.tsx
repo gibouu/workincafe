@@ -1,55 +1,65 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Icon, type PhosphorIconName } from '@/components/icons/Icon';
-import { StarRow } from '@/components/review/StarRow';
-import { ScaleRow } from '@/components/review/ScaleRow';
+import { SliderRow } from '@/components/review/SliderRow';
+import { PhotoSlots, type SlotState } from '@/components/review/PhotoSlots';
 import { categoryMeta } from '@/lib/categories';
 import { haversineMeters } from '@/lib/geo';
-import { runSpeedtest } from '@/lib/measurement/speedtest';
+import { runSpeedtest, SpeedtestError, type SpeedtestPhase } from '@/lib/measurement/speedtest';
 import { runDecibelTest } from '@/lib/measurement/decibel';
 import type { DemoPlace } from '@/lib/demo/paris-places';
+import { cityForPlace, currencySymbol } from '@/lib/demo/cities';
 import { savePending, consumePending, buildAuthRedirect } from '@/lib/auth/pending-submit';
+import {
+  priceBucketToValue,
+  ratingFromDb10,
+  ratingFromMbps10,
+  suggestOverall,
+  type WorkFact,
+} from '@/lib/review/scoring';
+import {
+  BUSY_ANCHORS,
+  FOOD_VALUE_ANCHORS,
+  NOISE_FALLBACK_ANCHORS,
+  OUTLETS_ANCHORS,
+  OVERALL_ANCHORS,
+  SEATING_ANCHORS,
+  TEMPERATURE_ANCHORS,
+  WIFI_FALLBACK_ANCHORS,
+} from '@/lib/review/anchors';
+import { weatherCondition } from '@/lib/weather/codes';
+import { createClient as createBrowserClient } from '@/lib/supabase/client';
+import { PHOTO_SLOTS, type PhotoSlot } from '@/lib/review/photos';
 
 type GeoState =
   | { kind: 'idle' }
   | { kind: 'checking' }
   | { kind: 'ok'; meters: number; lat: number; lng: number }
   | { kind: 'far'; meters: number }
-  | { kind: 'denied'; message: string };
+  | { kind: 'denied'; message: string }
+  | { kind: 'unavailable'; message: string }
+  | { kind: 'timeout' }
+  | { kind: 'unsupported' };
 
 const MAX_DISTANCE_METERS = 150;
 const FOOD_FORWARD = new Set(['restaurant', 'fast_food', 'bakery']);
 
-interface Ratings {
-  overall: number;
-  wifi: number;
-  noise: number;
-  seating: number;
-  outlets: number;
-  food: number;
-}
+type WifiState =
+  | { kind: 'idle' }
+  | { kind: 'measuring'; phase: SpeedtestPhase }
+  | { kind: 'measured'; mbps: number; ping: number; rating: number }
+  | { kind: 'failed'; phase: SpeedtestPhase; message: string };
 
-const EMPTY: Ratings = {
-  overall: 0,
-  wifi: 0,
-  noise: 0,
-  seating: 0,
-  outlets: 0,
-  food: 0,
-};
+type NoiseState =
+  | { kind: 'idle' }
+  | { kind: 'measuring' }
+  | { kind: 'measured'; db: number; rating: number }
+  | { kind: 'failed'; message: string };
 
-type PriceRange = 'lt3' | '3_5' | '5_8' | 'gte8' | 'na';
-type FoodPriceRange = PriceRange | 'did_not_eat';
-type EnvFact = 'heating' | 'air_conditioning' | 'usually_cold' | 'usually_warm' | 'comfortable_today';
-type WorkFact =
-  | 'stay_long'
-  | 'staff_chill'
-  | 'forced_consumption'
-  | 'hours_ok'
-  | 'good_for_focus'
-  | 'good_for_calls';
+type DrinkPriceBucket = 'lt2' | 'lt4' | 'lt6' | 'lt8' | 'lt10' | 'lt12' | 'lt14' | 'lt20' | 'gte20';
+type FoodPriceBucket = DrinkPriceBucket | 'did_not_eat';
 type PlaceType =
   | 'cafe'
   | 'bakery'
@@ -60,43 +70,37 @@ type PlaceType =
   | 'fast_food'
   | 'gym_workspace'
   | 'other';
-type CurrentSeating = 'plenty' | 'some' | 'full' | 'wait';
 
-const DRINK_PRICE_OPTIONS: { value: PriceRange; label: string }[] = [
-  { value: 'lt3', label: '<€3' },
-  { value: '3_5', label: '€3–5' },
-  { value: '5_8', label: '€5–8' },
-  { value: 'gte8', label: '€8+' },
-  { value: 'na', label: 'n/a' },
+const PRICE_BUCKETS: DrinkPriceBucket[] = [
+  'lt2',
+  'lt4',
+  'lt6',
+  'lt8',
+  'lt10',
+  'lt12',
+  'lt14',
+  'lt20',
+  'gte20',
 ];
 
-const FOOD_PRICE_OPTIONS: { value: FoodPriceRange; label: string }[] = [
-  { value: 'did_not_eat', label: 'Did not eat' },
-  { value: 'lt3', label: '<€5' },
-  { value: '3_5', label: '€5–10' },
-  { value: '5_8', label: '€10–20' },
-  { value: 'gte8', label: '€20+' },
-];
+function priceLabel(bucket: DrinkPriceBucket | 'did_not_eat', symbol: string): string {
+  if (bucket === 'did_not_eat') return 'Did not eat';
+  if (bucket === 'gte20') return `>${symbol}20`;
+  const n = bucket.slice(2); // lt2 → "2"
+  return `<${symbol}${n}`;
+}
 
-const ENV_OPTIONS: { value: EnvFact; label: string; icon: PhosphorIconName }[] = [
-  { value: 'heating', label: 'Heating', icon: 'Fire' },
-  { value: 'air_conditioning', label: 'Air conditioning', icon: 'Snowflake' },
-  { value: 'usually_cold', label: 'Usually cold', icon: 'Thermometer' },
-  { value: 'usually_warm', label: 'Usually warm', icon: 'Thermometer' },
-  { value: 'comfortable_today', label: 'Comfortable today', icon: 'Smiley' },
-];
-
-const WORK_OPTIONS: { value: WorkFact; label: string }[] = [
-  { value: 'stay_long', label: 'Could stay as long as I wanted' },
-  { value: 'staff_chill', label: 'Staff chill about laptops' },
-  { value: 'hours_ok', label: 'Felt ok to stay several hours' },
-  { value: 'forced_consumption', label: 'Pressured to keep ordering' },
-  { value: 'good_for_focus', label: 'Good for focused work' },
-  { value: 'good_for_calls', label: 'Good for calls' },
+const WORK_OPTIONS: { value: WorkFact; label: string; icon: PhosphorIconName }[] = [
+  { value: 'stay_long', label: 'Could stay as long as I wanted', icon: 'Clock' },
+  { value: 'staff_chill', label: 'Staff chill about laptops', icon: 'HandHeart' },
+  { value: 'hours_ok', label: 'Felt ok to stay several hours', icon: 'HourglassMedium' },
+  { value: 'good_for_focus', label: 'Good for focused work', icon: 'Brain' },
+  { value: 'good_for_calls', label: 'Good for calls', icon: 'Phone' },
+  { value: 'forced_consumption', label: 'Pressured to keep ordering', icon: 'WarningCircle' },
 ];
 
 const PLACE_TYPE_OPTIONS: { value: PlaceType; label: string }[] = [
-  { value: 'cafe', label: 'Cafe' },
+  { value: 'cafe', label: 'Café' },
   { value: 'bakery', label: 'Bakery' },
   { value: 'library', label: 'Library' },
   { value: 'coworking', label: 'Coworking' },
@@ -107,135 +111,103 @@ const PLACE_TYPE_OPTIONS: { value: PlaceType; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
-const CURRENT_SEATING_OPTIONS: { value: CurrentSeating; label: string }[] = [
-  { value: 'plenty', label: 'Plenty' },
-  { value: 'some', label: 'Some' },
-  { value: 'full', label: 'Full' },
-  { value: 'wait', label: 'Wait/line' },
-];
-
-function priceValue(range: PriceRange | FoodPriceRange | null): number | null {
-  if (!range || range === 'na' || range === 'did_not_eat') return null;
-  // Map price buckets onto a "value" axis (cheaper = higher value).
-  if (range === 'lt3') return 5;
-  if (range === '3_5') return 4;
-  if (range === '5_8') return 3;
-  if (range === 'gte8') return 2;
-  return null;
-}
-
-function ratingFromMbps(mbps: number): number {
-  if (mbps < 5) return 1;
-  if (mbps < 15) return 2;
-  if (mbps < 30) return 3;
-  if (mbps < 60) return 4;
-  return 5;
-}
-
-function ratingFromDb(db: number): number {
-  if (db < 45) return 1;
-  if (db < 55) return 2;
-  if (db < 65) return 3;
-  if (db < 75) return 4;
-  return 5;
-}
-
-function suggestOverall({
-  ratings,
-  drinkPrice,
-  foodPrice,
-  workFacts,
-  envFacts,
-  currentSeating,
-  ateFood,
-}: {
-  ratings: Ratings;
-  drinkPrice: PriceRange | null;
-  foodPrice: FoodPriceRange | null;
-  workFacts: WorkFact[];
-  envFacts: EnvFact[];
-  currentSeating: CurrentSeating | null;
-  ateFood: boolean;
-}): number {
-  const parts: number[] = [];
-  if (ratings.wifi) parts.push(ratings.wifi);
-  if (ratings.noise) parts.push(ratings.noise);
-  if (ratings.seating) parts.push(ratings.seating);
-  if (ratings.outlets) parts.push(ratings.outlets);
-  if (ateFood && ratings.food) parts.push(ratings.food);
-  const drinkV = priceValue(drinkPrice);
-  if (drinkV !== null) parts.push(drinkV);
-  if (ateFood) {
-    const foodV = priceValue(foodPrice);
-    if (foodV !== null) parts.push(foodV);
-  }
-  if (parts.length === 0) return 0;
-  let avg = parts.reduce((a, b) => a + b, 0) / parts.length;
-
-  // Work-friendliness adjustments
-  if (workFacts.includes('stay_long')) avg += 0.3;
-  if (workFacts.includes('staff_chill')) avg += 0.2;
-  if (workFacts.includes('hours_ok')) avg += 0.2;
-  if (workFacts.includes('good_for_focus')) avg += 0.2;
-  if (workFacts.includes('forced_consumption')) avg -= 0.5;
-
-  // Environment penalties
-  if (envFacts.includes('usually_cold') && !envFacts.includes('comfortable_today')) avg -= 0.2;
-  if (envFacts.includes('usually_warm') && !envFacts.includes('comfortable_today')) avg -= 0.2;
-
-  // Current crowding penalty
-  if (currentSeating === 'full' || currentSeating === 'wait') avg -= 0.2;
-
-  return Math.max(1, Math.min(5, Math.round(avg)));
+interface WeatherInfo {
+  tempC: number | null;
+  condition: string | null;
 }
 
 export function ReviewForm({ place }: { place: DemoPlace }) {
   const meta = categoryMeta(place.category);
   const needsFood = FOOD_FORWARD.has(place.category);
+  const symbol = currencySymbol(cityForPlace(place.id));
 
   const [geo, setGeo] = useState<GeoState>({ kind: 'idle' });
-  const [ratings, setRatings] = useState<Ratings>(EMPTY);
-  const [drinkPrice, setDrinkPrice] = useState<PriceRange | null>(null);
-  const [foodPrice, setFoodPrice] = useState<FoodPriceRange | null>(null);
-  const [envFacts, setEnvFacts] = useState<EnvFact[]>([]);
-  const [workFacts, setWorkFacts] = useState<WorkFact[]>([]);
-  const [placeType, setPlaceType] = useState<PlaceType | null>(null);
-  const [currentSeating, setCurrentSeating] = useState<CurrentSeating | null>(null);
+
+  // Sliders
+  const [seating, setSeating] = useState(0);
+  const [outlets, setOutlets] = useState(0);
+  const [temperatureFeel, setTemperatureFeel] = useState(0);
+  const [currentBusyness, setCurrentBusyness] = useState(0);
+  const [foodValue, setFoodValue] = useState(0);
+  const [overall, setOverall] = useState(0);
   const [overallTouched, setOverallTouched] = useState(false);
-  const [wifiAutoSet, setWifiAutoSet] = useState(false);
-  const [noiseAutoSet, setNoiseAutoSet] = useState(false);
-  const [wifiMbps, setWifiMbps] = useState<number | null>(null);
-  const [wifiLoading, setWifiLoading] = useState(false);
-  const [decibel, setDecibel] = useState<number | null>(null);
-  const [decibelLoading, setDecibelLoading] = useState(false);
+
+  // Measurement-first
+  const [wifi, setWifi] = useState<WifiState>({ kind: 'idle' });
+  const [wifiManual, setWifiManual] = useState(0);
+  const [noise, setNoise] = useState<NoiseState>({ kind: 'idle' });
+  const [noiseManual, setNoiseManual] = useState(0);
+
+  // Chips
+  const [drinkPrice, setDrinkPrice] = useState<DrinkPriceBucket | null>(null);
+  const [foodPrice, setFoodPrice] = useState<FoodPriceBucket | null>(null);
+
+  // Multi-select work facts
+  const [workFacts, setWorkFacts] = useState<WorkFact[]>([]);
+  const toggleWork = (f: WorkFact) =>
+    setWorkFacts((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
+
+  const [placeType, setPlaceType] = useState<PlaceType | null>(null);
+
   const [comment, setComment] = useState('');
+  const [photos, setPhotos] = useState<SlotState>({});
+
+  const [weather, setWeather] = useState<WeatherInfo | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const replayedRef = useRef(false);
 
-  const ateFood = needsFood && foodPrice !== 'did_not_eat';
-  const toggleEnvFact = (fact: EnvFact) =>
-    setEnvFacts((prev) => (prev.includes(fact) ? prev.filter((f) => f !== fact) : [...prev, fact]));
-  const toggleWorkFact = (fact: WorkFact) =>
-    setWorkFacts((prev) => (prev.includes(fact) ? prev.filter((f) => f !== fact) : [...prev, fact]));
+  const ateFood = needsFood && foodPrice !== null && foodPrice !== 'did_not_eat';
 
-  const suggestedOverall = suggestOverall({
-    ratings,
-    drinkPrice,
-    foodPrice,
-    workFacts,
-    envFacts,
-    currentSeating,
-    ateFood,
-  });
+  // Effective ratings used by both the suggestion and the payload
+  const effectiveWifi: number | null =
+    wifi.kind === 'measured' ? wifi.rating : wifi.kind === 'failed' && wifiManual > 0 ? wifiManual : null;
+  const effectiveNoise: number | null =
+    noise.kind === 'measured'
+      ? noise.rating
+      : noise.kind === 'failed' && noiseManual > 0
+        ? noiseManual
+        : null;
 
-  // Auto-fill the overall rating when the user hasn't touched it yet.
+  const suggestedOverall = useMemo(
+    () =>
+      suggestOverall({
+        wifi: effectiveWifi,
+        noise: effectiveNoise,
+        seating: seating || null,
+        outlets: outlets || null,
+        temperatureFeel: temperatureFeel || null,
+        currentBusyness: currentBusyness || null,
+        workFacts,
+        drinkPriceValue: priceBucketToValue(drinkPrice),
+        foodPriceValue: ateFood ? priceBucketToValue(foodPrice) : null,
+        foodValue: ateFood && foodValue > 0 ? foodValue : null,
+        ateFood,
+      }),
+    [
+      effectiveWifi,
+      effectiveNoise,
+      seating,
+      outlets,
+      temperatureFeel,
+      currentBusyness,
+      workFacts,
+      drinkPrice,
+      foodPrice,
+      foodValue,
+      ateFood,
+    ],
+  );
+
+  // Auto-fill the overall slider until the user touches it
   useEffect(() => {
     if (overallTouched) return;
     if (suggestedOverall === 0) return;
-    setRatings((r) => (r.overall === suggestedOverall ? r : { ...r, overall: suggestedOverall }));
+    setOverall(suggestedOverall);
   }, [suggestedOverall, overallTouched]);
 
-  // Restore pending draft when returning from /auth?next=/review/new/[id]?submit=review
+  // Restore pending draft after returning from /auth?next=...&submit=review
   useEffect(() => {
     if (replayedRef.current) return;
     if (typeof window === 'undefined') return;
@@ -250,13 +222,14 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
       noise_rating?: number | null;
       seating_rating?: number | null;
       outlets_rating?: number | null;
-      food_rating?: number | null;
-      drink_price_range?: PriceRange | null;
-      food_price_range?: FoodPriceRange | null;
-      environment_facts?: EnvFact[];
+      food_value_rating?: number | null;
+      current_busyness?: number | null;
+      temperature_feel?: number | null;
+      drink_price_range?: DrinkPriceBucket | null;
+      food_price_range?: FoodPriceBucket | null;
+      ate_food?: boolean;
       work_facts?: WorkFact[];
       place_type?: PlaceType | null;
-      current_seating?: CurrentSeating | null;
       comment?: string | null;
     }
 
@@ -267,28 +240,50 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
 
     if (!env || env.placeId !== place.id) return;
     const p = env.payload;
-    setRatings({
-      overall: p.overall_rating ?? 0,
-      wifi: p.wifi_rating ?? 0,
-      noise: p.noise_rating ?? 0,
-      seating: p.seating_rating ?? 0,
-      outlets: p.outlets_rating ?? 0,
-      food: p.food_rating ?? 0,
-    });
+    if (typeof p.overall_rating === 'number') setOverall(p.overall_rating);
+    if (typeof p.seating_rating === 'number') setSeating(p.seating_rating);
+    if (typeof p.outlets_rating === 'number') setOutlets(p.outlets_rating);
+    if (typeof p.temperature_feel === 'number') setTemperatureFeel(p.temperature_feel);
+    if (typeof p.current_busyness === 'number') setCurrentBusyness(p.current_busyness);
+    if (typeof p.food_value_rating === 'number') setFoodValue(p.food_value_rating);
+    if (typeof p.wifi_rating === 'number') {
+      setWifi({ kind: 'failed', phase: 'download', message: 'Re-test or rate manually' });
+      setWifiManual(p.wifi_rating);
+    }
+    if (typeof p.noise_rating === 'number') {
+      setNoise({ kind: 'failed', message: 'Re-test or rate manually' });
+      setNoiseManual(p.noise_rating);
+    }
     if (p.drink_price_range) setDrinkPrice(p.drink_price_range);
     if (p.food_price_range) setFoodPrice(p.food_price_range);
-    if (p.environment_facts) setEnvFacts(p.environment_facts);
     if (p.work_facts) setWorkFacts(p.work_facts);
     if (p.place_type) setPlaceType(p.place_type);
-    if (p.current_seating) setCurrentSeating(p.current_seating);
     if (p.comment) setComment(p.comment);
     if (p.overall_user_set) setOverallTouched(true);
   }, [place.id]);
 
-  // Geo check on mount
+  // Fetch weather for the temperature hint
   useEffect(() => {
-    if (!navigator.geolocation) {
-      setGeo({ kind: 'denied', message: 'Geolocation is not supported by this browser.' });
+    let aborted = false;
+    fetch(`/api/weather?lat=${place.lat}&lng=${place.lng}`)
+      .then((r) => r.json())
+      .then((data: { temp_c?: number; weather_code?: number }) => {
+        if (aborted) return;
+        const condition = weatherCondition(data.weather_code ?? null);
+        setWeather({
+          tempC: typeof data.temp_c === 'number' ? Math.round(data.temp_c) : null,
+          condition,
+        });
+      })
+      .catch(() => null);
+    return () => {
+      aborted = true;
+    };
+  }, [place.lat, place.lng]);
+
+  const requestGeo = () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setGeo({ kind: 'unsupported' });
       return;
     }
     setGeo({ kind: 'checking' });
@@ -304,67 +299,128 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
             : { kind: 'far', meters },
         );
       },
-      (err) => setGeo({ kind: 'denied', message: err.message || 'Location access denied.' }),
-      { enableHighAccuracy: true, timeout: 10000 },
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) {
+          setGeo({
+            kind: 'denied',
+            message:
+              'Location permission blocked. Enable it in your browser settings, or open this page on your phone.',
+          });
+        } else if (err.code === err.POSITION_UNAVAILABLE) {
+          setGeo({
+            kind: 'unavailable',
+            message: "Couldn't get a fix. Step outside or near a window and try again.",
+          });
+        } else if (err.code === err.TIMEOUT) {
+          setGeo({ kind: 'timeout' });
+        } else {
+          setGeo({ kind: 'denied', message: err.message || 'Location access denied.' });
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
-  }, [place.lat, place.lng]);
-
-  const runWifiTest = async () => {
-    setWifiLoading(true);
-    try {
-      const result = await runSpeedtest();
-      const mbps = result.download_mbps;
-      setWifiMbps(mbps);
-      const auto = ratingFromMbps(mbps);
-      setRatings((r) => ({ ...r, wifi: auto }));
-      setWifiAutoSet(true);
-    } catch {
-      setWifiMbps(null);
-    }
-    setWifiLoading(false);
   };
 
-  const runDecibel = async () => {
-    setDecibelLoading(true);
+  const runWifiTest = async () => {
+    setWifi({ kind: 'measuring', phase: 'ping' });
+    try {
+      const result = await runSpeedtest({
+        onPhase: (phase) => setWifi({ kind: 'measuring', phase }),
+      });
+      setWifi({
+        kind: 'measured',
+        mbps: result.download_mbps,
+        ping: result.ping_ms,
+        rating: ratingFromMbps10(result.download_mbps),
+      });
+    } catch (err) {
+      const phase = err instanceof SpeedtestError ? err.phase : 'download';
+      const message =
+        err instanceof Error ? err.message : 'Speed test failed.';
+      setWifi({ kind: 'failed', phase, message });
+    }
+  };
+
+  const runNoiseTest = async () => {
+    setNoise({ kind: 'measuring' });
     try {
       const result = await runDecibelTest(10);
       const db = Math.round(result.avg_db);
-      setDecibel(db);
-      const auto = ratingFromDb(db);
-      setRatings((r) => ({ ...r, noise: auto }));
-      setNoiseAutoSet(true);
-    } catch {
-      setDecibel(null);
+      setNoise({ kind: 'measured', db, rating: ratingFromDb10(db) });
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? /denied|permission/i.test(err.message)
+            ? 'Microphone access blocked. Enable it in your browser settings, or rate manually.'
+            : err.message
+          : 'Noise test failed.';
+      setNoise({ kind: 'failed', message });
     }
-    setDecibelLoading(false);
   };
-
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const canSubmit = ratings.overall > 0 && comment.length <= 280 && !submitting;
 
   const buildPayload = () => ({
     place_id: place.id,
-    overall_rating: ratings.overall,
+    overall_rating: overall,
     overall_suggested: suggestedOverall || null,
     overall_user_set: overallTouched,
-    wifi_rating: ratings.wifi || null,
-    noise_rating: ratings.noise || null,
-    seating_rating: ratings.seating || null,
-    outlets_rating: ratings.outlets || null,
-    food_rating: ateFood ? ratings.food || null : null,
+    wifi_rating: effectiveWifi,
+    noise_rating: effectiveNoise,
+    seating_rating: seating || null,
+    outlets_rating: outlets || null,
+    food_value_rating: ateFood && foodValue > 0 ? foodValue : null,
+    current_busyness: currentBusyness || null,
+    temperature_feel: temperatureFeel || null,
     drink_price_range: drinkPrice,
     food_price_range: foodPrice,
     ate_food: ateFood,
-    environment_facts: envFacts,
     work_facts: workFacts,
     place_type: placeType,
-    current_seating: currentSeating,
+    outside_temp_c: weather?.tempC ?? null,
+    outside_condition: weather?.condition ?? null,
     comment: comment.trim() || null,
     verified_lat: geo.kind === 'ok' ? geo.lat : null,
     verified_lng: geo.kind === 'ok' ? geo.lng : null,
   });
+
+  const canSubmit = overall > 0 && comment.length <= 280 && geo.kind === 'ok' && !submitting;
+  const submitLabel = submitting
+    ? 'Submitting…'
+    : geo.kind !== 'ok'
+      ? 'Verify your location to submit'
+      : overall === 0
+        ? 'Rate overall to continue'
+        : 'Submit review';
+
+  const uploadPhotos = async (reviewId: string) => {
+    const slotsWithPhotos = PHOTO_SLOTS.filter((s) => Boolean(photos[s])) as PhotoSlot[];
+    if (slotsWithPhotos.length === 0) return;
+    const supabase = createBrowserClient();
+    const uploaded: { slot: PhotoSlot; path: string; width: number; height: number; bytes: number }[] = [];
+    await Promise.all(
+      slotsWithPhotos.map(async (slot) => {
+        const prepared = photos[slot];
+        if (!prepared) return;
+        const path = `${reviewId}/${slot}.jpg`;
+        const { error } = await supabase.storage
+          .from('review-photos')
+          .upload(path, prepared.blob, { contentType: 'image/jpeg', upsert: true });
+        if (error) return;
+        uploaded.push({
+          slot,
+          path,
+          width: prepared.width,
+          height: prepared.height,
+          bytes: prepared.bytes,
+        });
+      }),
+    );
+    if (uploaded.length === 0) return;
+    await fetch(`/api/reviews/${reviewId}/photos`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ photos: uploaded }),
+    }).catch(() => null);
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -384,17 +440,16 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
         window.location.assign(buildAuthRedirect(nextPath, 'review'));
         return;
       }
-      const body = (await resp.json().catch(() => ({}))) as { error?: string };
+      const body = (await resp.json().catch(() => ({}))) as { error?: string; id?: string };
       if (!resp.ok) {
-        // 404/503: table missing — preserve demo UX by acknowledging.
         if (resp.status === 404 || resp.status === 503) {
           setSubmitted(true);
           return;
         }
         throw new Error(body.error ?? `request failed (${resp.status})`);
       }
-      // Fire-and-forget measurements if collected
-      if (wifiMbps !== null) {
+      // Fire-and-forget secondary measurements
+      if (wifi.kind === 'measured') {
         void fetch('/api/wifi-tests', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -402,16 +457,20 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
             place_id: place.id,
             lat: place.lat,
             lng: place.lng,
-            download_mbps: wifiMbps,
+            download_mbps: wifi.mbps,
+            ping_ms: wifi.ping,
           }),
-        });
+        }).catch(() => null);
       }
-      if (decibel !== null) {
+      if (noise.kind === 'measured') {
         void fetch('/api/decibel', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ place_id: place.id, avg_db: decibel }),
-        });
+          body: JSON.stringify({ place_id: place.id, avg_db: noise.db }),
+        }).catch(() => null);
+      }
+      if (body.id) {
+        await uploadPhotos(body.id);
       }
       setSubmitted(true);
     } catch (err) {
@@ -429,7 +488,7 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
         </div>
         <h1 className="mt-5 text-[28px] font-bold text-[var(--text-primary)]">Thanks!</h1>
         <p className="mt-2 max-w-xs text-[14px] text-[var(--text-secondary)]">
-          Your review would be saved once we wire the database. Demo complete.
+          Your review helps the next person find a good spot to work.
         </p>
         <Link
           href="/"
@@ -475,142 +534,189 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
           </div>
         </div>
 
-        <GeoBanner geo={geo} />
+        <GeoBanner geo={geo} placeName={place.name} onRequest={requestGeo} />
 
-        <section className="mt-6 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-          <div className="text-[13px] font-semibold text-[var(--text-primary)]">Rate your visit</div>
-          <div className="mt-2">
-            <ScaleRow
-              icon="WifiHigh"
-              label={wifiAutoSet && wifiMbps !== null ? `Wi-Fi · measured ${wifiMbps} Mbps` : 'Wi-Fi speed'}
-              lowLabel="Slow"
-              highLabel="Fast"
-              value={ratings.wifi}
-              onChange={(v) => {
-                setWifiAutoSet(false);
-                setRatings((r) => ({ ...r, wifi: v }));
-              }}
-            />
-            <ScaleRow
-              icon="SpeakerSimpleLow"
-              label={noiseAutoSet && decibel !== null ? `Noise · measured ${decibel} dB` : 'Noise'}
-              lowLabel="Quiet"
-              highLabel="Very loud"
-              value={ratings.noise}
-              onChange={(v) => {
-                setNoiseAutoSet(false);
-                setRatings((r) => ({ ...r, noise: v }));
-              }}
-            />
-            <StarRow
-              icon="Armchair"
-              label="Seating comfort"
-              value={ratings.seating}
-              onChange={(v) => setRatings((r) => ({ ...r, seating: v }))}
-            />
-            <StarRow
-              icon="Plug"
-              label="Outlets"
-              value={ratings.outlets}
-              onChange={(v) => setRatings((r) => ({ ...r, outlets: v }))}
-            />
-            {needsFood && ateFood && (
-              <StarRow
-                icon="ForkKnife"
-                label="Food"
-                value={ratings.food}
-                onChange={(v) => setRatings((r) => ({ ...r, food: v }))}
+        {/* Wi-Fi */}
+        <Section title="Wi-Fi" subtitle="We measure it. You can rate manually if the test fails.">
+          <MeasureCard
+            icon="WifiHigh"
+            label="Test Wi-Fi speed"
+            description="Pings + sustained download + sustained upload. ~12 s."
+            state={wifi}
+            onRun={runWifiTest}
+          />
+          {wifi.kind === 'failed' && (
+            <div className="mt-3">
+              <div className="rounded-xl bg-accent-red-tint px-3 py-2 text-[12px] text-accent-red">
+                {wifi.message}
+              </div>
+              <div className="mt-2">
+                <SliderRow
+                  icon="WifiHigh"
+                  label="Rate Wi-Fi manually"
+                  value={wifiManual}
+                  onChange={setWifiManual}
+                  anchors={WIFI_FALLBACK_ANCHORS}
+                  endLabels={{ low: 'Unusable', high: 'Fiber' }}
+                />
+              </div>
+            </div>
+          )}
+        </Section>
+
+        {/* Noise */}
+        <Section title="Noise" subtitle="We sample 10 s of ambient sound. Audio never leaves your device.">
+          <MeasureNoiseCard state={noise} onRun={runNoiseTest} />
+          {noise.kind === 'failed' && (
+            <div className="mt-3">
+              <div className="rounded-xl bg-accent-red-tint px-3 py-2 text-[12px] text-accent-red">
+                {noise.message}
+              </div>
+              <div className="mt-2">
+                <SliderRow
+                  icon="SpeakerSimpleHigh"
+                  label="Rate noise manually"
+                  value={noiseManual}
+                  onChange={setNoiseManual}
+                  anchors={NOISE_FALLBACK_ANCHORS}
+                  endLabels={{ low: 'Loud', high: 'Library-quiet' }}
+                />
+              </div>
+            </div>
+          )}
+        </Section>
+
+        {/* Seating + Outlets */}
+        <Section title="Comfort">
+          <SliderRow
+            icon="Armchair"
+            label="Seating comfort"
+            value={seating}
+            onChange={setSeating}
+            anchors={SEATING_ANCHORS}
+            endLabels={{ low: 'Wooden stool', high: 'Sofa lounge' }}
+          />
+          <SliderRow
+            icon="Plug"
+            label="Outlets / plugs"
+            value={outlets}
+            onChange={setOutlets}
+            anchors={OUTLETS_ANCHORS}
+            endLabels={{ low: 'None', high: 'Every seat' }}
+          />
+        </Section>
+
+        {/* Drink price */}
+        <Section title="Price for a drink" subtitle="Pick the bucket your usual order falls in.">
+          <ChipRow>
+            {PRICE_BUCKETS.map((bucket) => (
+              <Chip
+                key={bucket}
+                label={priceLabel(bucket, symbol)}
+                active={drinkPrice === bucket}
+                onClick={() => setDrinkPrice(bucket)}
               />
+            ))}
+          </ChipRow>
+        </Section>
+
+        {/* Food price + value */}
+        {needsFood && (
+          <Section title="Food">
+            <ChipRow>
+              <Chip
+                label="Did not eat"
+                active={foodPrice === 'did_not_eat'}
+                onClick={() => setFoodPrice('did_not_eat')}
+              />
+              {PRICE_BUCKETS.map((bucket) => (
+                <Chip
+                  key={bucket}
+                  label={priceLabel(bucket, symbol)}
+                  active={foodPrice === bucket}
+                  onClick={() => setFoodPrice(bucket)}
+                />
+              ))}
+            </ChipRow>
+            {ateFood && (
+              <div className="mt-3">
+                <SliderRow
+                  icon="ForkKnife"
+                  label="Portion / value"
+                  value={foodValue}
+                  onChange={setFoodValue}
+                  anchors={FOOD_VALUE_ANCHORS}
+                  endLabels={{ low: 'Overpriced', high: 'Great value' }}
+                />
+              </div>
             )}
-          </div>
-        </section>
+          </Section>
+        )}
 
-        <section className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-          <div className="text-[13px] font-semibold text-[var(--text-primary)]">Price</div>
-          <div className="mt-3">
-            <div className="text-[12px] font-medium text-[var(--text-secondary)]">Drink</div>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {DRINK_PRICE_OPTIONS.map((opt) => (
-                <Choice
+        {/* Environment / temperature */}
+        <Section title="Environment" subtitle="How does the air feel right now?">
+          <SliderRow
+            icon="Thermometer"
+            label="Temperature"
+            value={temperatureFeel}
+            onChange={setTemperatureFeel}
+            anchors={TEMPERATURE_ANCHORS}
+            endLabels={{ low: 'Cold', high: 'Hot' }}
+          />
+        </Section>
+
+        {/* Work-friendliness multi-select */}
+        <Section title="Work-friendliness" subtitle="Pick everything that was true — multiple ok.">
+          <div className="space-y-2">
+            {WORK_OPTIONS.map((opt) => {
+              const active = workFacts.includes(opt.value);
+              return (
+                <button
                   key={opt.value}
-                  label={opt.label}
-                  active={drinkPrice === opt.value}
-                  onClick={() => setDrinkPrice(opt.value)}
-                />
-              ))}
-            </div>
+                  type="button"
+                  onClick={() => toggleWork(opt.value)}
+                  className={`flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition ${
+                    active
+                      ? 'border-accent bg-accent-tint'
+                      : 'border-[var(--surface-border)] bg-white hover:bg-sys-gray-6'
+                  }`}
+                  aria-pressed={active}
+                >
+                  <Icon
+                    name={active ? 'CheckSquare' : 'Square'}
+                    weight={active ? 'fill' : 'regular'}
+                    size={22}
+                    className={active ? 'text-accent' : 'text-[var(--text-tertiary)]'}
+                  />
+                  <Icon
+                    name={opt.icon}
+                    size={18}
+                    className="text-[var(--text-secondary)]"
+                  />
+                  <span className="text-[14px] text-[var(--text-primary)]">{opt.label}</span>
+                </button>
+              );
+            })}
           </div>
-          <div className="mt-3">
-            <div className="text-[12px] font-medium text-[var(--text-secondary)]">Food</div>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {FOOD_PRICE_OPTIONS.map((opt) => (
-                <Choice
-                  key={opt.value}
-                  label={opt.label}
-                  active={foodPrice === opt.value}
-                  onClick={() => setFoodPrice(opt.value)}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
+        </Section>
 
-        <section className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-          <div className="text-[13px] font-semibold text-[var(--text-primary)]">Environment</div>
-          <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">Pick anything that fits.</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {ENV_OPTIONS.map((opt) => (
-              <Choice
-                key={opt.value}
-                icon={opt.icon}
-                label={opt.label}
-                active={envFacts.includes(opt.value)}
-                onClick={() => toggleEnvFact(opt.value)}
-              />
-            ))}
-          </div>
-        </section>
+        {/* How busy */}
+        <Section title="How busy is it right now?">
+          <SliderRow
+            icon="Users"
+            label="Right now"
+            value={currentBusyness}
+            onChange={setCurrentBusyness}
+            anchors={BUSY_ANCHORS}
+            endLabels={{ low: 'Empty', high: 'Packed' }}
+          />
+        </Section>
 
-        <section className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-          <div className="text-[13px] font-semibold text-[var(--text-primary)]">Work-friendliness</div>
-          <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
-            Stay comfort matters more than vibes — pick whatever was true.
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {WORK_OPTIONS.map((opt) => (
-              <Choice
-                key={opt.value}
-                label={opt.label}
-                active={workFacts.includes(opt.value)}
-                onClick={() => toggleWorkFact(opt.value)}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-          <div className="text-[13px] font-semibold text-[var(--text-primary)]">Right now</div>
-          <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">How busy is it?</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {CURRENT_SEATING_OPTIONS.map((opt) => (
-              <Choice
-                key={opt.value}
-                label={opt.label}
-                active={currentSeating === opt.value}
-                onClick={() => setCurrentSeating(opt.value)}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-          <div className="text-[13px] font-semibold text-[var(--text-primary)]">Place type</div>
-          <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
-            Confirm what this spot actually is — helps everyone&apos;s filters work.
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
+        {/* Place type */}
+        <Section title="Place type" subtitle="Confirm what this spot actually is — helps everyone’s filters work.">
+          <div className="flex flex-wrap gap-2">
             {PLACE_TYPE_OPTIONS.map((opt) => (
-              <Choice
+              <Chip
                 key={opt.value}
                 label={opt.label}
                 active={placeType === opt.value}
@@ -618,81 +724,65 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
               />
             ))}
           </div>
-        </section>
+        </Section>
 
-        <section className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-          <div className="text-[13px] font-semibold text-[var(--text-primary)]">Measurements</div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <TestTile
-              icon="WifiHigh"
-              label="Wi-Fi speed"
-              value={wifiMbps !== null ? `${wifiMbps} Mbps` : 'Run test'}
-              loading={wifiLoading}
-              onClick={runWifiTest}
-            />
-            <TestTile
-              icon="SpeakerSimpleLow"
-              label="Noise"
-              value={decibel !== null ? `${decibel} dB` : 'Sample 10 s'}
-              loading={decibelLoading}
-              onClick={runDecibel}
-            />
-          </div>
+        {/* Photos */}
+        <Section
+          title="Photos"
+          subtitle="Up to 4. Each slot has a specific job — please don’t fill all four with food and coffee."
+        >
+          <PhotoSlots value={photos} onChange={setPhotos} />
           <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
-            Demo stubs. We process sound locally and never upload audio.
+            Photos are optional. They’re saved with your review after submit.
           </p>
-        </section>
+        </Section>
 
-        <section className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-          <div className="flex items-center justify-between">
-            <div className="text-[13px] font-semibold text-[var(--text-primary)]">Comment</div>
-            <div className="text-[11px] text-[var(--text-tertiary)]">{comment.length}/280</div>
+        {/* Comment */}
+        <Section title="Comment">
+          <div className="flex items-center justify-between text-[11px] text-[var(--text-tertiary)]">
+            <span>Anything a future worker should know?</span>
+            <span>{comment.length}/280</span>
           </div>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value.slice(0, 280))}
-            placeholder="Anything a future worker should know?"
+            placeholder="Outlets near the window, music gets loud after 4pm, etc."
             rows={4}
             className="mt-2 w-full resize-none rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2 text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
           />
-        </section>
+        </Section>
 
-        <section className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-          <div className="flex items-baseline justify-between gap-3">
-            <div className="text-[13px] font-semibold text-[var(--text-primary)]">Overall</div>
-            {suggestedOverall > 0 && (
-              <div className="text-[11px] text-[var(--text-tertiary)]">
-                Suggested: {suggestedOverall} / 5
-              </div>
-            )}
-          </div>
-          <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
-            Computed from your answers. Tap a star to adjust if it doesn&apos;t feel right.
-          </p>
-          <div className="mt-2">
-            <StarRow
-              icon="Star"
-              label="Overall"
-              value={ratings.overall}
-              onChange={(v) => {
-                setOverallTouched(true);
-                setRatings((r) => ({ ...r, overall: v }));
-              }}
-            />
-          </div>
-          {overallTouched && suggestedOverall > 0 && ratings.overall !== suggestedOverall && (
+        {/* Overall */}
+        <Section title="Overall">
+          {suggestedOverall > 0 && !overallTouched && (
+            <p className="text-[11px] text-[var(--text-tertiary)]">
+              Suggested: {suggestedOverall} / 10 — adjust if it doesn’t feel right.
+            </p>
+          )}
+          <SliderRow
+            icon="Star"
+            label="Overall"
+            value={overall}
+            onChange={(v) => {
+              setOverallTouched(true);
+              setOverall(v);
+            }}
+            anchors={OVERALL_ANCHORS}
+            endLabels={{ low: 'Avoid', high: 'Top-tier' }}
+          />
+          {overallTouched && suggestedOverall > 0 && overall !== suggestedOverall && (
             <button
               type="button"
               onClick={() => {
                 setOverallTouched(false);
-                setRatings((r) => ({ ...r, overall: suggestedOverall }));
+                setOverall(suggestedOverall);
               }}
-              className="mt-2 text-[11px] font-medium text-accent hover:opacity-80 transition"
+              className="mt-1 text-[11px] font-medium text-accent hover:opacity-80 transition"
             >
               Reset to suggested ({suggestedOverall})
             </button>
           )}
-        </section>
+        </Section>
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--surface-border)] bg-white/95 p-4 backdrop-blur-ios">
@@ -707,11 +797,7 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
             disabled={!canSubmit}
             className="w-full rounded-2xl bg-accent py-3.5 text-[15px] font-semibold text-white hover:opacity-90 disabled:bg-sys-gray-4 disabled:cursor-not-allowed transition"
           >
-            {submitting
-              ? 'Submitting…'
-              : ratings.overall === 0
-                ? 'Rate overall to continue'
-                : 'Submit review'}
+            {submitLabel}
           </button>
         </div>
       </div>
@@ -719,8 +805,92 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
   );
 }
 
-function GeoBanner({ geo }: { geo: GeoState }) {
-  if (geo.kind === 'idle' || geo.kind === 'checking') {
+function Section({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
+      <div className="text-[13px] font-semibold text-[var(--text-primary)]">{title}</div>
+      {subtitle && (
+        <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">{subtitle}</p>
+      )}
+      <div className="mt-2">{children}</div>
+    </section>
+  );
+}
+
+function ChipRow({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="-mx-1 flex gap-2 overflow-x-auto px-1 no-scrollbar snap-x snap-mandatory pb-1">
+      {children}
+    </div>
+  );
+}
+
+function Chip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 snap-start rounded-full border px-3 py-1.5 text-[13px] font-medium transition ${
+        active
+          ? 'border-transparent bg-accent text-white'
+          : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function GeoBanner({
+  geo,
+  placeName,
+  onRequest,
+}: {
+  geo: GeoState;
+  placeName: string;
+  onRequest: () => void;
+}) {
+  if (geo.kind === 'idle') {
+    const isInsecure =
+      typeof window !== 'undefined' && window.isSecureContext === false;
+    return (
+      <div className="mt-5 flex flex-col gap-2 rounded-2xl border border-[var(--surface-border)] bg-white px-4 py-3">
+        <div className="flex items-center gap-2 text-[13px] text-[var(--text-secondary)]">
+          <Icon name="MapPinLine" size={16} />
+          <span>Reviews require being within 150 m of the place.</span>
+        </div>
+        <button
+          type="button"
+          onClick={onRequest}
+          className="self-start rounded-xl bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:opacity-90 transition"
+        >
+          Use my location
+        </button>
+        {isInsecure && (
+          <div className="text-[11px] text-accent-amber">
+            Location requires a secure (https) page.
+          </div>
+        )}
+      </div>
+    );
+  }
+  if (geo.kind === 'checking') {
     return (
       <div className="mt-5 flex items-center gap-2 rounded-2xl bg-sys-gray-6 px-4 py-3 text-[13px] text-[var(--text-secondary)]">
         <Icon name="CircleNotch" size={16} className="animate-spin" />
@@ -732,83 +902,184 @@ function GeoBanner({ geo }: { geo: GeoState }) {
     return (
       <div className="mt-5 flex items-center gap-2 rounded-2xl bg-accent-green-tint px-4 py-3 text-[13px] text-accent-green">
         <Icon name="MapPinLine" size={16} weight="fill" />
-        <span>You&apos;re here ({Math.round(geo.meters)} m away).</span>
+        <span>You’re here ({Math.round(geo.meters)} m away).</span>
       </div>
     );
   }
   if (geo.kind === 'far') {
     return (
-      <div className="mt-5 flex items-center gap-2 rounded-2xl bg-accent-amber-tint px-4 py-3 text-[13px] text-accent-amber">
-        <Icon name="Info" size={16} weight="fill" />
-        <span>
-          You&apos;re {(geo.meters / 1000).toFixed(1)} km from this place. Reviews require being
-          within 150 m.
-        </span>
+      <div className="mt-5 flex flex-col gap-2 rounded-2xl bg-accent-amber-tint px-4 py-3 text-[13px] text-accent-amber">
+        <div className="flex items-center gap-2">
+          <Icon name="Info" size={16} weight="fill" />
+          <span>
+            You’re {(geo.meters / 1000).toFixed(1)} km from {placeName}. Reviews require being within
+            150 m.
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onRequest}
+          className="self-start rounded-xl bg-white/80 px-3 py-1.5 text-[12px] font-semibold text-accent-amber hover:bg-white"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+  if (geo.kind === 'timeout' || geo.kind === 'unavailable') {
+    const message =
+      geo.kind === 'timeout'
+        ? 'That took too long. Try again?'
+        : geo.message;
+    return (
+      <div className="mt-5 flex flex-col gap-2 rounded-2xl bg-accent-amber-tint px-4 py-3 text-[13px] text-accent-amber">
+        <div className="flex items-center gap-2">
+          <Icon name="Warning" size={16} weight="fill" />
+          <span>{message}</span>
+        </div>
+        <button
+          type="button"
+          onClick={onRequest}
+          className="self-start rounded-xl bg-white/80 px-3 py-1.5 text-[12px] font-semibold text-accent-amber hover:bg-white"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+  if (geo.kind === 'unsupported') {
+    return (
+      <div className="mt-5 flex items-center gap-2 rounded-2xl bg-accent-red-tint px-4 py-3 text-[13px] text-accent-red">
+        <Icon name="Warning" size={16} weight="fill" />
+        <span>This browser doesn’t support location. Open in Safari or Chrome on your phone.</span>
       </div>
     );
   }
   return (
-    <div className="mt-5 flex items-center gap-2 rounded-2xl bg-accent-red-tint px-4 py-3 text-[13px] text-accent-red">
-      <Icon name="Warning" size={16} weight="fill" />
-      <span>{geo.message}</span>
+    <div className="mt-5 flex flex-col gap-2 rounded-2xl bg-accent-red-tint px-4 py-3 text-[13px] text-accent-red">
+      <div className="flex items-center gap-2">
+        <Icon name="Warning" size={16} weight="fill" />
+        <span>{geo.message}</span>
+      </div>
+      <button
+        type="button"
+        onClick={onRequest}
+        className="self-start rounded-xl bg-white/80 px-3 py-1.5 text-[12px] font-semibold text-accent-red hover:bg-white"
+      >
+        Retry
+      </button>
     </div>
   );
 }
 
-function Choice({
+function MeasureCard({
   icon,
   label,
-  active,
-  onClick,
+  description,
+  state,
+  onRun,
 }: {
-  icon?: PhosphorIconName;
+  icon: PhosphorIconName;
   label: string;
-  active: boolean;
-  onClick: () => void;
+  description: string;
+  state: WifiState;
+  onRun: () => void;
 }) {
+  const phaseCopy =
+    state.kind === 'measuring'
+      ? state.phase === 'ping'
+        ? 'Pinging…'
+        : state.phase === 'download'
+          ? 'Measuring download (~5 s)…'
+          : 'Measuring upload (~4 s)…'
+      : null;
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition ${
-        active
-          ? 'border-transparent bg-accent text-white'
-          : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
-      }`}
-    >
-      {icon && <Icon name={icon} size={14} weight={active ? 'fill' : 'regular'} />}
-      <span>{label}</span>
-    </button>
+    <div className="rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] p-4">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-bubble">
+          <Icon
+            name={state.kind === 'measuring' ? 'CircleNotch' : icon}
+            size={20}
+            className={state.kind === 'measuring' ? 'animate-spin text-accent' : 'text-accent'}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[14px] font-semibold text-[var(--text-primary)]">{label}</div>
+          <div className="text-[11px] text-[var(--text-tertiary)]">{description}</div>
+        </div>
+        <button
+          type="button"
+          onClick={onRun}
+          disabled={state.kind === 'measuring'}
+          className="rounded-xl bg-accent px-3 py-2 text-[12px] font-semibold text-white hover:opacity-90 disabled:opacity-60"
+        >
+          {state.kind === 'measured' ? 'Re-test' : state.kind === 'measuring' ? 'Running…' : 'Run test'}
+        </button>
+      </div>
+      {phaseCopy && (
+        <div className="mt-3 text-[12px] text-[var(--text-secondary)]">{phaseCopy}</div>
+      )}
+      {state.kind === 'measured' && (
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+          <Stat label="Speed" value={`${state.mbps} Mbps`} />
+          <Stat label="Ping" value={`${state.ping} ms`} />
+          <Stat label="Rating" value={`${state.rating} / 10`} />
+        </div>
+      )}
+    </div>
   );
 }
 
-function TestTile({
-  icon,
-  label,
-  value,
-  loading,
-  onClick,
+function MeasureNoiseCard({
+  state,
+  onRun,
 }: {
-  icon: 'WifiHigh' | 'SpeakerSimpleLow';
-  label: string;
-  value: string;
-  loading: boolean;
-  onClick: () => void;
+  state: NoiseState;
+  onRun: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={loading}
-      className="flex flex-col items-start rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-3 text-left transition hover:bg-sys-gray-6 disabled:opacity-60"
-    >
-      <Icon
-        name={loading ? 'CircleNotch' : icon}
-        size={20}
-        className={loading ? 'animate-spin text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}
-      />
-      <div className="mt-1 text-[11px] text-[var(--text-secondary)]">{label}</div>
-      <div className="text-[14px] font-semibold text-[var(--text-primary)]">{value}</div>
-    </button>
+    <div className="rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] p-4">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-bubble">
+          <Icon
+            name={state.kind === 'measuring' ? 'CircleNotch' : 'SpeakerSimpleHigh'}
+            size={20}
+            className={state.kind === 'measuring' ? 'animate-spin text-accent' : 'text-accent'}
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[14px] font-semibold text-[var(--text-primary)]">Test ambient noise</div>
+          <div className="text-[11px] text-[var(--text-tertiary)]">
+            10 s sample. Audio stays on your device.
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onRun}
+          disabled={state.kind === 'measuring'}
+          className="rounded-xl bg-accent px-3 py-2 text-[12px] font-semibold text-white hover:opacity-90 disabled:opacity-60"
+        >
+          {state.kind === 'measured' ? 'Re-test' : state.kind === 'measuring' ? 'Listening…' : 'Run test'}
+        </button>
+      </div>
+      {state.kind === 'measuring' && (
+        <div className="mt-3 text-[12px] text-[var(--text-secondary)]">Listening…</div>
+      )}
+      {state.kind === 'measured' && (
+        <div className="mt-3 grid grid-cols-2 gap-2 text-center">
+          <Stat label="Avg" value={`${state.db} dB`} />
+          <Stat label="Rating" value={`${state.rating} / 10`} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-white px-2 py-1.5">
+      <div className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">{label}</div>
+      <div className="text-[13px] font-semibold tabular-nums text-[var(--text-primary)]">{value}</div>
+    </div>
   );
 }

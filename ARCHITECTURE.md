@@ -25,7 +25,9 @@ Protected prefixes (defined in `middleware.ts`): `/profile`, `/admin`. **`/revie
 
 | Path | Method | Auth | Notes |
 | --- | --- | --- | --- |
-| `/api/reviews` | POST | required (401) | Geo-verified within 150 m; 5/user/day limit |
+| `/api/reviews` | POST | required (401) | Geo-verified within 150 m; 5/user/day limit; ratings 1–10 |
+| `/api/reviews/[id]/photos` | POST | required (401) | Records `{ slot, path }[]` rows after Storage upload; soft-503 if table missing |
+| `/api/weather` | GET | none | open-meteo proxy by `?lat&lng`; 30 min cache; soft-fail returns `{}` |
 | `/api/live-updates` | POST | required (401) | Right-now noise / seating / temperature snapshot |
 | `/api/checkins` | POST | required (401) | Live review (geolocated) |
 | `/api/favorites` | POST/DELETE | required (401) | Best-effort; client ignores 401/503 |
@@ -59,8 +61,10 @@ Other localStorage keys: `wic:onboarded`, `wic:favorites`, `wic:pending:{review,
 | `PlaceCardBody` | `components/card/PlaceCardBody.tsx` | Inside both card shells | **Edit only this one for card content** |
 | `TopRightControls` | `components/map/TopRightControls.tsx` | Map page | Filter pill (mobile only) + GPS pill |
 | `LiveUpdateSheet` | `components/review/LiveUpdateSheet.tsx` | Triggered by `useLiveUpdatePrompt` | Quick-update drawer with rotating optional question |
-| `ReviewForm` | `components/review/ReviewForm.tsx` | At `/review/new/[placeId]` | Layout: rate (Wi-Fi + Noise scale, others stars) → price → environment → work-friendliness → right-now → place type → measurements → comment → overall (auto-suggested) |
-| `ScaleRow` | `components/review/ScaleRow.tsx` | Inside ReviewForm | Labeled scale (1–5) with anchor labels (e.g. Quiet ↔ Very loud); replaces stars where direction is ambiguous |
+| `ReviewForm` | `components/review/ReviewForm.tsx` | At `/review/new/[placeId]` | Layout: geo CTA → Wi-Fi (measurement + manual fallback) → Noise (same) → Comfort sliders → Drink/food price chips → Environment slider with weather hint → Work-friendliness multi-select → Busy slider → Place type → Photos (4 slots) → Comment → Overall slider (auto-suggested) |
+| `SliderRow` | `components/review/SliderRow.tsx` | Inside ReviewForm | 1–10 anchored slider primitive; native `<input type="range">` with custom track + thumb |
+| `PhotoSlots` | `components/review/PhotoSlots.tsx` | Inside ReviewForm | 2×2 grid of 4 captioned photo slots; resize + EXIF strip via canvas before upload |
+| `ScaleRow` | `components/review/ScaleRow.tsx` | (legacy) | Discrete 1–5 scale; still used by older surfaces |
 | `FilterSheet` | `components/filters/FilterSheet.tsx` | Triggered from sidebar (desktop) or top-right pill (mobile) | |
 | `AddPlaceSheet` | `components/map/AddPlaceSheet.tsx` | Triggered from "Add a place" CTA | |
 
@@ -107,8 +111,12 @@ Replay handlers:
 
 ## Measurement
 
-- `lib/measurement/speedtest.ts` — calls `/api/speedtest/{blob,upload,ping}` to compute Mbps.
+- `lib/measurement/speedtest.ts` — calls `/api/speedtest/{blob,upload,ping}` to compute Mbps. Throws typed `SpeedtestError { phase }`. One-shot retry per phase. Upload payload is zero-filled (see conventions on `crypto.getRandomValues` cap).
 - `lib/measurement/decibel.ts` — `getUserMedia` + `AnalyserNode`; samples for 10 s. Only the aggregate dB number is uploaded; audio never leaves the device.
+- `lib/review/scoring.ts` — `suggestOverall(...)` weighted mean for the overall slider; `ratingFromMbps10` / `ratingFromDb10` map raw measurements onto the 1–10 scale.
+- `lib/review/anchors.ts` — anchored description copy for every slider in the form.
+- `lib/review/photos.ts` — client-side resize + EXIF strip pipeline; per-slot metadata.
+- `lib/weather/codes.ts` — open-meteo WMO weather code → friendly string.
 
 ## Format helpers
 

@@ -18,6 +18,8 @@ Copy each file into Supabase Dashboard → **SQL Editor** and run, in order:
 | 1 | `migrations/001_init.sql`             | tables, enums, RLS policies, triggers               |
 | 2 | `migrations/002_views.sql`            | `mv_noise_heatmap`, `mv_current_live_status`, `mv_place_ratings`, `recompute_trust_score` |
 | 3 | `migrations/003_cron.sql` *(optional)*| 15-minute `pg_cron` refresh of the three views      |
+| 4 | `migrations/004_demo_mode.sql`        | `is_demo` columns + indexes + reset function        |
+| 5 | `migrations/005_review_v2.sql`        | 1–10 rating scale, new collected fields, `review_photos` table |
 
 Or use the CLI from the repo root:
 
@@ -25,6 +27,29 @@ Or use the CLI from the repo root:
 npx supabase link --project-ref ndsrmsfqzkwbkzgkyrxr
 npx supabase db push
 ```
+
+## 2.5 · Create the review-photos Storage bucket
+
+Dashboard → **Storage → New bucket**:
+
+- **Name:** `review-photos`
+- **Public:** yes (read-only public; writes are RLS-gated)
+- **Allowed mime types:** `image/jpeg, image/png, image/webp`
+- **File size limit:** 5 MB
+
+Bucket policies (Storage → Policies → `review-photos`):
+
+```sql
+-- Public read
+create policy "review_photos_public_read" on storage.objects for select
+  using (bucket_id = 'review-photos');
+
+-- Authenticated write into a path scoped to the user's review id
+create policy "review_photos_authenticated_write" on storage.objects for insert
+  with check (bucket_id = 'review-photos' and auth.role() = 'authenticated');
+```
+
+If the bucket is not present, photo uploads fail silently and the review is still saved (the form surfaces a toast).
 
 ## 3 · Enable auth providers
 

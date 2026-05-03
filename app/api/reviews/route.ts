@@ -9,17 +9,33 @@ import { isWithin } from '@/app/api/_shared/geo-check';
 interface Body {
   place_id?: string;
   overall_rating?: number;
-  wifi_rating?: number;
-  noise_rating?: number;
-  seating_rating?: number;
-  outlets_rating?: number;
-  price_rating?: number;
-  atmosphere_rating?: number;
-  food_rating?: number;
-  temperature_rating?: number;
-  comment?: string;
+  overall_suggested?: number | null;
+  overall_user_set?: boolean;
+  wifi_rating?: number | null;
+  noise_rating?: number | null;
+  seating_rating?: number | null;
+  outlets_rating?: number | null;
+  food_rating?: number | null;
+  food_value_rating?: number | null;
+  current_busyness?: number | null;
+  temperature_feel?: number | null;
+  drink_price_range?: string | null;
+  food_price_range?: string | null;
+  ate_food?: boolean;
+  environment_facts?: string[];
+  work_facts?: string[];
+  place_type?: string | null;
+  current_seating?: string | null;
+  outside_temp_c?: number | null;
+  outside_condition?: string | null;
+  comment?: string | null;
   verified_lat?: number;
   verified_lng?: number;
+}
+
+function isValidRating10(value: unknown): value is number | null {
+  if (value === null || value === undefined) return true;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 10;
 }
 
 export async function POST(request: NextRequest) {
@@ -32,6 +48,27 @@ export async function POST(request: NextRequest) {
   }
   if (typeof body.verified_lat !== 'number' || typeof body.verified_lng !== 'number') {
     return NextResponse.json({ error: 'verified_lat/verified_lng required' }, { status: 400 });
+  }
+
+  const ratingFields: [string, unknown][] = [
+    ['overall_rating', body.overall_rating],
+    ['overall_suggested', body.overall_suggested ?? null],
+    ['wifi_rating', body.wifi_rating ?? null],
+    ['noise_rating', body.noise_rating ?? null],
+    ['seating_rating', body.seating_rating ?? null],
+    ['outlets_rating', body.outlets_rating ?? null],
+    ['food_rating', body.food_rating ?? null],
+    ['food_value_rating', body.food_value_rating ?? null],
+    ['current_busyness', body.current_busyness ?? null],
+    ['temperature_feel', body.temperature_feel ?? null],
+  ];
+  for (const [name, value] of ratingFields) {
+    if (!isValidRating10(value)) {
+      return NextResponse.json(
+        { error: `${name} must be an integer 1-10 or null` },
+        { status: 400 },
+      );
+    }
   }
 
   const placeId = await resolvePlaceIdForActor(db, body.place_id, isDemo);
@@ -74,14 +111,25 @@ export async function POST(request: NextRequest) {
       place_id: placeId,
       user_id: user.id,
       overall_rating: body.overall_rating,
+      overall_suggested: body.overall_suggested ?? null,
+      overall_user_set: body.overall_user_set ?? null,
       wifi_rating: body.wifi_rating ?? null,
       noise_rating: body.noise_rating ?? null,
       seating_rating: body.seating_rating ?? null,
       outlets_rating: body.outlets_rating ?? null,
-      price_rating: body.price_rating ?? null,
-      atmosphere_rating: body.atmosphere_rating ?? null,
       food_rating: body.food_rating ?? null,
-      temperature_rating: body.temperature_rating ?? null,
+      food_value_rating: body.food_value_rating ?? null,
+      current_busyness: body.current_busyness ?? null,
+      temperature_feel: body.temperature_feel ?? null,
+      drink_price_range: body.drink_price_range ?? null,
+      food_price_range: body.food_price_range ?? null,
+      ate_food: body.ate_food ?? null,
+      environment_facts: body.environment_facts ?? null,
+      work_facts: body.work_facts ?? null,
+      place_type: body.place_type ?? null,
+      current_seating: body.current_seating ?? null,
+      outside_temp_c: body.outside_temp_c ?? null,
+      outside_condition: body.outside_condition ?? null,
       comment: body.comment?.slice(0, 280) ?? null,
       geo_verified: true,
       verified_lat: body.verified_lat,
@@ -90,6 +138,18 @@ export async function POST(request: NextRequest) {
     isDemo,
   );
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    const code = (error as { code?: string }).code ?? '';
+    const message = (error as { message?: string }).message ?? '';
+    // Demo-mode contract: missing table or columns → soft 503 so the form
+    // shows the success state and the demo surface keeps working.
+    if (code === '42P01' || /relation .* does not exist/i.test(message)) {
+      return NextResponse.json({ error: 'table missing' }, { status: 503 });
+    }
+    if (code === '42703' || /column .* does not exist/i.test(message)) {
+      return NextResponse.json({ error: 'column missing' }, { status: 503 });
+    }
+    return NextResponse.json({ error: message || 'insert failed' }, { status: 500 });
+  }
   return NextResponse.json({ id: data?.id });
 }

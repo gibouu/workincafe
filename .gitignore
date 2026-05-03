@@ -42,3 +42,23 @@ yarn-error.log*
 # tools
 .idea
 .vscode
+
+# --- claude-optimizer ---
+# State files contain a running log of work and decisions.
+# By default we DO commit them — they're the point of the system, and they're
+# valuable in PR review and team handoff.
+#
+# If your repo is public OR if you ever describe sensitive things to Claude
+# (customer names, internal URLs, credentials in error messages), uncomment
+# the lines below to keep state local to each developer's machine.
+#
+# .claude/state/PROGRESS.md
+# .claude/state/MEMORY.md
+# .claude/state/DECISIONS.md
+# .claude/state/TASKS.md
+
+# Always ignore the per-session counter — it's noise.
+.claude/state/.edit_count
+
+# Always ignore the archive folder — only the active ledger needs review.
+.claude/state/archive/

@@ -7,7 +7,7 @@ Living list of what's planned but not yet shipped. Add to it when you defer some
 
 ## Ideas needing a decision before work starts
 
-- **Drag-style scale instead of segmented buttons** for noise / wifi (users want continuous slider feel). Today `ScaleRow` is 5 segmented buttons with end labels. Slider with snap-to-tick is straightforward but touch interaction needs care.
+_(none currently)_
 
 ## Aesthetics / UX
 
@@ -17,10 +17,12 @@ Living list of what's planned but not yet shipped. Add to it when you defer some
 
 ## Review form
 
-- Photo uploads (multiple, optional, server-side category later). Needs storage choice (Vercel Blob vs Supabase Storage), moderation rules, and DB columns.
+- `next/image` remote loader config for the `review-photos` Storage bucket so photos render through the Next image pipeline. Today the form uses `<img>` directly.
+- Automated content moderation for review photos (today: rely on the existing `flagged_reviews` flow as the moderation surface).
+- Per-photo edit/replace UX in the slot grid (today: delete + re-add).
+- Migrate `LiveUpdateSheet` to the new 1–10 sliders + chip rows (sister surface; kept on the 5-bucket model for now).
 - Owner-claim menu attachments (separate from user-submitted photos).
-- Persist `overall_suggested` vs `overall_user_set` so the algorithm can be evaluated (already in payload; needs DB column).
-- Wi-Fi/noise are measurement-first: the speed-test and decibel-test fill the rating automatically and the `ScaleRow` label shows the measured value. User can override; override clears the "measured" annotation. The raw mbps/dB are already POSTed to `/api/wifi-tests` and `/api/decibel` whenever the test ran, regardless of override.
+- Sweep `mv_place_ratings` aggregation for the 1–10 cutover if mixing legacy 1–5 and new 1–10 rows ever produces visibly off scores.
 
 ## Live update / quick review
 
@@ -36,16 +38,9 @@ Living list of what's planned but not yet shipped. Add to it when you defer some
 
 ## Schema migration (Phase B SQL)
 
-The review form currently sends fields the API silently ignores. To land them:
+Most of this landed in `005_review_v2.sql` (rating range widened to 1–10, new collected fields on `reviews`, `review_photos` table). Still outstanding:
 
-- `reviews.drink_price_range`, `reviews.food_price_range`, `reviews.ate_food`
-- `reviews.environment_facts text[]`, `reviews.work_facts text[]`
-- `reviews.place_type`, `reviews.current_seating`
-- `reviews.overall_suggested smallint`, `reviews.overall_user_set bool`
-- `live_updates.outlets`, `live_updates.rotating_question text`, `live_updates.rotating_answer text`
-- Photo metadata (when photos ship): `review_photos { id, review_id, url, category, ... }`
-
-Until this lands, the API treats unknown payload keys as no-op (route handler enumerates known columns).
+- `live_updates.outlets`, `live_updates.rotating_question text`, `live_updates.rotating_answer text` (when `LiveUpdateSheet` is migrated to the new shape).
 
 ## Cluster zoom + pin density
 

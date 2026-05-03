@@ -101,7 +101,10 @@ type ReviewRow = {
   id: string;
   place_id: string;
   user_id: string;
+  // 1–10 site-wide. Pre-2026 rows live in the lower half (1–5) of the new range.
   overall_rating: number | null;
+  overall_suggested: number | null;
+  overall_user_set: boolean | null;
   wifi_rating: number | null;
   noise_rating: number | null;
   seating_rating: number | null;
@@ -110,7 +113,19 @@ type ReviewRow = {
   price_rating: number | null;
   atmosphere_rating: number | null;
   food_rating: number | null;
+  food_value_rating: number | null;
   temperature_rating: number | null;
+  temperature_feel: number | null;
+  current_busyness: number | null;
+  drink_price_range: string | null;
+  food_price_range: string | null;
+  ate_food: boolean | null;
+  environment_facts: string[] | null;
+  work_facts: string[] | null;
+  place_type: string | null;
+  current_seating: string | null;
+  outside_temp_c: number | null;
+  outside_condition: string | null;
   comment: string | null;
   geo_verified: boolean;
   verified_lat: number | null;
@@ -122,6 +137,18 @@ type ReviewRow = {
   is_demo: boolean;
   created_at: string;
   updated_at: string;
+};
+
+type ReviewPhotoRow = {
+  id: string;
+  review_id: string;
+  slot: 'menu' | 'inside' | 'outside' | 'special';
+  path: string;
+  width: number | null;
+  height: number | null;
+  bytes: number | null;
+  is_demo: boolean;
+  created_at: string;
 };
 
 type CheckinRow = {
@@ -253,6 +280,7 @@ export interface Database {
       place_source_refs: Table<PlaceSourceRefRow>;
       place_requests: Table<PlaceRequestRow>;
       reviews: Table<ReviewRow>;
+      review_photos: Table<ReviewPhotoRow>;
       checkins: Table<CheckinRow>;
       wifi_tests: Table<WifiTestRow>;
       decibel_samples: Table<DecibelSampleRow>;
