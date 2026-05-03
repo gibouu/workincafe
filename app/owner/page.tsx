@@ -80,27 +80,27 @@ export default async function OwnerPage() {
               if (!row.places) return null;
               const meta = categoryMeta(row.places.category);
               return (
-                <li
-                  key={row.place_id}
-                  className="flex items-center gap-3 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card"
-                >
-                  <div
-                    className="flex h-12 w-12 items-center justify-center rounded-full text-white shadow-bubble"
-                    style={{ background: meta.color }}
+                <li key={row.place_id}>
+                  <Link
+                    href={`/owner/places/${row.place_id}`}
+                    className="flex items-center gap-3 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card hover:shadow-float transition"
                   >
-                    <Icon name={meta.icon} size={20} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-[15px] font-semibold text-[var(--text-primary)]">
-                      {row.places.name}
+                    <div
+                      className="flex h-12 w-12 items-center justify-center rounded-full text-white shadow-bubble"
+                      style={{ background: meta.color }}
+                    >
+                      <Icon name={meta.icon} size={20} />
                     </div>
-                    <div className="truncate text-[12px] text-[var(--text-secondary)]">
-                      {row.places.address} · {row.places.neighborhood}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[15px] font-semibold text-[var(--text-primary)]">
+                        {row.places.name}
+                      </div>
+                      <div className="truncate text-[12px] text-[var(--text-secondary)]">
+                        {row.places.address} · {row.places.neighborhood}
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-[12px] text-[var(--text-tertiary)]">
-                    Deals coming soon
-                  </span>
+                    <Icon name="ArrowRight" size={16} className="text-[var(--text-secondary)]" />
+                  </Link>
                 </li>
               );
             })}
@@ -110,11 +110,11 @@ export default async function OwnerPage() {
         <div className="mt-8 rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
           <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-primary)]">
             <Icon name="Info" size={16} className="text-accent" />
-            <span>What’s next</span>
+            <span>About payouts</span>
           </div>
           <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
-            Deal CRUD and the QR scanner ship in the next round. For now you can claim places — your
-            grants will carry over.
+            Purchases run on a demo payment path right now — no real money moves. Stripe Connect
+            wiring lands in a follow-up; deals you create today will keep working when it does.
           </p>
         </div>
       </div>

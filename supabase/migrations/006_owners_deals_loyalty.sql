@@ -136,7 +136,8 @@ create policy "deals_owner_write" on public.deals for all using (
 -- =========================================================================
 create table if not exists public.deal_purchases (
   id uuid primary key default uuid_generate_v4(),
-  deal_id uuid not null references public.deals(id) on delete cascade,
+  -- deal_id is nullable to allow platform-issued freebies (no parent deal row)
+  deal_id uuid references public.deals(id) on delete cascade,
   place_id uuid not null references public.places(id),
   user_id uuid not null references public.users(id) on delete cascade,
   qr_code text not null unique,

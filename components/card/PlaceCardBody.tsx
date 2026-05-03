@@ -15,6 +15,7 @@ import type {
 } from '@/lib/demo/paris-places';
 import { VitalsTile } from '@/components/card/VitalsTile';
 import { NoiseHeatmap } from '@/components/card/NoiseHeatmap';
+import { PlaceDealsSection } from '@/components/card/PlaceDealsSection';
 import { ReviewList } from '@/components/review/ReviewList';
 import { AllReviewsSheet } from '@/components/review/AllReviewsSheet';
 import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
@@ -232,6 +233,8 @@ export function PlaceCardBody({
             />
           </div>
         </div>
+
+        <PlaceDealsSection placeId={place.id} />
 
         <div className="mt-5">
           <div className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">

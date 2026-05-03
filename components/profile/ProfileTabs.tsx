@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Icon, type PhosphorIconName } from '@/components/icons/Icon';
 import { PARIS_DEMO_PLACES } from '@/lib/demo/paris-places';
 import { categoryMeta } from '@/lib/categories';
+import { LoyaltyCard } from '@/components/profile/LoyaltyCard';
 
 type Tab = 'places' | 'reviews' | 'stats';
 
@@ -70,33 +71,36 @@ export function ProfileTabs() {
         )}
 
         {tab === 'stats' && (
-          <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">
-                  Trust score
+          <div className="space-y-3">
+            <LoyaltyCard />
+            <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">
+                    Trust score
+                  </div>
+                  <div className="mt-1 text-[34px] font-bold text-[var(--text-primary)]">10</div>
                 </div>
-                <div className="mt-1 text-[34px] font-bold text-[var(--text-primary)]">10</div>
+                <div className="flex items-center gap-2 rounded-full bg-sys-gray-6 px-3 py-1.5 text-[12px] text-[var(--text-secondary)]">
+                  <Icon name="Medal" size={14} />
+                  <span>Newcomer</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 rounded-full bg-sys-gray-6 px-3 py-1.5 text-[12px] text-[var(--text-secondary)]">
-                <Icon name="Medal" size={14} />
-                <span>Newcomer</span>
+              <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-sys-gray-5">
+                <div
+                  className="h-full rounded-full bg-accent"
+                  style={{ width: '10%' }}
+                />
               </div>
-            </div>
-            <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-sys-gray-5">
-              <div
-                className="h-full rounded-full bg-accent"
-                style={{ width: '10%' }}
-              />
-            </div>
-            <div className="mt-2 text-[11px] text-[var(--text-tertiary)]">
-              Reach 90 for the Veteran badge (top 10% per city).
-            </div>
+              <div className="mt-2 text-[11px] text-[var(--text-tertiary)]">
+                Reach 90 for the Veteran badge (top 10% per city).
+              </div>
 
-            <div className="mt-5 grid grid-cols-3 gap-3">
-              <Mini label="Reviews" value="0" />
-              <Mini label="Check-ins" value="0" />
-              <Mini label="Tests" value="0" />
+              <div className="mt-5 grid grid-cols-3 gap-3">
+                <Mini label="Reviews" value="0" />
+                <Mini label="Check-ins" value="0" />
+                <Mini label="Tests" value="0" />
+              </div>
             </div>
           </div>
         )}

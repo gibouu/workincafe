@@ -199,7 +199,7 @@ type DealRow = {
 
 type DealPurchaseRow = {
   id: string;
-  deal_id: string;
+  deal_id: string | null;
   place_id: string;
   user_id: string;
   qr_code: string;
