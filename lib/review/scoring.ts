@@ -1,5 +1,4 @@
 export type WorkFact =
-  | 'stay_long'
   | 'staff_chill'
   | 'forced_consumption'
   | 'hours_ok'
@@ -88,9 +87,8 @@ export function suggestOverall(i: ScoreInputs): number {
   // place is actively hostile to remote workers — punish it harder than the
   // positive bonuses combined.
   for (const f of i.workFacts) {
-    if (f === 'stay_long') mean += 0.6;
-    else if (f === 'staff_chill') mean += 0.4;
-    else if (f === 'hours_ok') mean += 0.4;
+    if (f === 'staff_chill') mean += 0.5;
+    else if (f === 'hours_ok') mean += 0.6;
     else if (f === 'good_for_focus') mean += 0.4;
     else if (f === 'good_for_calls') mean += 0.2;
     else if (f === 'forced_consumption') mean -= 2.0;
@@ -109,13 +107,13 @@ export function suggestOverall(i: ScoreInputs): number {
 
 const PRICE_BUCKETS_TO_VALUE: Record<string, number> = {
   lt2: 10,
-  lt4: 9,
-  lt6: 8,
-  lt8: 7,
-  lt10: 6,
-  lt12: 5,
-  lt14: 4,
-  lt20: 3,
+  '2_4': 9,
+  '4_6': 8,
+  '6_8': 7,
+  '8_10': 6,
+  '10_12': 5,
+  '12_14': 4,
+  '14_20': 3,
   gte20: 1,
 };
 

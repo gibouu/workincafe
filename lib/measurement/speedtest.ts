@@ -2,9 +2,11 @@
  * Client-side Wi-Fi speed test. Runs against our own edge endpoints so we control
  * the payload size. Reports download + upload in Mbps and ping in ms.
  *
- * Throughput phases use a duration-based loop with a TCP warmup so a fast
- * connection (where a 5 MB blob lands in <100 ms) doesn't return fantasy
- * Mbps numbers from a measurement-error denominator.
+ * Uses parallel streams + a duration window with a TCP warmup, the same way
+ * Ookla and friends do — a single HTTP/1.1 connection can't saturate a
+ * high-bandwidth link because TCP slow-start caps the in-flight bytes per
+ * connection, so a single 5 MB blob on Gbps Wi-Fi reports a fantasy number
+ * that's mostly measurement error.
  */
 
 export interface SpeedResult {
@@ -27,13 +29,15 @@ export class SpeedtestError extends Error {
   }
 }
 
-const DOWNLOAD_DURATION_MS = 5000;
-const DOWNLOAD_MAX_BYTES = 50 * 1024 * 1024; // safety cap
+const DOWNLOAD_DURATION_MS = 8000;
+const DOWNLOAD_MAX_BYTES = 200 * 1024 * 1024; // safety cap
 const DOWNLOAD_CHUNK_MB = 10;
+const DOWNLOAD_PARALLELISM = 4;
 
-const UPLOAD_DURATION_MS = 4000;
-const UPLOAD_MAX_BYTES = 25 * 1024 * 1024; // safety cap
+const UPLOAD_DURATION_MS = 6000;
+const UPLOAD_MAX_BYTES = 100 * 1024 * 1024; // safety cap
 const UPLOAD_CHUNK_BYTES = 2 * 1024 * 1024;
+const UPLOAD_PARALLELISM = 3;
 
 export async function pingMs(samples = 4): Promise<number> {
   const results: number[] = [];
@@ -52,10 +56,14 @@ export async function pingMs(samples = 4): Promise<number> {
   return Math.round(results[Math.floor(results.length / 2)]);
 }
 
-async function drainBlob(sizeMB: number, onBytes: (n: number) => boolean): Promise<void> {
-  const resp = await fetch(`/api/speedtest/blob?size=${sizeMB}&t=${Date.now()}-${Math.random()}`, {
-    cache: 'no-store',
-  });
+async function drainBlob(
+  sizeMB: number,
+  onBytes: (n: number) => boolean,
+): Promise<void> {
+  const resp = await fetch(
+    `/api/speedtest/blob?size=${sizeMB}&t=${Date.now()}-${Math.random()}`,
+    { cache: 'no-store' },
+  );
   if (!resp.ok || !resp.body) {
     throw new SpeedtestError('download', `download failed: ${resp.status}`);
   }
@@ -73,20 +81,31 @@ async function drainBlob(sizeMB: number, onBytes: (n: number) => boolean): Promi
 export async function downloadMbps(
   durationMs = DOWNLOAD_DURATION_MS,
   maxBytes = DOWNLOAD_MAX_BYTES,
+  parallelism = DOWNLOAD_PARALLELISM,
 ): Promise<number> {
-  // TCP warmup: discard the first small fetch so slow-start doesn't skew the measurement.
+  // TCP warmup — discard the first small fetch so slow-start doesn't skew
+  // the actual measurement window.
   await drainBlob(1, () => true).catch(() => null);
 
   const start = performance.now();
   const deadline = start + durationMs;
   let totalBytes = 0;
+  const onBytes = (n: number) => {
+    totalBytes += n;
+    return totalBytes < maxBytes && performance.now() < deadline;
+  };
 
-  while (performance.now() < deadline && totalBytes < maxBytes) {
-    await drainBlob(DOWNLOAD_CHUNK_MB, (n) => {
-      totalBytes += n;
-      return totalBytes < maxBytes && performance.now() < deadline;
-    });
-  }
+  const streams = Array.from({ length: parallelism }, async () => {
+    while (performance.now() < deadline && totalBytes < maxBytes) {
+      try {
+        await drainBlob(DOWNLOAD_CHUNK_MB, onBytes);
+      } catch {
+        // One stream failing shouldn't kill the whole measurement.
+        break;
+      }
+    }
+  });
+  await Promise.all(streams);
 
   const seconds = (performance.now() - start) / 1000;
   if (seconds <= 0 || totalBytes === 0) {
@@ -109,6 +128,7 @@ export async function uploadMbps(
   durationMs = UPLOAD_DURATION_MS,
   maxBytes = UPLOAD_MAX_BYTES,
   chunkBytes = UPLOAD_CHUNK_BYTES,
+  parallelism = UPLOAD_PARALLELISM,
 ): Promise<number> {
   // A zero-filled buffer measures throughput just as well — the server returns
   // octet-stream with `cache-control: no-store`, so there's no compression.
@@ -123,10 +143,17 @@ export async function uploadMbps(
   const deadline = start + durationMs;
   let totalBytes = 0;
 
-  while (performance.now() < deadline && totalBytes < maxBytes) {
-    await postPayload(payload);
-    totalBytes += chunkBytes;
-  }
+  const streams = Array.from({ length: parallelism }, async () => {
+    while (performance.now() < deadline && totalBytes < maxBytes) {
+      try {
+        await postPayload(payload);
+        totalBytes += chunkBytes;
+      } catch {
+        break;
+      }
+    }
+  });
+  await Promise.all(streams);
 
   const seconds = (performance.now() - start) / 1000;
   if (seconds <= 0 || totalBytes === 0) {

@@ -58,7 +58,16 @@ type NoiseState =
   | { kind: 'measured'; db: number; rating: number }
   | { kind: 'failed'; message: string };
 
-type DrinkPriceBucket = 'lt2' | 'lt4' | 'lt6' | 'lt8' | 'lt10' | 'lt12' | 'lt14' | 'lt20' | 'gte20';
+type DrinkPriceBucket =
+  | 'lt2'
+  | '2_4'
+  | '4_6'
+  | '6_8'
+  | '8_10'
+  | '10_12'
+  | '12_14'
+  | '14_20'
+  | 'gte20';
 type FoodPriceBucket = DrinkPriceBucket | 'did_not_eat';
 type PlaceType =
   | 'cafe'
@@ -73,25 +82,25 @@ type PlaceType =
 
 const PRICE_BUCKETS: DrinkPriceBucket[] = [
   'lt2',
-  'lt4',
-  'lt6',
-  'lt8',
-  'lt10',
-  'lt12',
-  'lt14',
-  'lt20',
+  '2_4',
+  '4_6',
+  '6_8',
+  '8_10',
+  '10_12',
+  '12_14',
+  '14_20',
   'gte20',
 ];
 
 function priceLabel(bucket: DrinkPriceBucket | 'did_not_eat', symbol: string): string {
   if (bucket === 'did_not_eat') return 'Did not eat';
-  if (bucket === 'gte20') return `>${symbol}20`;
-  const n = bucket.slice(2); // lt2 → "2"
-  return `<${symbol}${n}`;
+  if (bucket === 'lt2') return `<${symbol}2`;
+  if (bucket === 'gte20') return `${symbol}20+`;
+  const [lo, hi] = bucket.split('_');
+  return `${symbol}${lo}–${hi}`;
 }
 
 const WORK_OPTIONS: { value: WorkFact; label: string; icon: PhosphorIconName }[] = [
-  { value: 'stay_long', label: 'Could stay as long as I wanted', icon: 'Clock' },
   { value: 'staff_chill', label: 'Staff chill about laptops', icon: 'HandHeart' },
   { value: 'hours_ok', label: 'Felt ok to stay several hours', icon: 'HourglassMedium' },
   { value: 'good_for_focus', label: 'Good for focused work', icon: 'Brain' },
@@ -280,6 +289,10 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
       aborted = true;
     };
   }, [place.lat, place.lng]);
+
+  const useDevLocation = () => {
+    setGeo({ kind: 'ok', meters: 0, lat: place.lat, lng: place.lng });
+  };
 
   const requestGeo = () => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
@@ -534,14 +547,19 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
           </div>
         </div>
 
-        <GeoBanner geo={geo} placeName={place.name} onRequest={requestGeo} />
+        <GeoBanner
+          geo={geo}
+          placeName={place.name}
+          onRequest={requestGeo}
+          onDevSkip={process.env.NODE_ENV !== 'production' ? useDevLocation : undefined}
+        />
 
         {/* Wi-Fi */}
         <Section title="Wi-Fi" subtitle="We measure it. You can rate manually if the test fails.">
           <MeasureCard
             icon="WifiHigh"
             label="Test Wi-Fi speed"
-            description="Pings + sustained download + sustained upload. ~12 s."
+            description="Pings + parallel download + parallel upload. ~16 s."
             state={wifi}
             onRun={runWifiTest}
           />
@@ -861,11 +879,23 @@ function GeoBanner({
   geo,
   placeName,
   onRequest,
+  onDevSkip,
 }: {
   geo: GeoState;
   placeName: string;
   onRequest: () => void;
+  onDevSkip?: () => void;
 }) {
+  const devSkipLink = onDevSkip ? (
+    <button
+      type="button"
+      onClick={onDevSkip}
+      className="self-start text-[11px] font-medium text-[var(--text-tertiary)] underline hover:text-[var(--text-secondary)]"
+    >
+      Use place location (dev only)
+    </button>
+  ) : null;
+
   if (geo.kind === 'idle') {
     const isInsecure =
       typeof window !== 'undefined' && window.isSecureContext === false;
@@ -887,6 +917,7 @@ function GeoBanner({
             Location requires a secure (https) page.
           </div>
         )}
+        {devSkipLink}
       </div>
     );
   }
@@ -923,6 +954,7 @@ function GeoBanner({
         >
           Try again
         </button>
+        {devSkipLink}
       </div>
     );
   }
@@ -944,14 +976,18 @@ function GeoBanner({
         >
           Retry
         </button>
+        {devSkipLink}
       </div>
     );
   }
   if (geo.kind === 'unsupported') {
     return (
-      <div className="mt-5 flex items-center gap-2 rounded-2xl bg-accent-red-tint px-4 py-3 text-[13px] text-accent-red">
-        <Icon name="Warning" size={16} weight="fill" />
-        <span>This browser doesn’t support location. Open in Safari or Chrome on your phone.</span>
+      <div className="mt-5 flex flex-col gap-2 rounded-2xl bg-accent-red-tint px-4 py-3 text-[13px] text-accent-red">
+        <div className="flex items-center gap-2">
+          <Icon name="Warning" size={16} weight="fill" />
+          <span>This browser doesn’t support location. Open in Safari or Chrome on your phone.</span>
+        </div>
+        {devSkipLink}
       </div>
     );
   }
@@ -968,6 +1004,7 @@ function GeoBanner({
       >
         Retry
       </button>
+      {devSkipLink}
     </div>
   );
 }
@@ -990,8 +1027,8 @@ function MeasureCard({
       ? state.phase === 'ping'
         ? 'Pinging…'
         : state.phase === 'download'
-          ? 'Measuring download (~5 s)…'
-          : 'Measuring upload (~4 s)…'
+          ? 'Measuring download (~8 s)…'
+          : 'Measuring upload (~6 s)…'
       : null;
   return (
     <div className="rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] p-4">
