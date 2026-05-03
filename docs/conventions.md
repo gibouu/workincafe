@@ -91,6 +91,10 @@ Anything that requires "is this user the owner of this place?" must check `place
 
 `point_events` has no public RLS insert/update/delete policy. Points are issued exclusively by server actions tied to verified events (e.g. `deal_uses` insert by an owner). Don't reach for the service role from a client component to award points; route through an API endpoint that validates the underlying action.
 
+## Stripe gating goes through `lib/payments/env.ts:isStripeEnabled()`
+
+Anything that hits the Stripe SDK must short-circuit when `STRIPE_SECRET_KEY` is unset and fall back to the demo path. `lib/payments/stripe.ts` throws on use without keys — guard with `isStripeEnabled()` first. Webhook + onboard routes return 503 when disabled. The owner UI's `PayoutsCard` reads the same gate via the `/api/stripe/onboard` GET endpoint and shows a "Demo mode" badge instead of the connect button.
+
 ## Don't add filters without a collection point
 
 Every user-facing filter must have a structured way to be **collected** (review, quick-update, place request, owner claim, or admin) and a structured way to be **updated**. If you can't answer "where does this attribute come from?", the filter doesn't ship.

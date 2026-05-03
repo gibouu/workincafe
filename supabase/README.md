@@ -22,6 +22,7 @@ Copy each file into Supabase Dashboard → **SQL Editor** and run, in order:
 | 5 | `migrations/005_review_v2.sql`        | 1–10 rating scale, new collected fields, `review_photos` table |
 | 6 | `migrations/006_owners_deals_loyalty.sql` | Place ownership claims, owner grants, deals (single + pack), purchases with QR, deal uses, point ledger |
 | 7 | `migrations/007_friend_profiles.sql`  | Friend profile schema (occupation, work style, looking-for, identity, bio) |
+| 8 | `migrations/008_stripe_connect.sql`   | `stripe_accounts`, `stripe_events`, payment lifecycle columns on `deal_purchases` |
 
 Or use the CLI from the repo root:
 

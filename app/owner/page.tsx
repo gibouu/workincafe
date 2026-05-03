@@ -4,6 +4,7 @@ import { Icon } from '@/components/icons/Icon';
 import { createClient } from '@/lib/supabase/server';
 import { categoryMeta } from '@/lib/categories';
 import type { PlaceCategory } from '@/lib/categories';
+import { PayoutsCard } from '@/components/owner/PayoutsCard';
 
 export const metadata = { title: 'Your places · Work in Cafe' };
 
@@ -107,15 +108,8 @@ export default async function OwnerPage() {
           </ul>
         )}
 
-        <div className="mt-8 rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
-          <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-primary)]">
-            <Icon name="Info" size={16} className="text-accent" />
-            <span>About payouts</span>
-          </div>
-          <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
-            Purchases run on a demo payment path right now — no real money moves. Stripe Connect
-            wiring lands in a follow-up; deals you create today will keep working when it does.
-          </p>
+        <div className="mt-8">
+          <PayoutsCard />
         </div>
       </div>
     </div>

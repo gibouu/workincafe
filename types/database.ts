@@ -209,9 +209,34 @@ type DealPurchaseRow = {
   currency: string;
   payment_method: string;
   payment_intent_id: string | null;
+  payment_status: 'pending' | 'paid' | 'refunded' | 'failed' | 'disputed';
+  refunded_at: string | null;
+  refund_amount_cents: number | null;
+  application_fee_cents: number | null;
   is_demo: boolean;
   purchased_at: string;
   expires_at: string | null;
+};
+
+type StripeAccountRow = {
+  user_id: string;
+  stripe_account_id: string;
+  charges_enabled: boolean;
+  payouts_enabled: boolean;
+  details_submitted: boolean;
+  country: string | null;
+  default_currency: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type StripeEventRow = {
+  event_id: string;
+  event_type: string;
+  livemode: boolean;
+  payload_summary: Json | null;
+  processed_at: string;
+  error: string | null;
 };
 
 type DealUseRow = {
@@ -389,6 +414,8 @@ export interface Database {
       deal_uses: Table<DealUseRow>;
       point_events: Table<PointEventRow>;
       friend_profiles: Table<FriendProfileRow>;
+      stripe_accounts: Table<StripeAccountRow>;
+      stripe_events: Table<StripeEventRow>;
       checkins: Table<CheckinRow>;
       wifi_tests: Table<WifiTestRow>;
       decibel_samples: Table<DecibelSampleRow>;

@@ -32,6 +32,12 @@ Protected prefixes (defined in `middleware.ts`): `/profile`, `/admin`. **`/revie
 | `/api/weather` | GET | none | open-meteo proxy by `?lat&lng`; 30 min cache; soft-fail returns `{}` |
 | `/api/place-claims` | POST | required | Submit a place ownership claim |
 | `/api/place-claims/[id]/decision` | POST | admin | Approve (creates `place_owners` row) or reject |
+| `/api/stripe/onboard` | POST/GET | required | Create Connect account + onboarding link / read status |
+| `/api/stripe/refresh` | GET | required | Re-mint expired onboarding links |
+| `/api/stripe/webhook` | POST | none (signature) | Verifies Stripe signature; idempotent dispatch on payment + account events |
+| `/api/me` | GET | none | Returns `{ signedIn, name, email, isDemo }` for client-side gating |
+| `/api/friend-profiles` | GET/PUT | required | Read own friend profile / upsert |
+| `/api/places/[id]/reviews` | GET | none | Real reviews for a place; resolves demo IDs via place_source_refs |
 | `/api/live-updates` | POST | required (401) | Right-now noise / seating / temperature snapshot |
 | `/api/checkins` | POST | required (401) | Live review (geolocated) |
 | `/api/favorites` | POST/DELETE | required (401) | Best-effort; client ignores 401/503 |

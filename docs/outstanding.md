@@ -47,17 +47,20 @@ Most of this landed in `005_review_v2.sql` (rating range widened to 1–10, new 
 Foundation shipped in PR 1: schema, claim wizard, admin queue, `/owner` skeleton.
 Pending:
 
-- **PR 2** — Deal CRUD on `/owner`, place-card deals section, mocked-payment purchase flow, owner scanner page, `deal_uses` insert → `point_events` server-issued, demo deals seed, loyalty card on profile, freebie redemption picker.
-- **PR 3** — `/waitlist/partners` becomes the friend-profile wizard, profile Friends tab, drop the Soon badge from the bottom-nav Friends slot.
+- ~~**PR 2** — Deal CRUD on `/owner`, place-card deals section, mocked-payment purchase flow, owner scanner page, `deal_uses` insert → `point_events` server-issued, demo deals seed, loyalty card on profile, freebie redemption picker.~~ Shipped.
+- ~~**PR 3** — `/waitlist/partners` becomes the friend-profile wizard, profile Friends tab, drop the Soon badge from the bottom-nav Friends slot.~~ Shipped (Soon badge stays as a hint; drop when matching surface ships).
+- ~~**PR 4** — Stripe Connect Express scaffolding.~~ Shipped (data model + lib + onboard + webhook + owner UI). Needs operator to flip on per `docs/stripe-setup.md`.
 
 Deferred (separate plans):
 
-- Real Stripe Connect payment integration (schema is ready; `payment_method` defaults to `'demo'`).
+- **Stripe Checkout flow on purchase** — current `/api/deals/[id]/purchase` issues a QR synchronously via the demo path. Switching to real Stripe Checkout requires a `payment_status='pending'` row pre-redirect + a webhook flip to `'paid'` + QR issuance. Schema is ready; UI flow change pending.
 - Camera-based QR scanner.
 - Magic-link auth for owners without Google/Apple.
 - Admin "request more info" workflow on claims.
 - Owner email notifications on claim decisions.
 - Cron job that expires loyalty points after 12 months.
+- Cron job that prunes old `stripe_events` rows.
+- Refund initiation UI for owners (Stripe Dashboard works for now).
 
 ## Cluster zoom + pin density
 
