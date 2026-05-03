@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { Icon, type PhosphorIconName } from '@/components/icons/Icon';
 import { useLayout } from '@/lib/store/layout';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 type SlotKey = 'profile' | 'work' | 'friends';
 
@@ -12,16 +13,40 @@ export function BottomBar() {
   const router = useRouter();
   const pathname = usePathname() ?? '/';
   const cardOpen = useLayout((s) => s.cardOpen);
+  const panel = useLayout((s) => s.panel);
+  const setPanel = useLayout((s) => s.setPanel);
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const isMapPage = pathname === '/';
   if (HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return null;
   }
-  // On mobile, the place card drawer covers the screen — keep the bar out of the way.
-  // On desktop, the card is a side panel, so the bar stays.
-  const active: SlotKey = pathname.startsWith('/profile')
-    ? 'profile'
-    : pathname.startsWith('/waitlist')
-      ? 'friends'
-      : 'work';
+  // Active slot: on the map page (desktop), reflect the panel mode; on mobile
+  // and on dedicated routes, reflect the URL.
+  const active: SlotKey =
+    isDesktop && isMapPage
+      ? panel === 'profile'
+        ? 'profile'
+        : panel === 'friends'
+          ? 'friends'
+          : 'work'
+      : pathname.startsWith('/profile')
+        ? 'profile'
+        : pathname.startsWith('/waitlist')
+          ? 'friends'
+          : 'work';
+
+  const goProfile = () => {
+    if (isDesktop && isMapPage) setPanel(panel === 'profile' ? null : 'profile');
+    else router.push('/profile');
+  };
+  const goWork = () => {
+    if (isDesktop && isMapPage) setPanel(null);
+    else router.push('/');
+  };
+  const goFriends = () => {
+    if (isDesktop && isMapPage) setPanel(panel === 'friends' ? null : 'friends');
+    else router.push('/waitlist/partners');
+  };
 
   return (
     <div
@@ -34,20 +59,19 @@ export function BottomBar() {
           icon="UserCircle"
           label="Profile"
           active={active === 'profile'}
-          onClick={() => router.push('/profile')}
+          onClick={goProfile}
         />
         <Slot
           icon="Coffee"
           label="Work spots"
           active={active === 'work'}
-          onClick={() => router.push('/')}
+          onClick={goWork}
         />
         <Slot
           icon="UsersThree"
           label="Friends"
           active={active === 'friends'}
-          onClick={() => router.push('/waitlist/partners')}
-          soon
+          onClick={goFriends}
         />
       </div>
     </div>

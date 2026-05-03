@@ -2,7 +2,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { getDemoSessionFromRequest } from '@/lib/demo/auth';
 
-const PROTECTED_PREFIXES = ['/profile', '/admin'];
+// /profile is intentionally NOT protected — the page itself shows a sign-in
+// CTA inline rather than bouncing the user to /auth. This matches the
+// integrated panel UX on desktop where Profile is just another panel mode.
+const PROTECTED_PREFIXES = ['/admin', '/owner'];
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 

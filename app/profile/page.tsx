@@ -1,70 +1,11 @@
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { cookies } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
-import { Icon } from '@/components/icons/Icon';
-import { SignOutButton } from '@/components/auth/SignOutButton';
-import { ProfileTabs } from '@/components/profile/ProfileTabs';
-import { DEMO_SESSION_COOKIE, verifyDemoSessionToken } from '@/lib/demo/auth';
+import { ProfileBody } from '@/components/profile/ProfileBody';
 
-export default async function ProfilePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const cookieStore = await cookies();
-  const demoSession = user
-    ? null
-    : await verifyDemoSessionToken(cookieStore.get(DEMO_SESSION_COOKIE)?.value);
+export const metadata = { title: 'Profile · Work in Cafe' };
 
-  if (!user && !demoSession) redirect('/auth');
-
-  const name =
-    (user?.user_metadata?.full_name as string | undefined) ??
-    (user?.user_metadata?.name as string | undefined) ??
-    user?.email ??
-    demoSession?.name ??
-    'Traveller';
-  const email = user?.email ?? demoSession?.email ?? null;
-
+export default function ProfileRoute() {
   return (
     <div className="min-h-dvh bg-[var(--map-bg)]">
-      <div className="mx-auto max-w-2xl px-5 py-6">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-card"
-            aria-label="Back"
-          >
-            <Icon name="ArrowLeft" size={18} />
-          </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">Profile</div>
-          <div className="w-9" />
-        </div>
-
-        <div className="mt-8 flex flex-col items-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-sys-gray-5 text-[var(--text-secondary)]">
-            <Icon name="UserCircle" size={64} weight="regular" />
-          </div>
-          <div className="mt-4 text-[22px] font-semibold text-[var(--text-primary)]">{name}</div>
-          {email && (
-            <div className="mt-1 text-[13px] text-[var(--text-secondary)]">{email}</div>
-          )}
-          {demoSession && (
-            <div className="mt-3 rounded-full bg-accent-amber-tint px-3 py-1 text-[12px] font-medium text-accent-amber">
-              Demo mode
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8">
-          <ProfileTabs />
-        </div>
-
-        <div className="mt-8">
-          <SignOutButton />
-        </div>
-      </div>
+      <ProfileBody />
     </div>
   );
 }

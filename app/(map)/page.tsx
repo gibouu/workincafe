@@ -7,6 +7,8 @@ import { useToasts } from '@/lib/store/toasts';
 import { MapContainer, type MapHandle } from '@/components/map/MapContainer';
 import { PlaceCard } from '@/components/card/PlaceCard';
 import { FloatingPlaceCard } from '@/components/card/FloatingPlaceCard';
+import { FloatingProfileCard } from '@/components/card/FloatingProfileCard';
+import { FloatingFriendsCard } from '@/components/card/FloatingFriendsCard';
 import { TopRightControls } from '@/components/map/TopRightControls';
 import { PlaceSidebar } from '@/components/layout/PlaceSidebar';
 import { CitySwitcher } from '@/components/layout/CitySwitcher';
@@ -44,11 +46,22 @@ export default function MapPage() {
   const router = useRouter();
   const showToast = useToasts((s) => s.show);
   const setCardOpen = useLayout((s) => s.setCardOpen);
+  const panel = useLayout((s) => s.panel);
+  const setPanel = useLayout((s) => s.setPanel);
   const [onboardChecked, setOnboardChecked] = useState(false);
 
+  // selectedPlace ↔ panel='place' kept in sync. Selecting a place opens the
+  // place panel; opening another panel mode (profile / friends) clears the
+  // selected place; closing the place panel clears selectedPlace.
   useEffect(() => {
-    setCardOpen(selectedPlace !== null);
-  }, [selectedPlace, setCardOpen]);
+    if (selectedPlace) setPanel('place');
+  }, [selectedPlace, setPanel]);
+  useEffect(() => {
+    if (panel !== 'place' && selectedPlace) setSelectedPlace(null);
+  }, [panel, selectedPlace]);
+  useEffect(() => {
+    if (selectedPlace === null && panel === 'place') setPanel(null);
+  }, [selectedPlace, panel, setPanel]);
   useEffect(() => () => setCardOpen(false), [setCardOpen]);
 
   useEffect(() => {
@@ -222,8 +235,14 @@ export default function MapPage() {
           </div>
         )}
 
-        {isDesktop && (
+        {isDesktop && panel === 'place' && (
           <FloatingPlaceCard place={selectedPlace} onClose={() => setSelectedPlace(null)} />
+        )}
+        {isDesktop && panel === 'profile' && (
+          <FloatingProfileCard onClose={() => setPanel(null)} />
+        )}
+        {isDesktop && panel === 'friends' && (
+          <FloatingFriendsCard onClose={() => setPanel(null)} />
         )}
 
         {!selectedPlace && (
