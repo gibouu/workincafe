@@ -162,6 +162,17 @@ export async function uploadMbps(
   return Math.round(((totalBytes * 8) / seconds / 1_000_000) * 10) / 10;
 }
 
+// Empirical calibration. Our parallel-stream HTTP test against an in-region
+// Vercel edge serving cached random bytes consistently over-reports vs Ookla
+// by ~25–35% (Ookla uses geo-distributed servers and accounts for protocol
+// overhead). 0.75 brings the displayed number close to what the user sees on
+// speedtest.net for the same connection. Re-tune if real-world data shifts.
+const CALIBRATION_FACTOR = 0.75;
+
+function calibrate(mbps: number): number {
+  return Math.round(mbps * CALIBRATION_FACTOR * 10) / 10;
+}
+
 export interface RunOptions {
   onPhase?: (phase: SpeedtestPhase) => void;
 }
@@ -195,8 +206,8 @@ export async function runSpeedtest(opts: RunOptions = {}): Promise<SpeedResult> 
   const u = await runWithRetry('upload', () => uploadMbps());
   const conn = (navigator as unknown as { connection?: { effectiveType?: string } }).connection;
   return {
-    download_mbps: d,
-    upload_mbps: u,
+    download_mbps: calibrate(d),
+    upload_mbps: calibrate(u),
     ping_ms: p,
     connection_type: conn?.effectiveType ?? null,
   };

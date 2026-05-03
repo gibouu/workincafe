@@ -125,7 +125,35 @@ interface WeatherInfo {
   condition: string | null;
 }
 
-export function ReviewForm({ place }: { place: DemoPlace }) {
+type WizardStep =
+  | 'location'
+  | 'measurements'
+  | 'comfort'
+  | 'price'
+  | 'vibe'
+  | 'photos'
+  | 'final';
+
+const STEPS: { id: WizardStep; title: string }[] = [
+  { id: 'location', title: 'Location' },
+  { id: 'measurements', title: 'Measurements' },
+  { id: 'comfort', title: 'Comfort' },
+  { id: 'price', title: 'Price' },
+  { id: 'vibe', title: 'Vibe' },
+  { id: 'photos', title: 'Photos' },
+  { id: 'final', title: 'Overall' },
+];
+
+interface ReviewFormProps {
+  place: DemoPlace;
+  /** When true, the form is embedded in a parent surface (PlaceCard / FloatingPlaceCard).
+   *  No page header, no place hero, navigation buttons render inline (not fixed). */
+  compact?: boolean;
+  /** Called when the user closes the inline review (compact mode only). */
+  onClose?: () => void;
+}
+
+export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps) {
   const meta = categoryMeta(place.category);
   const needsFood = FOOD_FORWARD.has(place.category);
   const symbol = currencySymbol(cityForPlace(place.id));
@@ -166,6 +194,11 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const replayedRef = useRef(false);
+
+  const [stepIndex, setStepIndex] = useState(0);
+  const step = STEPS[stepIndex];
+  const isFirstStep = stepIndex === 0;
+  const isLastStep = stepIndex === STEPS.length - 1;
 
   const ateFood = needsFood && foodPrice !== null && foodPrice !== 'did_not_eat';
 
@@ -396,13 +429,22 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
   });
 
   const canSubmit = overall > 0 && comment.length <= 280 && geo.kind === 'ok' && !submitting;
-  const submitLabel = submitting
-    ? 'Submitting…'
-    : geo.kind !== 'ok'
-      ? 'Verify your location to submit'
-      : overall === 0
-        ? 'Rate overall to continue'
-        : 'Submit review';
+
+  const advanceBlockedReason: string | null =
+    step.id === 'location' && geo.kind !== 'ok'
+      ? 'Verify your location to continue'
+      : isLastStep && overall === 0
+        ? 'Pick an overall rating to submit'
+        : isLastStep && geo.kind !== 'ok'
+          ? 'Verify your location to submit'
+          : null;
+  const canAdvance = advanceBlockedReason === null && !submitting;
+
+  const goNext = () => {
+    if (!canAdvance) return;
+    setStepIndex((i) => Math.min(STEPS.length - 1, i + 1));
+  };
+  const goBack = () => setStepIndex((i) => Math.max(0, i - 1));
 
   const uploadPhotos = async (reviewId: string) => {
     const slotsWithPhotos = PHOTO_SLOTS.filter((s) => Boolean(photos[s])) as PhotoSlot[];
@@ -494,6 +536,26 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
   };
 
   if (submitted) {
+    if (compact) {
+      return (
+        <div className="flex flex-col items-center px-6 py-10 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-green-tint">
+            <Icon name="CheckCircle" weight="fill" size={36} className="text-accent-green" />
+          </div>
+          <h1 className="mt-4 text-[20px] font-bold text-[var(--text-primary)]">Thanks!</h1>
+          <p className="mt-1 max-w-xs text-[13px] text-[var(--text-secondary)]">
+            Your review helps the next person find a good spot to work.
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-6 rounded-2xl bg-accent px-5 py-2.5 text-[14px] font-semibold text-white hover:opacity-90 transition"
+          >
+            Back to place
+          </button>
+        </div>
+      );
+    }
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center bg-[var(--map-bg)] px-6 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent-green-tint">
@@ -514,309 +576,422 @@ export function ReviewForm({ place }: { place: DemoPlace }) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="min-h-dvh bg-[var(--map-bg)] pb-32">
-      <header className="sticky top-0 z-10 border-b border-[var(--surface-border)] bg-white/90 backdrop-blur-ios">
-        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
-          <Link
-            href="/"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-sys-gray-6"
-            aria-label="Back to map"
-          >
-            <Icon name="X" size={18} />
-          </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">Leave a review</div>
-          <div className="w-9" />
+    <form
+      onSubmit={onSubmit}
+      className={
+        compact
+          ? 'flex w-full flex-col bg-white'
+          : 'flex min-h-dvh flex-col bg-[var(--map-bg)] pb-28'
+      }
+    >
+      <header
+        className={
+          compact
+            ? 'sticky top-0 z-10 border-b border-[var(--surface-border)] bg-white/95 backdrop-blur-ios'
+            : 'sticky top-0 z-10 border-b border-[var(--surface-border)] bg-white/90 backdrop-blur-ios'
+        }
+      >
+        <div
+          className={`mx-auto flex max-w-2xl items-center justify-between ${
+            compact ? 'px-3 py-2' : 'px-4 py-3'
+          }`}
+        >
+          {compact ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-sys-gray-6"
+              aria-label="Close review"
+            >
+              <Icon name="ArrowLeft" size={16} />
+            </button>
+          ) : (
+            <Link
+              href="/"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-sys-gray-6"
+              aria-label="Back to map"
+            >
+              <Icon name="X" size={18} />
+            </Link>
+          )}
+          <div className="flex flex-col items-center text-center">
+            <div
+              className={`font-medium uppercase tracking-wide text-[var(--text-tertiary)] ${
+                compact ? 'text-[10px]' : 'text-[11px]'
+              }`}
+            >
+              Step {stepIndex + 1} of {STEPS.length}
+            </div>
+            <div
+              className={`font-semibold text-[var(--text-primary)] ${
+                compact ? 'text-[13px]' : 'text-[14px]'
+              }`}
+            >
+              {step.title}
+            </div>
+          </div>
+          <div className={compact ? 'w-8' : 'w-9'} />
+        </div>
+        <div
+          className={`mx-auto flex max-w-2xl gap-1 ${
+            compact ? 'px-3 pb-2' : 'px-4 pb-3'
+          }`}
+        >
+          {STEPS.map((s, i) => (
+            <div
+              key={s.id}
+              className={`h-1 flex-1 rounded-full transition-colors ${
+                i <= stepIndex ? 'bg-accent' : 'bg-sys-gray-5'
+              }`}
+            />
+          ))}
         </div>
       </header>
 
-      <div className="mx-auto max-w-2xl px-5 pt-5">
-        <div className="flex items-center gap-3">
-          <div
-            className="flex h-12 w-12 items-center justify-center rounded-full text-white shadow-bubble"
-            style={{ background: meta.color }}
-          >
-            <Icon name={meta.icon} size={22} />
+      <div
+        className={`mx-auto w-full max-w-2xl flex-1 ${compact ? 'px-4 pt-3' : 'px-5 pt-5'}`}
+      >
+        {!compact && (
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-full text-white shadow-bubble"
+              style={{ background: meta.color }}
+            >
+              <Icon name={meta.icon} size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-[15px] font-semibold text-[var(--text-primary)]">
+                {place.name}
+              </div>
+              <div className="truncate text-[11px] text-[var(--text-secondary)]">
+                {place.address} · {place.neighborhood}
+              </div>
+            </div>
           </div>
-          <div className="min-w-0">
-            <div className="truncate text-[17px] font-semibold text-[var(--text-primary)]">
-              {place.name}
-            </div>
-            <div className="truncate text-[12px] text-[var(--text-secondary)]">
-              {place.address} · {place.neighborhood}
-            </div>
-          </div>
-        </div>
+        )}
 
-        <GeoBanner
-          geo={geo}
-          placeName={place.name}
-          onRequest={requestGeo}
-          onDevSkip={process.env.NODE_ENV !== 'production' ? useDevLocation : undefined}
-        />
-
-        {/* Wi-Fi */}
-        <Section title="Wi-Fi" subtitle="We measure it. You can rate manually if the test fails.">
-          <MeasureCard
-            icon="WifiHigh"
-            label="Test Wi-Fi speed"
-            description="Pings + parallel download + parallel upload. ~16 s."
-            state={wifi}
-            onRun={runWifiTest}
+        {step.id === 'location' && (
+          <GeoBanner
+            geo={geo}
+            placeName={place.name}
+            onRequest={requestGeo}
+            onDevSkip={process.env.NODE_ENV !== 'production' ? useDevLocation : undefined}
           />
-          {wifi.kind === 'failed' && (
-            <div className="mt-3">
-              <div className="rounded-xl bg-accent-red-tint px-3 py-2 text-[12px] text-accent-red">
-                {wifi.message}
-              </div>
-              <div className="mt-2">
-                <SliderRow
-                  icon="WifiHigh"
-                  label="Rate Wi-Fi manually"
-                  value={wifiManual}
-                  onChange={setWifiManual}
-                  anchors={WIFI_FALLBACK_ANCHORS}
-                  endLabels={{ low: 'Unusable', high: 'Fiber' }}
-                />
-              </div>
-            </div>
-          )}
-        </Section>
+        )}
 
-        {/* Noise */}
-        <Section title="Noise" subtitle="We sample 10 s of ambient sound. Audio never leaves your device.">
-          <MeasureNoiseCard state={noise} onRun={runNoiseTest} />
-          {noise.kind === 'failed' && (
-            <div className="mt-3">
-              <div className="rounded-xl bg-accent-red-tint px-3 py-2 text-[12px] text-accent-red">
-                {noise.message}
-              </div>
-              <div className="mt-2">
-                <SliderRow
-                  icon="SpeakerSimpleHigh"
-                  label="Rate noise manually"
-                  value={noiseManual}
-                  onChange={setNoiseManual}
-                  anchors={NOISE_FALLBACK_ANCHORS}
-                  endLabels={{ low: 'Loud', high: 'Library-quiet' }}
-                />
-              </div>
-            </div>
-          )}
-        </Section>
-
-        {/* Seating + Outlets */}
-        <Section title="Comfort">
-          <SliderRow
-            icon="Armchair"
-            label="Seating comfort"
-            value={seating}
-            onChange={setSeating}
-            anchors={SEATING_ANCHORS}
-            endLabels={{ low: 'Wooden stool', high: 'Sofa lounge' }}
-          />
-          <SliderRow
-            icon="Plug"
-            label="Outlets / plugs"
-            value={outlets}
-            onChange={setOutlets}
-            anchors={OUTLETS_ANCHORS}
-            endLabels={{ low: 'None', high: 'Every seat' }}
-          />
-        </Section>
-
-        {/* Drink price */}
-        <Section title="Price for a drink" subtitle="Pick the bucket your usual order falls in.">
-          <ChipRow>
-            {PRICE_BUCKETS.map((bucket) => (
-              <Chip
-                key={bucket}
-                label={priceLabel(bucket, symbol)}
-                active={drinkPrice === bucket}
-                onClick={() => setDrinkPrice(bucket)}
+        {step.id === 'measurements' && (
+          <>
+            <Section
+              title="Wi-Fi"
+              subtitle="We measure it. Rate manually if the test fails."
+            >
+              <MeasureCard
+                icon="WifiHigh"
+                label="Test Wi-Fi speed"
+                description="Parallel download + upload. ~16 s."
+                state={wifi}
+                onRun={runWifiTest}
               />
-            ))}
-          </ChipRow>
-        </Section>
+              {wifi.kind === 'failed' && (
+                <div className="mt-3">
+                  <div className="rounded-xl bg-accent-red-tint px-3 py-2 text-[12px] text-accent-red">
+                    {wifi.message}
+                  </div>
+                  <div className="mt-2">
+                    <SliderRow
+                      icon="WifiHigh"
+                      label="Rate Wi-Fi manually"
+                      value={wifiManual}
+                      onChange={setWifiManual}
+                      anchors={WIFI_FALLBACK_ANCHORS}
+                      endLabels={{ low: 'Unusable', high: 'Fiber' }}
+                    />
+                  </div>
+                </div>
+              )}
+            </Section>
+            <Section
+              title="Noise"
+              subtitle="We sample 10 s of ambient sound. Audio never leaves your device."
+            >
+              <MeasureNoiseCard state={noise} onRun={runNoiseTest} />
+              {noise.kind === 'failed' && (
+                <div className="mt-3">
+                  <div className="rounded-xl bg-accent-red-tint px-3 py-2 text-[12px] text-accent-red">
+                    {noise.message}
+                  </div>
+                  <div className="mt-2">
+                    <SliderRow
+                      icon="SpeakerSimpleHigh"
+                      label="Rate noise manually"
+                      value={noiseManual}
+                      onChange={setNoiseManual}
+                      anchors={NOISE_FALLBACK_ANCHORS}
+                      endLabels={{ low: 'Loud', high: 'Library-quiet' }}
+                    />
+                  </div>
+                </div>
+              )}
+            </Section>
+          </>
+        )}
 
-        {/* Food price + value */}
-        {needsFood && (
-          <Section title="Food">
-            <ChipRow>
-              <Chip
-                label="Did not eat"
-                active={foodPrice === 'did_not_eat'}
-                onClick={() => setFoodPrice('did_not_eat')}
-              />
-              {PRICE_BUCKETS.map((bucket) => (
-                <Chip
-                  key={bucket}
-                  label={priceLabel(bucket, symbol)}
-                  active={foodPrice === bucket}
-                  onClick={() => setFoodPrice(bucket)}
-                />
-              ))}
-            </ChipRow>
-            {ateFood && (
-              <div className="mt-3">
-                <SliderRow
-                  icon="ForkKnife"
-                  label="Portion / value"
-                  value={foodValue}
-                  onChange={setFoodValue}
-                  anchors={FOOD_VALUE_ANCHORS}
-                  endLabels={{ low: 'Overpriced', high: 'Great value' }}
-                />
-              </div>
-            )}
+        {step.id === 'comfort' && (
+          <Section title="Comfort & environment">
+            <SliderRow
+              icon="Armchair"
+              label="Seating comfort"
+              value={seating}
+              onChange={setSeating}
+              anchors={SEATING_ANCHORS}
+              endLabels={{ low: 'Wooden stool', high: 'Sofa lounge' }}
+            />
+            <SliderRow
+              icon="Plug"
+              label="Outlets / plugs"
+              value={outlets}
+              onChange={setOutlets}
+              anchors={OUTLETS_ANCHORS}
+              endLabels={{ low: 'None', high: 'Every seat' }}
+            />
+            <SliderRow
+              icon="Thermometer"
+              label="Temperature"
+              value={temperatureFeel}
+              onChange={setTemperatureFeel}
+              anchors={TEMPERATURE_ANCHORS}
+              endLabels={{ low: 'Cold', high: 'Hot' }}
+            />
+            <SliderRow
+              icon="Users"
+              label="Busy right now"
+              value={currentBusyness}
+              onChange={setCurrentBusyness}
+              anchors={BUSY_ANCHORS}
+              endLabels={{ low: 'Empty', high: 'Packed' }}
+            />
           </Section>
         )}
 
-        {/* Environment / temperature */}
-        <Section title="Environment" subtitle="How does the air feel right now?">
-          <SliderRow
-            icon="Thermometer"
-            label="Temperature"
-            value={temperatureFeel}
-            onChange={setTemperatureFeel}
-            anchors={TEMPERATURE_ANCHORS}
-            endLabels={{ low: 'Cold', high: 'Hot' }}
-          />
-        </Section>
-
-        {/* Work-friendliness multi-select */}
-        <Section title="Work-friendliness" subtitle="Pick everything that was true — multiple ok.">
-          <div className="space-y-2">
-            {WORK_OPTIONS.map((opt) => {
-              const active = workFacts.includes(opt.value);
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => toggleWork(opt.value)}
-                  className={`flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition ${
-                    active
-                      ? 'border-accent bg-accent-tint'
-                      : 'border-[var(--surface-border)] bg-white hover:bg-sys-gray-6'
-                  }`}
-                  aria-pressed={active}
-                >
-                  <Icon
-                    name={active ? 'CheckSquare' : 'Square'}
-                    weight={active ? 'fill' : 'regular'}
-                    size={22}
-                    className={active ? 'text-accent' : 'text-[var(--text-tertiary)]'}
-                  />
-                  <Icon
-                    name={opt.icon}
-                    size={18}
-                    className="text-[var(--text-secondary)]"
-                  />
-                  <span className="text-[14px] text-[var(--text-primary)]">{opt.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </Section>
-
-        {/* How busy */}
-        <Section title="How busy is it right now?">
-          <SliderRow
-            icon="Users"
-            label="Right now"
-            value={currentBusyness}
-            onChange={setCurrentBusyness}
-            anchors={BUSY_ANCHORS}
-            endLabels={{ low: 'Empty', high: 'Packed' }}
-          />
-        </Section>
-
-        {/* Place type */}
-        <Section title="Place type" subtitle="Confirm what this spot actually is — helps everyone’s filters work.">
-          <div className="flex flex-wrap gap-2">
-            {PLACE_TYPE_OPTIONS.map((opt) => (
-              <Chip
-                key={opt.value}
-                label={opt.label}
-                active={placeType === opt.value}
-                onClick={() => setPlaceType(opt.value)}
-              />
-            ))}
-          </div>
-        </Section>
-
-        {/* Photos */}
-        <Section
-          title="Photos"
-          subtitle="Up to 4. Each slot has a specific job — please don’t fill all four with food and coffee."
-        >
-          <PhotoSlots value={photos} onChange={setPhotos} />
-          <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
-            Photos are optional. They’re saved with your review after submit.
-          </p>
-        </Section>
-
-        {/* Comment */}
-        <Section title="Comment">
-          <div className="flex items-center justify-between text-[11px] text-[var(--text-tertiary)]">
-            <span>Anything a future worker should know?</span>
-            <span>{comment.length}/280</span>
-          </div>
-          <textarea
-            value={comment}
-            onChange={(e) => setComment(e.target.value.slice(0, 280))}
-            placeholder="Outlets near the window, music gets loud after 4pm, etc."
-            rows={4}
-            className="mt-2 w-full resize-none rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2 text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-        </Section>
-
-        {/* Overall */}
-        <Section title="Overall">
-          {suggestedOverall > 0 && !overallTouched && (
-            <p className="text-[11px] text-[var(--text-tertiary)]">
-              Suggested: {suggestedOverall} / 10 — adjust if it doesn’t feel right.
-            </p>
-          )}
-          <SliderRow
-            icon="Star"
-            label="Overall"
-            value={overall}
-            onChange={(v) => {
-              setOverallTouched(true);
-              setOverall(v);
-            }}
-            anchors={OVERALL_ANCHORS}
-            endLabels={{ low: 'Avoid', high: 'Top-tier' }}
-          />
-          {overallTouched && suggestedOverall > 0 && overall !== suggestedOverall && (
-            <button
-              type="button"
-              onClick={() => {
-                setOverallTouched(false);
-                setOverall(suggestedOverall);
-              }}
-              className="mt-1 text-[11px] font-medium text-accent hover:opacity-80 transition"
+        {step.id === 'price' && (
+          <>
+            <Section
+              title="Price for a drink"
+              subtitle="Pick the bucket your usual order falls in."
             >
-              Reset to suggested ({suggestedOverall})
-            </button>
-          )}
-        </Section>
+              <ChipRow>
+                {PRICE_BUCKETS.map((bucket) => (
+                  <Chip
+                    key={bucket}
+                    label={priceLabel(bucket, symbol)}
+                    active={drinkPrice === bucket}
+                    onClick={() => setDrinkPrice(bucket)}
+                  />
+                ))}
+              </ChipRow>
+            </Section>
+            {needsFood && (
+              <Section title="Food">
+                <ChipRow>
+                  <Chip
+                    label="Did not eat"
+                    active={foodPrice === 'did_not_eat'}
+                    onClick={() => setFoodPrice('did_not_eat')}
+                  />
+                  {PRICE_BUCKETS.map((bucket) => (
+                    <Chip
+                      key={bucket}
+                      label={priceLabel(bucket, symbol)}
+                      active={foodPrice === bucket}
+                      onClick={() => setFoodPrice(bucket)}
+                    />
+                  ))}
+                </ChipRow>
+                {ateFood && (
+                  <div className="mt-3">
+                    <SliderRow
+                      icon="ForkKnife"
+                      label="Portion / value"
+                      value={foodValue}
+                      onChange={setFoodValue}
+                      anchors={FOOD_VALUE_ANCHORS}
+                      endLabels={{ low: 'Overpriced', high: 'Great value' }}
+                    />
+                  </div>
+                )}
+              </Section>
+            )}
+          </>
+        )}
+
+        {step.id === 'vibe' && (
+          <>
+            <Section
+              title="Place type"
+              subtitle="Confirm what this spot actually is — helps everyone’s filters work."
+            >
+              <div className="flex flex-wrap gap-2">
+                {PLACE_TYPE_OPTIONS.map((opt) => (
+                  <Chip
+                    key={opt.value}
+                    label={opt.label}
+                    active={placeType === opt.value}
+                    onClick={() => setPlaceType(opt.value)}
+                  />
+                ))}
+              </div>
+            </Section>
+            <Section
+              title="Work-friendliness"
+              subtitle="Pick everything that was true — multiple ok."
+            >
+              <div className="space-y-2">
+                {WORK_OPTIONS.map((opt) => {
+                  const active = workFacts.includes(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => toggleWork(opt.value)}
+                      className={`flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition ${
+                        active
+                          ? 'border-accent bg-accent-tint'
+                          : 'border-[var(--surface-border)] bg-white hover:bg-sys-gray-6'
+                      }`}
+                      aria-pressed={active}
+                    >
+                      <Icon
+                        name={active ? 'CheckSquare' : 'Square'}
+                        weight={active ? 'fill' : 'regular'}
+                        size={22}
+                        className={active ? 'text-accent' : 'text-[var(--text-tertiary)]'}
+                      />
+                      <Icon
+                        name={opt.icon}
+                        size={18}
+                        className="text-[var(--text-secondary)]"
+                      />
+                      <span className="text-[14px] text-[var(--text-primary)]">{opt.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+          </>
+        )}
+
+        {step.id === 'photos' && (
+          <Section
+            title="Photos"
+            subtitle="Up to 4. Each slot has a specific job — please don’t fill all four with food and coffee."
+          >
+            <PhotoSlots value={photos} onChange={setPhotos} />
+            <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
+              Photos are optional. They’re saved with your review after submit.
+            </p>
+          </Section>
+        )}
+
+        {step.id === 'final' && (
+          <>
+            <Section title="Overall rating">
+              {suggestedOverall > 0 && !overallTouched && (
+                <p className="text-[11px] text-[var(--text-tertiary)]">
+                  Suggested: {suggestedOverall} / 10 — adjust if it doesn’t feel right.
+                </p>
+              )}
+              <SliderRow
+                icon="Star"
+                label="Overall"
+                value={overall}
+                onChange={(v) => {
+                  setOverallTouched(true);
+                  setOverall(v);
+                }}
+                anchors={OVERALL_ANCHORS}
+                endLabels={{ low: 'Avoid', high: 'Top-tier' }}
+              />
+              {overallTouched && suggestedOverall > 0 && overall !== suggestedOverall && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOverallTouched(false);
+                    setOverall(suggestedOverall);
+                  }}
+                  className="mt-1 text-[11px] font-medium text-accent hover:opacity-80 transition"
+                >
+                  Reset to suggested ({suggestedOverall})
+                </button>
+              )}
+            </Section>
+            <Section title="Comment">
+              <div className="flex items-center justify-between text-[11px] text-[var(--text-tertiary)]">
+                <span>Anything a future worker should know?</span>
+                <span>{comment.length}/280</span>
+              </div>
+              <textarea
+                value={comment}
+                onChange={(e) => setComment(e.target.value.slice(0, 280))}
+                placeholder="Outlets near the window, music gets loud after 4pm, etc."
+                rows={4}
+                className="mt-2 w-full resize-none rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2 text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
+              />
+            </Section>
+          </>
+        )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--surface-border)] bg-white/95 p-4 backdrop-blur-ios">
-        <div className="mx-auto max-w-2xl">
-          {submitError && (
-            <div className="mb-2 rounded-xl bg-accent-red-tint p-2 text-center text-[12px] text-accent-red">
-              {submitError}
-            </div>
+      <div
+        className={
+          compact
+            ? 'sticky bottom-0 z-20 border-t border-[var(--surface-border)] bg-white/95 px-4 py-3 backdrop-blur-ios'
+            : 'fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--surface-border)] bg-white/95 p-4 backdrop-blur-ios'
+        }
+      >
+        <div
+          className={`mx-auto flex max-w-2xl items-center ${compact ? 'gap-2' : 'gap-3'}`}
+        >
+          {!isFirstStep && (
+            <button
+              type="button"
+              onClick={goBack}
+              disabled={submitting}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60"
+              aria-label="Back"
+            >
+              <Icon name="ArrowLeft" size={20} />
+            </button>
           )}
-          <button
-            type="submit"
-            disabled={!canSubmit}
-            className="w-full rounded-2xl bg-accent py-3.5 text-[15px] font-semibold text-white hover:opacity-90 disabled:bg-sys-gray-4 disabled:cursor-not-allowed transition"
-          >
-            {submitLabel}
-          </button>
+          <div className="flex-1">
+            {submitError && (
+              <div className="mb-2 rounded-xl bg-accent-red-tint p-2 text-center text-[12px] text-accent-red">
+                {submitError}
+              </div>
+            )}
+            {advanceBlockedReason && (
+              <div className="mb-2 text-center text-[11px] text-[var(--text-tertiary)]">
+                {advanceBlockedReason}
+              </div>
+            )}
+            {isLastStep ? (
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="w-full rounded-2xl bg-accent py-3.5 text-[15px] font-semibold text-white hover:opacity-90 disabled:bg-sys-gray-4 disabled:cursor-not-allowed transition"
+              >
+                {submitting ? 'Submitting…' : 'Submit review'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={!canAdvance}
+                className="w-full rounded-2xl bg-accent py-3.5 text-[15px] font-semibold text-white hover:opacity-90 disabled:bg-sys-gray-4 disabled:cursor-not-allowed transition"
+              >
+                Continue
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </form>

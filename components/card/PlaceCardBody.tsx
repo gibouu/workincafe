@@ -18,6 +18,7 @@ import { NoiseHeatmap } from '@/components/card/NoiseHeatmap';
 import { ReviewList } from '@/components/review/ReviewList';
 import { AllReviewsSheet } from '@/components/review/AllReviewsSheet';
 import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
+import { ReviewForm } from '@/components/review/ReviewForm';
 import { reviewsForPlace } from '@/lib/demo/reviews';
 import { formatStayLimit } from '@/lib/format/stay-limit';
 
@@ -75,6 +76,7 @@ export function PlaceCardBody({
 }) {
   const [allReviewsOpen, setAllReviewsOpen] = useState(false);
   const [liveUpdateOpen, setLiveUpdateOpen] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
   const allReviews = useMemo(() => reviewsForPlace(place.id, 5), [place.id]);
   const previewReviews = useMemo(() => allReviews.slice(0, 3), [allReviews]);
   const [favorite, setFavorite] = useState(() => {
@@ -116,6 +118,14 @@ export function PlaceCardBody({
   };
 
   const liveReview = () => setLiveUpdateOpen(true);
+
+  if (reviewMode) {
+    return (
+      <div className="flex flex-1 min-h-0 flex-col">
+        <ReviewForm place={place} compact onClose={() => setReviewMode(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 min-h-0 flex-col">
@@ -178,7 +188,11 @@ export function PlaceCardBody({
         </a>
 
         <div className="mt-3 flex gap-2">
-          <ChipButton icon="PencilSimple" label="Review" href={`/review/new/${place.id}`} />
+          <ChipButton
+            icon="PencilSimple"
+            label="Review"
+            onClick={() => setReviewMode(true)}
+          />
           <ChipButton icon="MapPinLine" label="Live review" onClick={liveReview} />
           <ChipButton
             icon="Heart"
@@ -254,13 +268,14 @@ export function PlaceCardBody({
           <ReviewList reviews={previewReviews} />
         </div>
 
-        <Link
-          href={`/review/new/${place.id}`}
-          className="mt-4 flex items-center justify-center gap-2 rounded-2xl border border-[var(--surface-border)] bg-white px-4 py-3 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 transition"
+        <button
+          type="button"
+          onClick={() => setReviewMode(true)}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--surface-border)] bg-white px-4 py-3 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 transition"
         >
           <Icon name="PencilSimple" size={16} />
           <span>Leave a review</span>
-        </Link>
+        </button>
       </div>
 
       <AllReviewsSheet
