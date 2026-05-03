@@ -178,6 +178,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
   // Chips
   const [drinkPrice, setDrinkPrice] = useState<DrinkPriceBucket | null>(null);
   const [foodPrice, setFoodPrice] = useState<FoodPriceBucket | null>(null);
+  const [didOrder, setDidOrder] = useState<'yes' | 'no' | null>(null);
 
   // Multi-select work facts
   const [workFacts, setWorkFacts] = useState<WorkFact[]>([]);
@@ -200,7 +201,11 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
   const isFirstStep = stepIndex === 0;
   const isLastStep = stepIndex === STEPS.length - 1;
 
-  const ateFood = needsFood && foodPrice !== null && foodPrice !== 'did_not_eat';
+  const ateFood =
+    didOrder === 'yes' &&
+    needsFood &&
+    foodPrice !== null &&
+    foodPrice !== 'did_not_eat';
 
   // Effective ratings used by both the suggestion and the payload
   const effectiveWifi: number | null =
@@ -580,14 +585,14 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       onSubmit={onSubmit}
       className={
         compact
-          ? 'flex w-full flex-col bg-white'
+          ? 'flex h-full min-h-0 w-full flex-1 flex-col bg-white'
           : 'flex min-h-dvh flex-col bg-[var(--map-bg)] pb-28'
       }
     >
       <header
         className={
           compact
-            ? 'sticky top-0 z-10 border-b border-[var(--surface-border)] bg-white/95 backdrop-blur-ios'
+            ? 'shrink-0 border-b border-[var(--surface-border)] bg-white/95 backdrop-blur-ios'
             : 'sticky top-0 z-10 border-b border-[var(--surface-border)] bg-white/90 backdrop-blur-ios'
         }
       >
@@ -649,7 +654,9 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       </header>
 
       <div
-        className={`mx-auto w-full max-w-2xl flex-1 ${compact ? 'px-4 pt-3' : 'px-5 pt-5'}`}
+        className={`mx-auto w-full max-w-2xl ${
+          compact ? 'min-h-0 flex-1 overflow-y-auto px-4 pt-3 pb-4' : 'flex-1 px-5 pt-5'
+        }`}
       >
         {!compact && (
           <div className="flex items-center gap-3">
@@ -775,50 +782,93 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
 
         {step.id === 'price' && (
           <>
-            <Section
-              title="Price for a drink"
-              subtitle="Pick the bucket your usual order falls in."
-            >
-              <ChipRow>
-                {PRICE_BUCKETS.map((bucket) => (
-                  <Chip
-                    key={bucket}
-                    label={priceLabel(bucket, symbol)}
-                    active={drinkPrice === bucket}
-                    onClick={() => setDrinkPrice(bucket)}
-                  />
-                ))}
-              </ChipRow>
+            <Section title="Did you order anything here?">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDidOrder('yes')}
+                  className={`rounded-2xl border px-3 py-3 text-[14px] font-semibold transition ${
+                    didOrder === 'yes'
+                      ? 'border-transparent bg-accent text-white'
+                      : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
+                  }`}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDidOrder('no');
+                    setDrinkPrice(null);
+                    setFoodPrice(null);
+                  }}
+                  className={`rounded-2xl border px-3 py-3 text-[14px] font-semibold transition ${
+                    didOrder === 'no'
+                      ? 'border-transparent bg-accent text-white'
+                      : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
+                  }`}
+                >
+                  No, just used the space
+                </button>
+              </div>
             </Section>
-            {needsFood && (
-              <Section title="Food">
-                <ChipRow>
-                  <Chip
-                    label="Did not eat"
-                    active={foodPrice === 'did_not_eat'}
-                    onClick={() => setFoodPrice('did_not_eat')}
-                  />
-                  {PRICE_BUCKETS.map((bucket) => (
-                    <Chip
-                      key={bucket}
-                      label={priceLabel(bucket, symbol)}
-                      active={foodPrice === bucket}
-                      onClick={() => setFoodPrice(bucket)}
-                    />
-                  ))}
-                </ChipRow>
-                {ateFood && (
-                  <div className="mt-3">
-                    <SliderRow
-                      icon="ForkKnife"
-                      label="Portion / value"
-                      value={foodValue}
-                      onChange={setFoodValue}
-                      anchors={FOOD_VALUE_ANCHORS}
-                      endLabels={{ low: 'Overpriced', high: 'Great value' }}
-                    />
-                  </div>
+            {didOrder === 'yes' && (
+              <>
+                <Section
+                  title="Price for a drink"
+                  subtitle="Pick the bucket your usual order falls in."
+                >
+                  <ChipRow>
+                    {PRICE_BUCKETS.map((bucket) => (
+                      <Chip
+                        key={bucket}
+                        label={priceLabel(bucket, symbol)}
+                        active={drinkPrice === bucket}
+                        onClick={() => setDrinkPrice(bucket)}
+                      />
+                    ))}
+                  </ChipRow>
+                </Section>
+                {needsFood && (
+                  <Section title="Food">
+                    <ChipRow>
+                      <Chip
+                        label="Did not eat"
+                        active={foodPrice === 'did_not_eat'}
+                        onClick={() => setFoodPrice('did_not_eat')}
+                      />
+                      {PRICE_BUCKETS.map((bucket) => (
+                        <Chip
+                          key={bucket}
+                          label={priceLabel(bucket, symbol)}
+                          active={foodPrice === bucket}
+                          onClick={() => setFoodPrice(bucket)}
+                        />
+                      ))}
+                    </ChipRow>
+                    {ateFood && (
+                      <div className="mt-3">
+                        <SliderRow
+                          icon="ForkKnife"
+                          label="Portion / value"
+                          value={foodValue}
+                          onChange={setFoodValue}
+                          anchors={FOOD_VALUE_ANCHORS}
+                          endLabels={{ low: 'Overpriced', high: 'Great value' }}
+                        />
+                      </div>
+                    )}
+                  </Section>
                 )}
+              </>
+            )}
+            {didOrder === 'no' && (
+              <Section title="Got it">
+                <p className="text-[12px] text-[var(--text-secondary)]">
+                  We’ll skip the price questions. A library or a coworking lobby is
+                  just as valid a work spot — the price of a coffee you didn’t buy
+                  doesn’t belong in your review.
+                </p>
               </Section>
             )}
           </>
@@ -944,7 +994,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       <div
         className={
           compact
-            ? 'sticky bottom-0 z-20 border-t border-[var(--surface-border)] bg-white/95 px-4 py-3 backdrop-blur-ios'
+            ? 'shrink-0 border-t border-[var(--surface-border)] bg-white/95 px-4 py-3 backdrop-blur-ios'
             : 'fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--surface-border)] bg-white/95 p-4 backdrop-blur-ios'
         }
       >

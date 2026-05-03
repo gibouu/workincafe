@@ -12,11 +12,9 @@ export function FloatingPlaceCard({
 }) {
   if (!place) return null;
   return (
-    <div className="pointer-events-none absolute top-4 right-4 z-30 w-[360px] max-h-[calc(100%-2rem)]">
-      <div className="pointer-events-auto overflow-hidden rounded-2xl border border-[var(--surface-border)] bg-white/95 backdrop-blur-ios shadow-float">
-        <div className="max-h-[calc(100vh-2rem)] overflow-y-auto">
-          <PlaceCardBody place={place} onClose={onClose} />
-        </div>
+    <div className="pointer-events-none absolute top-4 right-4 z-30 flex h-[calc(100vh-2rem)] w-[360px] flex-col">
+      <div className="pointer-events-auto flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[var(--surface-border)] bg-white/95 backdrop-blur-ios shadow-float">
+        <PlaceCardBody place={place} onClose={onClose} />
       </div>
     </div>
   );
