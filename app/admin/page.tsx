@@ -44,6 +44,13 @@ export default async function AdminIndex() {
             count={DEMO_FLAGGED_REVIEWS.length}
             hint="Dismiss, hide, or ban"
           />
+          <QueueCard
+            href="/admin/ownership-claims"
+            icon="Storefront"
+            title="Ownership claims"
+            count={0}
+            hint="Approve, reject with reason"
+          />
         </div>
 
         <div className="mt-8 rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
@@ -69,7 +76,7 @@ function QueueCard({
   hint,
 }: {
   href: string;
-  icon: 'MapPinLine' | 'Flag';
+  icon: 'MapPinLine' | 'Flag' | 'Storefront';
   title: string;
   count: number;
   hint: string;

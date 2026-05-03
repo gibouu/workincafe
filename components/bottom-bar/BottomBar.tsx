@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Icon, type PhosphorIconName } from '@/components/icons/Icon';
 import { useLayout } from '@/lib/store/layout';
 
-type SlotKey = 'profile' | 'work' | 'meetups';
+type SlotKey = 'profile' | 'work' | 'friends';
 
 const HIDDEN_PREFIXES = ['/welcome', '/auth', '/review/new'];
 
@@ -20,7 +20,7 @@ export function BottomBar() {
   const active: SlotKey = pathname.startsWith('/profile')
     ? 'profile'
     : pathname.startsWith('/waitlist')
-      ? 'meetups'
+      ? 'friends'
       : 'work';
 
   return (
@@ -44,8 +44,8 @@ export function BottomBar() {
         />
         <Slot
           icon="UsersThree"
-          label="Meetups"
-          active={active === 'meetups'}
+          label="Friends"
+          active={active === 'friends'}
           onClick={() => router.push('/waitlist/partners')}
           soon
         />

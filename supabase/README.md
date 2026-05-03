@@ -20,6 +20,8 @@ Copy each file into Supabase Dashboard → **SQL Editor** and run, in order:
 | 3 | `migrations/003_cron.sql` *(optional)*| 15-minute `pg_cron` refresh of the three views      |
 | 4 | `migrations/004_demo_mode.sql`        | `is_demo` columns + indexes + reset function        |
 | 5 | `migrations/005_review_v2.sql`        | 1–10 rating scale, new collected fields, `review_photos` table |
+| 6 | `migrations/006_owners_deals_loyalty.sql` | Place ownership claims, owner grants, deals (single + pack), purchases with QR, deal uses, point ledger |
+| 7 | `migrations/007_friend_profiles.sql`  | Friend profile schema (occupation, work style, looking-for, identity, bio) |
 
 Or use the CLI from the repo root:
 
@@ -50,6 +52,31 @@ create policy "review_photos_authenticated_write" on storage.objects for insert
 ```
 
 If the bucket is not present, photo uploads fail silently and the review is still saved (the form surfaces a toast).
+
+## 2.6 · Create the claim-proofs Storage bucket
+
+Dashboard → **Storage → New bucket**:
+
+- **Name:** `claim-proofs`
+- **Public:** **no** (private; admin reads via signed URL)
+- **Allowed mime types:** `image/jpeg, image/png, image/webp, application/pdf`
+- **File size limit:** 10 MB
+
+Bucket policies:
+
+```sql
+-- Authenticated users can upload to a path under their own uid
+create policy "claim_proofs_authenticated_write" on storage.objects for insert
+  with check (bucket_id = 'claim-proofs' and auth.role() = 'authenticated');
+
+-- Owners read their own; admins read all (admin signing happens server-side)
+create policy "claim_proofs_read_own" on storage.objects for select
+  using (
+    bucket_id = 'claim-proofs'
+    and (auth.uid()::text = (storage.foldername(name))[1]
+         or exists (select 1 from public.users where id = auth.uid() and is_admin))
+  );
+```
 
 ## 3 · Enable auth providers
 

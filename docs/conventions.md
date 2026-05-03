@@ -83,6 +83,14 @@ If you added a new component that uses any of the following, it must be a client
 
 Browsers cap `crypto.getRandomValues(view)` at 65536 bytes per call. The Wi-Fi speed test in `lib/measurement/speedtest.ts:uploadMbps` ships a 2 MB buffer — a single `getRandomValues(...)` call on it throws `QuotaExceededError`. The buffer is sent uncompressed (`octet-stream`, `cache-control: no-store`), so a zero-filled `Uint8Array(size)` measures throughput exactly the same. Don't reintroduce the random fill.
 
+## Owner privileges go through `place_owners` only
+
+Anything that requires "is this user the owner of this place?" must check `place_owners` (active row, `revoked_at is null`). There is no `users.is_owner` flag; ownership is a per-place relation, not a global role. Use `isOwnerOf(db, placeId, userId)` from `lib/auth/request-actor.ts`. RLS on `deals`, `deal_purchases`, `deal_uses` already gates writes through this table.
+
+## Loyalty point events are server-issued only
+
+`point_events` has no public RLS insert/update/delete policy. Points are issued exclusively by server actions tied to verified events (e.g. `deal_uses` insert by an owner). Don't reach for the service role from a client component to award points; route through an API endpoint that validates the underlying action.
+
 ## Don't add filters without a collection point
 
 Every user-facing filter must have a structured way to be **collected** (review, quick-update, place request, owner claim, or admin) and a structured way to be **updated**. If you can't answer "where does this attribute come from?", the filter doesn't ship.

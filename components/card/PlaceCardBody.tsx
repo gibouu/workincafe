@@ -276,6 +276,14 @@ export function PlaceCardBody({
           <Icon name="PencilSimple" size={16} />
           <span>Leave a review</span>
         </button>
+
+        <Link
+          href={`/place/${place.id}/claim`}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--surface-border)] bg-transparent px-4 py-2.5 text-[12px] font-medium text-[var(--text-secondary)] hover:bg-sys-gray-6 transition"
+        >
+          <Icon name="Storefront" size={14} />
+          <span>Own this place? Claim it</span>
+        </Link>
       </div>
 
       <AllReviewsSheet

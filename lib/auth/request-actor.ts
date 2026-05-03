@@ -105,6 +105,28 @@ export async function upsertWithDemoFlag(
   return first;
 }
 
+export async function isOwnerOf(db: any, placeId: string, userId: string): Promise<boolean> {
+  const { data, error } = await db
+    .from('place_owners')
+    .select('id')
+    .eq('place_id', placeId)
+    .eq('user_id', userId)
+    .is('revoked_at', null)
+    .maybeSingle();
+  if (error) return false;
+  return Boolean(data?.id);
+}
+
+export async function listOwnedPlaceIds(db: any, userId: string): Promise<string[]> {
+  const { data, error } = await db
+    .from('place_owners')
+    .select('place_id')
+    .eq('user_id', userId)
+    .is('revoked_at', null);
+  if (error) return [];
+  return ((data ?? []) as { place_id: string }[]).map((r) => r.place_id);
+}
+
 export async function resolvePlaceIdForActor(db: any, placeId: string, isDemo: boolean) {
   if (!isDemo || isUuid(placeId)) return placeId;
 

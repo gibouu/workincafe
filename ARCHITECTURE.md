@@ -17,7 +17,9 @@ For the high-level product spec, see [`workin-cafe-build-spec.md`](workin-cafe-b
 | `/place/[id]` | `app/place/[id]/page.tsx` | Full place profile (back button → `/`) |
 | `/review/new/[placeId]` | `app/review/new/[placeId]/page.tsx` | Review form; signed-out users can fill, sign-in required at submit |
 | `/admin/...` | `app/admin/**` | Admin (protected) |
-| `/waitlist/partners` | `app/waitlist/partners/page.tsx` | "Meetups" placeholder destination |
+| `/owner` | `app/owner/page.tsx` | Owner dashboard (lists `place_owners` for the signed-in user) |
+| `/place/[id]/claim` | `app/place/[id]/claim/page.tsx` | Owner-claim wizard (proof + email) |
+| `/waitlist/partners` | `app/waitlist/partners/page.tsx` | "Friends" destination (will become the friend-profile wizard in PR 3) |
 
 Protected prefixes (defined in `middleware.ts`): `/profile`, `/admin`. **`/review/new` is intentionally NOT protected** — auth happens on submit.
 
@@ -28,6 +30,8 @@ Protected prefixes (defined in `middleware.ts`): `/profile`, `/admin`. **`/revie
 | `/api/reviews` | POST | required (401) | Geo-verified within 150 m; 5/user/day limit; ratings 1–10 |
 | `/api/reviews/[id]/photos` | POST | required (401) | Records `{ slot, path }[]` rows after Storage upload; soft-503 if table missing |
 | `/api/weather` | GET | none | open-meteo proxy by `?lat&lng`; 30 min cache; soft-fail returns `{}` |
+| `/api/place-claims` | POST | required | Submit a place ownership claim |
+| `/api/place-claims/[id]/decision` | POST | admin | Approve (creates `place_owners` row) or reject |
 | `/api/live-updates` | POST | required (401) | Right-now noise / seating / temperature snapshot |
 | `/api/checkins` | POST | required (401) | Live review (geolocated) |
 | `/api/favorites` | POST/DELETE | required (401) | Best-effort; client ignores 401/503 |

@@ -151,6 +151,107 @@ type ReviewPhotoRow = {
   created_at: string;
 };
 
+type PlaceClaimRow = {
+  id: string;
+  place_id: string;
+  claimant_user_id: string;
+  claimant_email: string;
+  claimant_name: string | null;
+  proof_type: 'storefront_photo' | 'business_doc' | 'website_email' | 'other';
+  proof_path: string | null;
+  proof_notes: string | null;
+  status: RequestStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  rejection_reason: string | null;
+  is_demo: boolean;
+  created_at: string;
+};
+
+type PlaceOwnerRow = {
+  id: string;
+  place_id: string;
+  user_id: string;
+  granted_at: string;
+  revoked_at: string | null;
+  granted_by: string | null;
+  is_demo: boolean;
+};
+
+type DealRow = {
+  id: string;
+  place_id: string;
+  created_by: string;
+  title: string;
+  description: string | null;
+  kind: 'single_use' | 'pack';
+  pack_size: number;
+  price_cents: number;
+  currency: string;
+  starts_at: string;
+  ends_at: string | null;
+  purchase_limit_per_user: number | null;
+  active: boolean;
+  is_demo: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+type DealPurchaseRow = {
+  id: string;
+  deal_id: string;
+  place_id: string;
+  user_id: string;
+  qr_code: string;
+  uses_total: number;
+  uses_remaining: number;
+  amount_paid_cents: number;
+  currency: string;
+  payment_method: string;
+  payment_intent_id: string | null;
+  is_demo: boolean;
+  purchased_at: string;
+  expires_at: string | null;
+};
+
+type DealUseRow = {
+  id: string;
+  purchase_id: string;
+  scanned_by: string;
+  scanned_at: string;
+  notes: string | null;
+  is_demo: boolean;
+};
+
+type PointEventRow = {
+  id: string;
+  user_id: string;
+  kind: 'earned_use' | 'spent_freebie' | 'adjusted' | 'expired';
+  delta: number;
+  related_use_id: string | null;
+  related_purchase_id: string | null;
+  related_place_id: string | null;
+  related_deal_id: string | null;
+  notes: string | null;
+  is_demo: boolean;
+  created_at: string;
+};
+
+type FriendProfileRow = {
+  user_id: string;
+  occupation: string | null;
+  work_style: 'quiet_focus' | 'brainstormer' | 'idea_bouncer' | 'company_only' | null;
+  looking_for: string[];
+  industry: string[];
+  gender: 'woman' | 'man' | 'non_binary' | 'prefer_not_to_say' | null;
+  open_to: string[];
+  bio: string | null;
+  active: boolean;
+  is_demo: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 type CheckinRow = {
   id: string;
   place_id: string;
@@ -281,6 +382,13 @@ export interface Database {
       place_requests: Table<PlaceRequestRow>;
       reviews: Table<ReviewRow>;
       review_photos: Table<ReviewPhotoRow>;
+      place_claims: Table<PlaceClaimRow>;
+      place_owners: Table<PlaceOwnerRow>;
+      deals: Table<DealRow>;
+      deal_purchases: Table<DealPurchaseRow>;
+      deal_uses: Table<DealUseRow>;
+      point_events: Table<PointEventRow>;
+      friend_profiles: Table<FriendProfileRow>;
       checkins: Table<CheckinRow>;
       wifi_tests: Table<WifiTestRow>;
       decibel_samples: Table<DecibelSampleRow>;

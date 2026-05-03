@@ -30,6 +30,9 @@ import {
   WIFI_FALLBACK_ANCHORS,
 } from '@/lib/review/anchors';
 import { weatherCondition } from '@/lib/weather/codes';
+import { Chip } from '@/components/ui/Chip';
+import { ChipRow } from '@/components/ui/ChipRow';
+import { Section } from '@/components/ui/Section';
 import { createClient as createBrowserClient } from '@/lib/supabase/client';
 import { PHOTO_SLOTS, type PhotoSlot } from '@/lib/review/photos';
 
@@ -865,9 +868,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
             {didOrder === 'no' && (
               <Section title="Got it">
                 <p className="text-[12px] text-[var(--text-secondary)]">
-                  We’ll skip the price questions. A library or a coworking lobby is
-                  just as valid a work spot — the price of a coffee you didn’t buy
-                  doesn’t belong in your review.
+                  We’ll skip the price questions.
                 </p>
               </Section>
             )}
@@ -1045,58 +1046,6 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
         </div>
       </div>
     </form>
-  );
-}
-
-function Section({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-      <div className="text-[13px] font-semibold text-[var(--text-primary)]">{title}</div>
-      {subtitle && (
-        <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">{subtitle}</p>
-      )}
-      <div className="mt-2">{children}</div>
-    </section>
-  );
-}
-
-function ChipRow({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="-mx-1 flex gap-2 overflow-x-auto px-1 no-scrollbar snap-x snap-mandatory pb-1">
-      {children}
-    </div>
-  );
-}
-
-function Chip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`shrink-0 snap-start rounded-full border px-3 py-1.5 text-[13px] font-medium transition ${
-        active
-          ? 'border-transparent bg-accent text-white'
-          : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
-      }`}
-    >
-      {label}
-    </button>
   );
 }
 

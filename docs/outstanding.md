@@ -38,9 +38,26 @@ _(none currently)_
 
 ## Schema migration (Phase B SQL)
 
-Most of this landed in `005_review_v2.sql` (rating range widened to 1–10, new collected fields on `reviews`, `review_photos` table). Still outstanding:
+Most of this landed in `005_review_v2.sql` (rating range widened to 1–10, new collected fields on `reviews`, `review_photos` table). Owner / deals / loyalty / friend-profile schema landed in `006_owners_deals_loyalty.sql` + `007_friend_profiles.sql`. Still outstanding:
 
 - `live_updates.outlets`, `live_updates.rotating_question text`, `live_updates.rotating_answer text` (when `LiveUpdateSheet` is migrated to the new shape).
+
+## Owners / deals / loyalty (PR 2 + 3 to follow)
+
+Foundation shipped in PR 1: schema, claim wizard, admin queue, `/owner` skeleton.
+Pending:
+
+- **PR 2** — Deal CRUD on `/owner`, place-card deals section, mocked-payment purchase flow, owner scanner page, `deal_uses` insert → `point_events` server-issued, demo deals seed, loyalty card on profile, freebie redemption picker.
+- **PR 3** — `/waitlist/partners` becomes the friend-profile wizard, profile Friends tab, drop the Soon badge from the bottom-nav Friends slot.
+
+Deferred (separate plans):
+
+- Real Stripe Connect payment integration (schema is ready; `payment_method` defaults to `'demo'`).
+- Camera-based QR scanner.
+- Magic-link auth for owners without Google/Apple.
+- Admin "request more info" workflow on claims.
+- Owner email notifications on claim decisions.
+- Cron job that expires loyalty points after 12 months.
 
 ## Cluster zoom + pin density
 
