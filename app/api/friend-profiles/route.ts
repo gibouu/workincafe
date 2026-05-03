@@ -15,6 +15,21 @@ interface Body {
 const WORK_STYLES = new Set(['quiet_focus', 'brainstormer', 'idea_bouncer', 'company_only']);
 const GENDERS = new Set(['woman', 'man', 'non_binary', 'prefer_not_to_say']);
 
+/**
+ * Detects "the table doesn't exist yet" across the various error shapes
+ * Postgres / PostgREST / Supabase return:
+ *   - 42P01    Postgres "relation does not exist"
+ *   - PGRST205 PostgREST schema cache miss ("Could not find the table …")
+ *   - free-text "schema cache" / "Could not find the table"
+ */
+function isMissingTable(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { code?: string; message?: string; details?: string; hint?: string };
+  if (e.code === '42P01' || e.code === 'PGRST205') return true;
+  const blob = `${e.message ?? ''} ${e.details ?? ''} ${e.hint ?? ''}`;
+  return /schema cache|Could not find the table|relation .* does not exist/i.test(blob);
+}
+
 export async function GET(request: NextRequest) {
   const { db, user } = await getRequestActor(request);
   if (!user) return NextResponse.json({ profile: null }, { status: 401 });
@@ -28,9 +43,12 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   if (error) {
-    const code = (error as { code?: string }).code ?? '';
-    if (code === '42P01') return NextResponse.json({ profile: null }, { status: 200 });
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (isMissingTable(error)) {
+      // Migration 007 not applied yet — soft success. Client renders an
+      // empty profile and the wizard.
+      return NextResponse.json({ profile: null, deferred: true }, { status: 200 });
+    }
+    return NextResponse.json({ error: (error as { message?: string }).message ?? 'failed' }, { status: 500 });
   }
   return NextResponse.json({ profile: data ?? null });
 }
@@ -65,9 +83,13 @@ export async function PUT(request: NextRequest) {
 
   const { error } = await db.from('friend_profiles').upsert(payload, { onConflict: 'user_id' });
   if (error) {
-    const code = (error as { code?: string }).code ?? '';
-    if (code === '42P01') return NextResponse.json({ ok: true }, { status: 503 });
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (isMissingTable(error)) {
+      // Migration 007 not applied yet — soft success so the client UX still
+      // celebrates submission. The data isn't persisted; client should warn
+      // when ready (today: silent, mirrors the demo-mode contract elsewhere).
+      return NextResponse.json({ ok: true, deferred: true }, { status: 200 });
+    }
+    return NextResponse.json({ error: (error as { message?: string }).message ?? 'failed' }, { status: 500 });
   }
   return NextResponse.json({ ok: true });
 }

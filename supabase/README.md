@@ -23,6 +23,9 @@ Copy each file into Supabase Dashboard → **SQL Editor** and run, in order:
 | 6 | `migrations/006_owners_deals_loyalty.sql` | Place ownership claims, owner grants, deals (single + pack), purchases with QR, deal uses, point ledger |
 | 7 | `migrations/007_friend_profiles.sql`  | Friend profile schema (occupation, work style, looking-for, identity, bio) |
 | 8 | `migrations/008_stripe_connect.sql`   | `stripe_accounts`, `stripe_events`, payment lifecycle columns on `deal_purchases` |
+| 9 | `migrations/009_admin_bootstrap.sql`  | First user signed in is auto-promoted to admin (advisory-locked) |
+
+> **`Could not find the table 'public.friend_profiles'`** in your logs is expected when migration 007 hasn't been applied yet. The friend-profile API soft-handles it (returns an empty profile + the wizard renders cleanly). Apply 007 to make the error go away.
 
 Or use the CLI from the repo root:
 

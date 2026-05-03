@@ -43,21 +43,32 @@ Authentication → Providers → Google:
 
 ## Step 3 — Apple provider
 
+> **About the MapKit Apple keys you already have.** `APPLE_TEAM_ID` is the same Team ID. `APPLE_KEY_ID` + `APPLE_MAPKIT_PRIVATE_KEY` (`.p8`) **can** be reused for Sign in with Apple **only if** the original Key was created with both "MapKit JS" and "Sign in with Apple" capabilities checked. Most teams ship one capability per key — if the existing key is MapKit-only, generate a NEW Sign in with Apple key. Either way, you also need a fresh **Services ID** (separate from the App ID and from MapKit), because Sign in with Apple uses Services IDs as the OAuth client ID.
+
 ### Apple Developer
 
-1. **App ID** with Sign in with Apple enabled (or confirm an existing one).
-2. **Services ID** for the website, e.g. `cafe.workin.web`. Configure Website URLs:
-   - **Domain**: `workin.cafe`
-   - **Return URL**: the Supabase callback URL
-     `https://<project-ref>.supabase.co/auth/v1/callback`
-3. **Key** with Sign in with Apple enabled. Download the `.p8` file. Record the **Key ID** and the **Team ID**.
+1. **App ID** — Identifiers → App IDs → confirm an App ID exists with the "Sign in with Apple" capability enabled.
+2. **Services ID** — Identifiers → Services IDs → New (this is the OAuth client ID).
+   - Identifier: e.g. `cafe.workin.web`
+   - Description: "Work in Cafe Web"
+   - Configure → enable **Sign in with Apple**
+   - Domains: `workin.cafe` (and `localhost` for dev — Apple accepts it)
+   - **Return URL**: the Supabase callback `https://<project-ref>.supabase.co/auth/v1/callback`
+   - Save.
+3. **Key** — Identifiers → Keys.
+   - **If your MapKit key has Sign-in-with-Apple checked**: reuse it.
+   - **Otherwise**: New Key → enable Sign in with Apple → Continue → download `.p8`.
+   - Record the **Key ID** and your **Team ID** (top-right of the Apple Developer console).
 
 ### Supabase Dashboard
 
 Authentication → Providers → Apple:
 
 - Toggle **Enabled**.
-- Paste **Services ID**, **Team ID**, **Key ID**, and the entire contents of the `.p8` file.
+- **Client ID (Services ID)** = `cafe.workin.web` (the Services ID from step 2 — NOT the App ID).
+- **Team ID** = your Apple Team ID.
+- **Key ID** = the Sign-in-with-Apple key's ID.
+- **Secret Key** = the entire contents of the `.p8` file (start with `-----BEGIN PRIVATE KEY-----`, end with `-----END PRIVATE KEY-----`).
 - Save.
 
 ## Step 4 — App env
@@ -82,6 +93,7 @@ OAuth provider secrets live **in Supabase**, not in app env. Do not put Google/A
    - After OAuth, you should land back on `/` and see a "Live review posted" toast within ~1 s.
    - `localStorage["wic:pending:checkin"]` should be cleared.
 5. Try `?next=https://evil.com` on `/auth/callback` directly — you should be redirected to `/`.
+6. **First user becomes admin automatically** (per `supabase/migrations/009_admin_bootstrap.sql`). After your very first sign-in, run `select id, is_admin from public.users where id = auth.uid();` in SQL Editor and you should see `is_admin = true`. From there, visit `/admin/users` to grant admin to others by email.
 
 ## Troubleshooting
 

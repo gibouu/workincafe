@@ -51,6 +51,13 @@ export default async function AdminIndex() {
             count={0}
             hint="Approve, reject with reason"
           />
+          <QueueCard
+            href="/admin/users"
+            icon="UsersThree"
+            title="Admins"
+            count={0}
+            hint="Promote / demote by email"
+          />
         </div>
 
         <div className="mt-8 rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
@@ -76,7 +83,7 @@ function QueueCard({
   hint,
 }: {
   href: string;
-  icon: 'MapPinLine' | 'Flag' | 'Storefront';
+  icon: 'MapPinLine' | 'Flag' | 'Storefront' | 'UsersThree';
   title: string;
   count: number;
   hint: string;

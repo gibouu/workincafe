@@ -50,19 +50,13 @@ export default function MapPage() {
   const setPanel = useLayout((s) => s.setPanel);
   const [onboardChecked, setOnboardChecked] = useState(false);
 
-  // selectedPlace ↔ panel='place' kept in sync. Selecting a place opens the
-  // place panel; opening another panel mode (profile / friends) clears the
-  // selected place; closing the place panel clears selectedPlace.
-  useEffect(() => {
-    if (selectedPlace) setPanel('place');
-  }, [selectedPlace, setPanel]);
-  useEffect(() => {
-    if (panel !== 'place' && selectedPlace) setSelectedPlace(null);
-  }, [panel, selectedPlace]);
-  useEffect(() => {
-    if (selectedPlace === null && panel === 'place') setPanel(null);
-  }, [selectedPlace, panel, setPanel]);
+  // selectedPlace and panel are mutated atomically inside event handlers
+  // (handleSelectPlace, the various onClose callbacks). No sync effects —
+  // they introduced a race that could clear selectedPlace before
+  // setPanel('place') committed, leaving the place card empty.
   useEffect(() => () => setCardOpen(false), [setCardOpen]);
+  // Lazy listener: read cardOpen for plus-button positioning below.
+  const cardOpen = useLayout((s) => s.cardOpen);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -177,6 +171,7 @@ export default function MapPage() {
 
   const handleSelectPlace = (place: DemoPlace) => {
     setSelectedPlace(place);
+    setPanel('place');
     mapRef.current?.panTo(place.lat, place.lng);
   };
 
@@ -235,27 +230,45 @@ export default function MapPage() {
           </div>
         )}
 
-        {isDesktop && panel === 'place' && (
-          <FloatingPlaceCard place={selectedPlace} onClose={() => setSelectedPlace(null)} />
+        {isDesktop && panel === 'place' && selectedPlace && (
+          <FloatingPlaceCard
+            place={selectedPlace}
+            onClose={() => {
+              setSelectedPlace(null);
+              setPanel(null);
+            }}
+          />
         )}
         {isDesktop && panel === 'profile' && (
-          <FloatingProfileCard onClose={() => setPanel(null)} />
+          <FloatingProfileCard
+            onClose={() => {
+              setSelectedPlace(null);
+              setPanel(null);
+            }}
+          />
         )}
         {isDesktop && panel === 'friends' && (
-          <FloatingFriendsCard onClose={() => setPanel(null)} />
+          <FloatingFriendsCard
+            onClose={() => {
+              setSelectedPlace(null);
+              setPanel(null);
+            }}
+          />
         )}
 
-        {!selectedPlace && (
-          <button
-            type="button"
-            onClick={handleOpenAddPlace}
-            aria-label="Add a place"
-            title="Add a place"
-            className="pointer-events-auto absolute bottom-[96px] right-4 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface)] text-[var(--text-primary)] shadow-float backdrop-blur-ios hover:bg-white transition"
-          >
-            <Icon name="Plus" size={16} weight="bold" />
-          </button>
-        )}
+        {/* "+" stays out of the way: hidden on mobile when a panel/drawer is
+            open, shifted left of the floating card on desktop when open. */}
+        <button
+          type="button"
+          onClick={handleOpenAddPlace}
+          aria-label="Add a place"
+          title="Add a place"
+          className={`pointer-events-auto absolute bottom-[96px] z-30 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface)] text-[var(--text-primary)] shadow-float backdrop-blur-ios hover:bg-white transition-[right] duration-200 ${
+            cardOpen ? 'hidden md:flex md:right-[392px]' : 'flex right-4'
+          }`}
+        >
+          <Icon name="Plus" size={16} weight="bold" />
+        </button>
 
         <AttributionPill />
       </main>

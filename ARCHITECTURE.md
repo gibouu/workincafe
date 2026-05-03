@@ -16,7 +16,7 @@ For the high-level product spec, see [`workin-cafe-build-spec.md`](workin-cafe-b
 | `/profile` | `app/profile/page.tsx` | Authed user profile (protected) |
 | `/place/[id]` | `app/place/[id]/page.tsx` | Full place profile (back button → `/`) |
 | `/review/new/[placeId]` | `app/review/new/[placeId]/page.tsx` | Review form; signed-out users can fill, sign-in required at submit |
-| `/admin/...` | `app/admin/**` | Admin (protected) |
+| `/admin/...` | `app/admin/**` | Admin (protected): `/admin`, `/admin/place-requests`, `/admin/flagged-reviews`, `/admin/ownership-claims`, `/admin/users` |
 | `/owner` | `app/owner/page.tsx` | Owner dashboard (lists `place_owners` for the signed-in user) |
 | `/place/[id]/claim` | `app/place/[id]/claim/page.tsx` | Owner-claim wizard (proof + email) |
 | `/waitlist/partners` | `app/waitlist/partners/page.tsx` | "Friends" destination (will become the friend-profile wizard in PR 3) |
@@ -38,6 +38,8 @@ Protected prefixes (defined in `middleware.ts`): `/profile`, `/admin`. **`/revie
 | `/api/me` | GET | none | Returns `{ signedIn, name, email, isDemo }` for client-side gating |
 | `/api/friend-profiles` | GET/PUT | required | Read own friend profile / upsert |
 | `/api/places/[id]/reviews` | GET | none | Real reviews for a place; resolves demo IDs via place_source_refs |
+| `/api/admin/users/search` | POST | admin | Email search across `auth.users` (service-role) |
+| `/api/admin/users/[id]/admin` | POST | admin | Toggle `is_admin` on a user; refuses to demote the last admin |
 | `/api/live-updates` | POST | required (401) | Right-now noise / seating / temperature snapshot |
 | `/api/checkins` | POST | required (401) | Live review (geolocated) |
 | `/api/favorites` | POST/DELETE | required (401) | Best-effort; client ignores 401/503 |
