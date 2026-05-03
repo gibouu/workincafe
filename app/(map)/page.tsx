@@ -129,10 +129,30 @@ export default function MapPage() {
   const filters = useFilters();
   const activeFilterCount = useFilters((s) => s.activeCount());
 
-  const liveUpdate = useLiveUpdatePrompt(cityMeta.places);
+  // Load real places from Supabase. Falls back to demo array on empty
+  // response (so the demo experience still works against an empty DB).
+  const [livePlaces, setLivePlaces] = useState<DemoPlace[] | null>(null);
+  useEffect(() => {
+    let aborted = false;
+    setLivePlaces(null);
+    fetch(`/api/places?city=${encodeURIComponent(city)}`)
+      .then((r) => (r.ok ? r.json() : { places: [] }))
+      .then((data: { places?: DemoPlace[] }) => {
+        if (aborted) return;
+        if (Array.isArray(data.places) && data.places.length > 0) setLivePlaces(data.places);
+      })
+      .catch(() => null);
+    return () => {
+      aborted = true;
+    };
+  }, [city]);
+
+  const sourcePlaces: DemoPlace[] = livePlaces ?? cityMeta.places;
+
+  const liveUpdate = useLiveUpdatePrompt(sourcePlaces);
 
   const visiblePlaces = useMemo(() => {
-    return cityMeta.places.filter((p) => {
+    return sourcePlaces.filter((p) => {
       if (filters.categories.size > 0 && !filters.categories.has(p.category)) return false;
       if (filters.outlets && p.outlets === 'none') return false;
       if (filters.noise !== 'any' && p.noise !== filters.noise) return false;
@@ -141,7 +161,7 @@ export default function MapPage() {
       if (filters.minRating !== null && p.rating < filters.minRating) return false;
       return true;
     });
-  }, [cityMeta.places, filters]);
+  }, [sourcePlaces, filters]);
 
   // Pan to the active city's center whenever it changes.
   useEffect(() => {
