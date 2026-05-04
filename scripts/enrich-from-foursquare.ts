@@ -1,30 +1,22 @@
 /**
- * Work in Cafe — enrich places using the Foursquare Places API.
+ * Work in Cafe — backfill places.phone / website / address from Foursquare.
  *
- * For each place (filtered by --city), this script:
- *   1. Calls Foursquare match to find their record by name + lat/lng.
- *   2. Pulls details (rating /10, hours, popularity).
- *   3. Backfills places.hours_json when our row had no OSM hours.
- *   4. Inserts a synthetic review (source='foursquare', source_weight=0.5).
- *      The review's overall_rating is the Foursquare rating; we map other
- *      buckets only when we have signal.
+ * The 2025 Foursquare API put rating + hours behind a paid tier. The free
+ * tier still returns the place's address, phone, website, and chain
+ * affiliation, which is useful when OSM didn't tag those fields.
  *
- * Run order recommended by the user: Toronto first, Paris over the next
- * couple of days as the daily quota allows.
+ * For ratings + hours we use Yelp instead (`scripts/enrich-from-yelp.ts`).
  *
  * Usage:
- *   npm run enrich:foursquare -- --city=toronto --dry-run
- *   npm run enrich:foursquare -- --city=toronto --limit=500
- *   npm run enrich:foursquare -- --city=paris
+ *   npm run enrich:foursquare -- --city=toronto --dry-run --limit=20
+ *   npm run enrich:foursquare -- --city=toronto
+ *   npm run enrich:foursquare -- --city=paris --limit=2000
  *
- * Idempotent: a place that already has a foursquare-source review is
- * skipped on re-runs (unique (place_id, source) lookup).
+ * Idempotent: skips places that already have phone AND website AND address.
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { matchByLocation, fetchDetails } from '../lib/places/foursquare';
-
-const SYS_USER_ID = '00000000-0000-0000-0000-0000000005ed';
+import { matchEnrichment } from '../lib/places/foursquare';
 
 const args = process.argv.slice(2);
 const argMap = new Map<string, string>();
@@ -52,24 +44,18 @@ interface PlaceRow {
   name: string;
   lat: number;
   lng: number;
-  hours_json: { raw?: string } | null;
+  address: string | null;
+  phone: string | null;
+  website: string | null;
+  brand: string | null;
 }
 
 async function main() {
   const sb = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
-  // Skip places that already have a foursquare review attached.
-  const { data: enrichedRows } = await sb
-    .from('reviews')
-    .select('place_id')
-    .eq('source', 'foursquare')
-    .eq('user_id', SYS_USER_ID);
-  const enriched = new Set<string>((enrichedRows ?? []).map((r) => (r as { place_id: string }).place_id));
-  console.log(`[fsq] already enriched: ${enriched.size}`);
-
-  // Pull places to enrich. We prioritize categories users actually work
-  // from: cafés / bakeries / libraries / coworking / hotels — restaurants
-  // and fast_food are skipped because we don't review them.
+  // Pull places we'd want to enrich. We prioritize work-friendly categories
+  // (cafe / bakery / library / coworking / hotel) and skip places that
+  // already have phone + website + address — nothing left to fill in.
   const PAGE = 1000;
   let from = 0;
   const candidates: PlaceRow[] = [];
@@ -78,7 +64,7 @@ async function main() {
     const take = Math.min(PAGE, need);
     const { data, error } = await sb
       .from('places')
-      .select('id, name, lat, lng, hours_json')
+      .select('id, name, lat, lng, address, phone, website, brand')
       .eq('city', CITY!)
       .in('category', ['cafe', 'bakery', 'library', 'coworking', 'hotel'])
       .order('id')
@@ -87,60 +73,57 @@ async function main() {
     const rows = (data ?? []) as PlaceRow[];
     if (rows.length === 0) break;
     for (const r of rows) {
-      if (!enriched.has(r.id)) candidates.push(r);
+      // Skip if all three contact fields are already filled.
+      if (r.address && r.phone && r.website) continue;
+      candidates.push(r);
     }
     if (rows.length < take) break;
     from += rows.length;
   }
-  console.log(`[fsq] candidates after dedup: ${candidates.length} (city=${CITY})`);
+  console.log(`[fsq] candidates: ${candidates.length} (city=${CITY})`);
 
   let matched = 0;
   let skipped = 0;
   let errored = 0;
-  let hoursBackfilled = 0;
-  let reviewsInserted = 0;
+  let updated = 0;
+  let phoneAdded = 0;
+  let websiteAdded = 0;
+  let addressAdded = 0;
+  let brandAdded = 0;
 
   for (let i = 0; i < candidates.length; i++) {
     const p = candidates[i];
     try {
-      const m = await matchByLocation(FSQ_KEY, p.name, p.lat, p.lng);
+      const m = await matchEnrichment(FSQ_KEY, p.name, p.lat, p.lng);
       if (!m) {
         skipped++;
       } else {
-        const d = await fetchDetails(FSQ_KEY, m.fsq_id);
-        if (!d) {
-          skipped++;
+        matched++;
+        const patch: Record<string, string> = {};
+        if (!p.address && m.formatted_address) {
+          patch.address = m.formatted_address;
+          addressAdded++;
+        }
+        if (!p.phone && m.tel) {
+          patch.phone = m.tel;
+          phoneAdded++;
+        }
+        if (!p.website && m.website) {
+          patch.website = m.website;
+          websiteAdded++;
+        }
+        if (!p.brand && m.chain_name) {
+          patch.brand = m.chain_name;
+          brandAdded++;
+        }
+        const fields = Object.keys(patch);
+        if (fields.length === 0) {
+          // Matched but no new info.
+        } else if (DRY_RUN) {
+          console.log(`  · ${p.name} ← ${m.name} → backfill ${fields.join(', ')}`);
         } else {
-          matched++;
-          if (DRY_RUN) {
-            console.log(
-              `  · ${p.name} → ${m.name} (${m.distance_m}m, rating=${d.rating ?? '—'}, hours=${d.hours_osm ? 'yes' : 'no'})`,
-            );
-          } else {
-            // Backfill hours if we had none.
-            if (!p.hours_json && d.hours_osm) {
-              const { error: updErr } = await sb
-                .from('places')
-                .update({ hours_json: { raw: d.hours_osm, source: 'foursquare' } })
-                .eq('id', p.id);
-              if (!updErr) hoursBackfilled++;
-            }
-            // Synthetic review row. We only fill overall_rating; other
-            // buckets stay null so they don't pollute means until a real
-            // user reviews. comment carries provenance for transparency.
-            if (typeof d.rating === 'number') {
-              const { error: insErr } = await sb.from('reviews').insert({
-                place_id: p.id,
-                user_id: SYS_USER_ID,
-                overall_rating: Math.round(Math.max(1, Math.min(10, d.rating))),
-                comment: `Imported from Foursquare (${d.total_ratings ?? 0} ratings).`,
-                geo_verified: false,
-                source: 'foursquare',
-                source_weight: 0.5,
-              });
-              if (!insErr) reviewsInserted++;
-            }
-          }
+          const { error: updErr } = await sb.from('places').update(patch).eq('id', p.id);
+          if (!updErr) updated++;
         }
       }
     } catch (err) {
@@ -149,14 +132,16 @@ async function main() {
     }
     if ((i + 1) % 50 === 0) {
       console.log(
-        `[fsq] ${i + 1}/${candidates.length} · matched=${matched} skipped=${skipped} hrs+=${hoursBackfilled} rev+=${reviewsInserted} err=${errored}`,
+        `[fsq] ${i + 1}/${candidates.length} · matched=${matched} skipped=${skipped} updated=${updated} err=${errored}`,
       );
     }
     if (SLEEP_MS > 0 && i + 1 < candidates.length) await sleep(SLEEP_MS);
   }
 
   console.log(
-    `\n[fsq] done. matched=${matched} skipped=${skipped} hrs+=${hoursBackfilled} rev+=${reviewsInserted} err=${errored}${DRY_RUN ? ' (dry run)' : ''}`,
+    `\n[fsq] done. matched=${matched} skipped=${skipped} updated=${updated} err=${errored}` +
+      `  · phone+=${phoneAdded} website+=${websiteAdded} address+=${addressAdded} brand+=${brandAdded}` +
+      (DRY_RUN ? ' (dry run)' : ''),
   );
 }
 

@@ -1,81 +1,83 @@
 /**
- * Foursquare Places API v3 client. Server-only — keep FOURSQUARE_API_KEY
- * out of any code that runs in the browser.
+ * Foursquare Places API client (post-2025 endpoints).
  *
- * Two operations we use:
- *   1. matchByLocation(name, lat, lng) — finds the most likely Foursquare
- *      record for one of our places. Uses the search endpoint with a
- *      tight radius and fuzzy name match.
- *   2. fetchDetails(fsq_id) — pulls hours, rating, popularity, price tier
- *      for an enrichment row.
+ *   Base: https://places-api.foursquare.com
+ *   Auth: Authorization: Bearer <FOURSQUARE_API_KEY>
+ *   Required: X-Places-Api-Version: 2025-06-17
  *
- * Foursquare ratings are 0–10 (well-suited to our 1–10 review scale).
- * Hours come back as `regular_hours.display`, a human string in OSM-ish
- * format ("Mon-Fri 8-18; Sat 9-17") plus a structured weekly array.
+ * The 2025 API put rating, price, popularity, and hours behind a Premium
+ * (paid) tier. The free tier still returns the place's address, phone,
+ * website, social media handles, and chain affiliation — useful for
+ * filling in our `places` table when OSM is sparse.
+ *
+ * For ratings + hours we use Yelp instead (`lib/places/yelp.ts`).
  */
 
-const SEARCH_URL = 'https://api.foursquare.com/v3/places/search';
-const DETAILS_URL = 'https://api.foursquare.com/v3/places';
+const SEARCH_URL = 'https://places-api.foursquare.com/places/search';
+const API_VERSION = '2025-06-17';
 
-export interface FoursquareMatch {
-  fsq_id: string;
+export interface FoursquareEnrichment {
   name: string;
-  distance_m: number;
-}
-
-export interface FoursquareDetails {
-  fsq_id: string;
-  name: string;
-  rating?: number;          // 0..10
-  price?: number;           // 1..4
-  popularity?: number;      // 0..1
-  hours_display?: string;   // e.g. "Mon-Fri 8:00 AM - 6:00 PM"
-  hours_osm?: string;       // best-effort OSM-format string
-  total_ratings?: number;
+  formatted_address?: string;
+  tel?: string;
+  website?: string;
+  /** Foursquare chain id, e.g. for Starbucks. Useful for brand mapping. */
+  chain_name?: string;
+  twitter?: string;
+  facebook_id?: string;
+  primary_category?: string;
 }
 
 interface SearchResponse {
-  results?: {
-    fsq_id: string;
-    name: string;
-    distance: number;
-  }[];
+  results?: FoursquareResult[];
 }
 
-interface DetailsResponse {
-  fsq_id: string;
+interface FoursquareResult {
   name: string;
-  rating?: number;
-  price?: number;
-  popularity?: number;
-  stats?: { total_ratings?: number };
-  hours?: {
-    display?: string;
-    regular?: { day: number; open: string; close: string }[];
+  location?: {
+    address?: string;
+    locality?: string;
+    region?: string;
+    postcode?: string;
+    country?: string;
+    formatted_address?: string;
   };
+  tel?: string;
+  website?: string;
+  social_media?: {
+    facebook_id?: string;
+    twitter?: string;
+  };
+  chains?: { fsq_chain_id: string; name: string }[];
+  categories?: { name: string; short_name?: string }[];
 }
 
 function authHeaders(apiKey: string): HeadersInit {
   return {
-    Authorization: apiKey,
+    Authorization: `Bearer ${apiKey}`,
+    'X-Places-Api-Version': API_VERSION,
     accept: 'application/json',
   };
 }
 
 /**
  * Find the closest Foursquare place to (lat,lng) whose name fuzzy-matches.
- * `radiusM` defaults to 80 — tight enough that we don't grab neighbors.
+ * Returns the enrichment fields we'd backfill into our `places` row.
+ *
+ * `radiusM` defaults to 200 — the new API's geocoder is less precise than
+ * the v3 era and tends to return empty at radii under 100m even for
+ * obvious matches.
  */
-export async function matchByLocation(
+export async function matchEnrichment(
   apiKey: string,
   name: string,
   lat: number,
   lng: number,
   opts: { radiusM?: number } = {},
-): Promise<FoursquareMatch | null> {
+): Promise<FoursquareEnrichment | null> {
   const url = new URL(SEARCH_URL);
   url.searchParams.set('ll', `${lat},${lng}`);
-  url.searchParams.set('radius', String(opts.radiusM ?? 80));
+  url.searchParams.set('radius', String(opts.radiusM ?? 200));
   url.searchParams.set('query', name);
   url.searchParams.set('limit', '5');
   const resp = await fetch(url.toString(), { headers: authHeaders(apiKey) });
@@ -83,70 +85,31 @@ export async function matchByLocation(
   const data = (await resp.json()) as SearchResponse;
   const results = data.results ?? [];
   if (results.length === 0) return null;
-  // Take the closest result whose name shares a token with ours; the API
-  // already biased on `query` so this is a sanity check.
+
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
   const ourTokens = new Set(norm(name).split(/\s+/).filter((t) => t.length >= 3));
-  const ranked = [...results].sort((a, b) => a.distance - b.distance);
-  for (const r of ranked) {
+
+  // Prefer the first result whose name shares a meaningful token with ours.
+  // The API already biased on `query`, so this is the sanity check.
+  for (const r of results) {
     const theirTokens = norm(r.name).split(/\s+/);
     if (theirTokens.some((t) => ourTokens.has(t))) {
-      return { fsq_id: r.fsq_id, name: r.name, distance_m: r.distance };
+      return shape(r);
     }
   }
-  return null;
+  // Fallback: first result. Better to over-match than miss.
+  return shape(results[0]);
 }
 
-export async function fetchDetails(apiKey: string, fsqId: string): Promise<FoursquareDetails | null> {
-  const url = new URL(`${DETAILS_URL}/${encodeURIComponent(fsqId)}`);
-  url.searchParams.set('fields', 'fsq_id,name,rating,price,popularity,stats,hours');
-  const resp = await fetch(url.toString(), { headers: authHeaders(apiKey) });
-  if (!resp.ok) return null;
-  const data = (await resp.json()) as DetailsResponse;
-
-  let osm: string | undefined;
-  if (data.hours?.regular && data.hours.regular.length > 0) {
-    osm = formatRegularToOsm(data.hours.regular);
-  }
+function shape(r: FoursquareResult): FoursquareEnrichment {
   return {
-    fsq_id: data.fsq_id,
-    name: data.name,
-    rating: typeof data.rating === 'number' ? data.rating : undefined,
-    price: typeof data.price === 'number' ? data.price : undefined,
-    popularity: typeof data.popularity === 'number' ? data.popularity : undefined,
-    total_ratings: data.stats?.total_ratings,
-    hours_display: data.hours?.display,
-    hours_osm: osm,
+    name: r.name,
+    formatted_address: r.location?.formatted_address,
+    tel: r.tel,
+    website: r.website,
+    chain_name: r.chains?.[0]?.name,
+    twitter: r.social_media?.twitter,
+    facebook_id: r.social_media?.facebook_id,
+    primary_category: r.categories?.[0]?.short_name ?? r.categories?.[0]?.name,
   };
-}
-
-/**
- * Convert Foursquare's `hours.regular` array into an OSM `opening_hours`
- * string. FSQ days are 1=Mon..7=Sun; OSM uses Mo/Tu/We/Th/Fr/Sa/Su.
- * Times are "HHMM" (e.g. "0830"). We collapse contiguous identical days.
- */
-function formatRegularToOsm(regular: { day: number; open: string; close: string }[]): string {
-  const OSM_DAYS = ['', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-  const fmt = (hhmm: string) => {
-    const h = hhmm.slice(0, 2);
-    const m = hhmm.slice(2, 4);
-    return `${h}:${m}`;
-  };
-  // Group day → list of intervals.
-  const byDay = new Map<number, string[]>();
-  for (const r of regular) {
-    if (!OSM_DAYS[r.day]) continue;
-    const ranges = byDay.get(r.day) ?? [];
-    ranges.push(`${fmt(r.open)}-${fmt(r.close)}`);
-    byDay.set(r.day, ranges);
-  }
-  // Emit each day's rule. Don't try to collapse Mo-Fr style ranges — too
-  // brittle when intervals differ. opening_hours.js parses per-day fine.
-  const parts: string[] = [];
-  for (let d = 1; d <= 7; d++) {
-    const ranges = byDay.get(d);
-    if (!ranges || ranges.length === 0) continue;
-    parts.push(`${OSM_DAYS[d]} ${ranges.join(',')}`);
-  }
-  return parts.join('; ');
 }

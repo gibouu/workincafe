@@ -111,7 +111,8 @@ CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=                                        # mirrors CLOUDINARY_CLOUD_NAME for client URL builder
 GOOGLE_PLACES_API_KEY=                                                    # optional; enables Google Places autocomplete in AddPlaceSheet
-FOURSQUARE_API_KEY=                                                       # optional; enables `npm run enrich:foursquare` to seed synthetic reviews + backfill hours
+FOURSQUARE_API_KEY=                                                       # optional; backfills phone/website/address via npm run enrich:foursquare (free tier)
+YELP_API_KEY=                                                             # optional; seeds synthetic ratings + hours via npm run enrich:yelp (5k calls/day free)
 ```
 
 Sign in with Apple is configured in the Supabase Dashboard (Services ID + JWT secret), not in app env.
