@@ -66,3 +66,6 @@ yarn-error.log*
 
 # Always ignore the archive folder — only the active ledger needs review.
 .claude/state/archive/
+
+# Per-developer local Claude Code permissions (machine-specific, not shared).
+.claude/settings.local.json
