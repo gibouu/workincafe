@@ -106,9 +106,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_MAP_STYLE_URL=https://tiles.openfreemap.org/styles/positron   # optional override
 OVERPASS_ENDPOINT=https://overpass-api.de/api/interpreter                  # optional, only for seed scripts
+CLOUDINARY_CLOUD_NAME=                                                    # for review-photo uploads
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=                                        # mirrors CLOUDINARY_CLOUD_NAME for client URL builder
+GOOGLE_PLACES_API_KEY=                                                    # optional; enables Google Places autocomplete in AddPlaceSheet
 ```
 
 Sign in with Apple is configured in the Supabase Dashboard (Services ID + JWT secret), not in app env.
+
+`GOOGLE_PLACES_API_KEY` runbook: enable **Places API (New)** in Google Cloud Console → Credentials → create an API key → restrict to HTTP referrer (`https://workin.cafe/*`, `http://localhost:3000/*`) → enable billing on the project. Without the key, `AddPlaceSheet` falls back gracefully (search box hidden; manual entry still works) and `/api/places/lookup` returns 503.
 
 ## Gotchas worth remembering
 

@@ -15,6 +15,7 @@ import { createClient } from '@supabase/supabase-js';
 import { readFile } from 'node:fs/promises';
 import crypto from 'node:crypto';
 import path from 'node:path';
+import { isWorkConducive } from '../lib/places/work-conducive';
 
 type OsmCity = 'paris' | 'toronto';
 
@@ -139,11 +140,35 @@ async function seedCity(city: OsmCity) {
     .filter((p): p is PlaceInsert => p !== null);
 
   // Dedup + quality filter (spec §11.2: require website OR phone OR brand).
-  const unique = [...new Map(places.map((p) => [p.normalized_name_hash, p])).values()].filter(
+  const deduped = [...new Map(places.map((p) => [p.normalized_name_hash, p])).values()].filter(
     (p) => p.website || p.phone || p.brand,
   );
 
-  console.log(`[osm] ${city}: ${json.elements.length} raw → ${unique.length} after dedup/quality`);
+  // Work-conducive hours filter — drop dinner-only / split-shift restaurants
+  // and fast-food. Cafes / bakeries / libraries / coworking / hotel pass
+  // through unchanged. See lib/places/work-conducive.ts.
+  let droppedByHours = 0;
+  const droppedByCategory: Record<string, number> = {};
+  const unique = deduped.filter((p) => {
+    const raw = (p.hours_json as { raw?: string } | null)?.raw ?? null;
+    const ok = isWorkConducive(p.category, raw);
+    if (!ok) {
+      droppedByHours++;
+      droppedByCategory[p.category] = (droppedByCategory[p.category] ?? 0) + 1;
+    }
+    return ok;
+  });
+
+  console.log(
+    `[osm] ${city}: ${json.elements.length} raw → ${deduped.length} after dedup/quality → ${unique.length} after hours filter`,
+  );
+  if (droppedByHours > 0) {
+    console.log(
+      `[osm] ${city}: hours filter dropped ${droppedByHours} (${Object.entries(droppedByCategory)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(', ')})`,
+    );
+  }
 
   for (let i = 0; i < unique.length; i += 500) {
     const batch = unique.slice(i, i + 500);

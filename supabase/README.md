@@ -97,11 +97,29 @@ Allow-list redirect URIs:
 ## 4 · Seed places (after migrations applied)
 
 ```bash
-pnpm seed:paris
-npx tsx scripts/seed-osm.ts toronto
+npm run seed:paris
+npm run seed:toronto
 ```
 
-Expected: ~1,000 Paris + ~900 Toronto quality places after dedup.
+Expected: ~1,000 Paris + ~900 Toronto quality places after dedup. The seed
+applies a **work-conducive hours filter** (`lib/places/work-conducive.ts`)
+that drops dinner-only and split-shift restaurants/fast-food. Cafés,
+bakeries, libraries, coworking spaces, and hotels are kept regardless of
+hours.
+
+### 4.1 · Pruning already-seeded restaurants
+
+If you seeded before the hours filter existed, run the prune script:
+
+```bash
+npm run prune:hours -- --dry-run   # preview the kill list (count + sample)
+npm run prune:hours                # commit the deletions
+```
+
+The script protects any place with reviews, check-ins, or live updates so
+user contributions are never destroyed. The seed is idempotent
+(`normalized_name_hash` dedup), so re-running it after a prune is safe and
+will refresh anything new the filter now permits.
 
 ## 5 · Regenerate typed DB (optional but nice)
 
