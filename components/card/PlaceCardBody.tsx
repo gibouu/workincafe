@@ -189,10 +189,14 @@ export function PlaceCardBody({
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-accent-tint p-3 text-center">
             <div className="text-[22px] font-semibold text-accent">
-              {realReviewCount > 0 ? place.rating.toFixed(1) : '—'}
+              {place.review_count > 0 ? place.rating.toFixed(1) : '—'}
             </div>
             <div className="text-[11px] text-accent mt-0.5">
-              {realReviewCount > 0 ? `Rating · ${realReviewCount}` : 'No reviews yet'}
+              {realReviewCount > 0
+                ? `Rating · ${realReviewCount} review${realReviewCount === 1 ? '' : 's'}`
+                : place.review_count > 0
+                  ? 'Preliminary'
+                  : 'No reviews yet'}
             </div>
           </div>
           <div className="rounded-2xl bg-accent-green-tint p-3 text-center">

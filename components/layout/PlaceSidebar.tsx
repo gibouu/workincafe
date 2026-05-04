@@ -219,9 +219,7 @@ function PlaceRow({
         <div className="text-[13px] font-semibold text-[var(--text-primary)]">
           {place.review_count > 0 ? place.rating.toFixed(1) : '—'}
         </div>
-        <div className="text-[10px] text-[var(--text-secondary)]">
-          {place.review_count > 0 ? `${place.review_count} rev` : 'No reviews'}
-        </div>
+        <div className="text-[10px] text-[var(--text-tertiary)]">/10</div>
       </div>
     </button>
   );

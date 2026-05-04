@@ -34,6 +34,10 @@ export async function GET(
     if (ref?.place_id) resolvedId = ref.place_id;
   }
 
+  // Only show real user reviews here. System / Foursquare / Yelp seeded
+  // reviews still feed the aggregate rating in mv_place_ratings, but we
+  // hide them from the visible list — they're labeled "Preliminary" via
+  // a separate UI affordance, not rendered as fake user reviews.
   const { data, error } = await supabase
     .from('reviews')
     .select(
@@ -41,6 +45,7 @@ export async function GET(
     )
     .eq('place_id', resolvedId)
     .eq('is_hidden', false)
+    .eq('source', 'user')
     .order('created_at', { ascending: false })
     .limit(limit);
 
