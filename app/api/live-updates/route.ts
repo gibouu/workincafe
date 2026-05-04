@@ -5,6 +5,7 @@ import {
   resolvePlaceIdForActor,
 } from '@/lib/auth/request-actor';
 import { isWithin } from '@/app/api/_shared/geo-check';
+import { rateLimit } from '@/lib/rate-limit';
 import type { NoiseLevel, SeatingAvailability, TemperatureLevel } from '@/types/database';
 
 const NOISE: NoiseLevel[] = ['quiet', 'moderate', 'loud'];
@@ -14,6 +15,15 @@ const TEMP: TemperatureLevel[] = ['cold', 'comfortable', 'warm', 'hot'];
 export async function POST(request: NextRequest) {
   const { db, user, isDemo } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  // 10/min per user — live updates are quick taps, allow some burst.
+  const rl = rateLimit('live-updates', user.id, { capacity: 10, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'too many updates — slow down' },
+      { status: 429, headers: { 'retry-after': String(rl.retryAfterSec) } },
+    );
+  }
 
   const body = (await request.json().catch(() => null)) as {
     place_id?: string;

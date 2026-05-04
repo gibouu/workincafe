@@ -83,7 +83,13 @@ export async function GET(request: NextRequest) {
       lng: p.lng,
       brand: p.brand,
     }));
-    return NextResponse.json({ places: out, total: out.length, slim: true });
+    // CDN caches the bbox response for 60 s and serves it stale up to 5 min
+    // while revalidating. Place data only changes on seed/prune so this is
+    // safe — first request hits the DB, the next 100 hit Vercel's edge.
+    return NextResponse.json(
+      { places: out, total: out.length, slim: true },
+      { headers: { 'cache-control': 'public, s-maxage=60, stale-while-revalidate=300' } },
+    );
   }
 
   // ── Full city dump (legacy / sidebar path) ─────────────────────────────
@@ -135,5 +141,8 @@ export async function GET(request: NextRequest) {
     };
   });
 
-  return NextResponse.json({ places: out, total: out.length });
+  return NextResponse.json(
+    { places: out, total: out.length },
+    { headers: { 'cache-control': 'public, s-maxage=60, stale-while-revalidate=300' } },
+  );
 }

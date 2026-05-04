@@ -28,5 +28,8 @@ export async function GET(request: NextRequest) {
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ places: data ?? [] });
+  return NextResponse.json(
+    { places: data ?? [] },
+    { headers: { 'cache-control': 'public, s-maxage=30, stale-while-revalidate=120' } },
+  );
 }

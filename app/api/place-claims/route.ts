@@ -4,6 +4,7 @@ import {
   insertWithDemoFlag,
   resolvePlaceIdForActor,
 } from '@/lib/auth/request-actor';
+import { rateLimit } from '@/lib/rate-limit';
 
 const ALLOWED_PROOF_TYPES = new Set([
   'storefront_photo',
@@ -24,6 +25,15 @@ interface Body {
 export async function POST(request: NextRequest) {
   const { db, user, isDemo } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  // 5/hour per user — claims are a one-shot action, not bulk.
+  const rl = rateLimit('place-claims', user.id, { capacity: 5, windowMs: 60 * 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'too many claims — try again later' },
+      { status: 429, headers: { 'retry-after': String(rl.retryAfterSec) } },
+    );
+  }
 
   const body = (await request.json().catch(() => null)) as Body | null;
   if (!body?.place_id) {

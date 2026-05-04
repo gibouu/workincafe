@@ -13,6 +13,7 @@ const CATEGORY_KEYS: PlaceCategory[] = [
   'coworking',
   'hotel',
   'restaurant',
+  'other',
 ];
 
 interface SubmittedRequest {
@@ -79,6 +80,7 @@ export function AddPlaceSheet({
 }) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState<PlaceCategory>('cafe');
+  const [customType, setCustomType] = useState('');
   const [notes, setNotes] = useState('');
   const [search, setSearch] = useState('');
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -91,6 +93,7 @@ export function AddPlaceSheet({
   const reset = () => {
     setName('');
     setCategory('cafe');
+    setCustomType('');
     setNotes('');
     setSearch('');
     setPredictions([]);
@@ -175,15 +178,27 @@ export function AddPlaceSheet({
   const submitLat = picked?.lat ?? center?.lat ?? null;
   const submitLng = picked?.lng ?? center?.lng ?? null;
   const submitAddress = picked?.address ?? null;
-  const canSubmit = name.trim().length > 1 && submitLat !== null && submitLng !== null;
+  const customTrim = customType.trim();
+  const canSubmit =
+    name.trim().length > 1 &&
+    submitLat !== null &&
+    submitLng !== null &&
+    (category !== 'other' || customTrim.length > 1);
 
   const onSubmit = () => {
     if (!canSubmit || submitLat === null || submitLng === null) return;
+    // When the user picked Other, prepend the custom type to notes so the
+    // admin reviewer can re-categorize. The API's `category` enum stays
+    // 'other' until an admin moves the place into one of our buckets.
+    const composedNotes =
+      category === 'other' && customTrim
+        ? `Type: ${customTrim}${notes.trim() ? `\n\n${notes.trim()}` : ''}`
+        : notes.trim();
     const record: SubmittedRequest = {
       name: name.trim(),
       address: submitAddress,
       category,
-      notes: notes.trim(),
+      notes: composedNotes,
       lat: submitLat,
       lng: submitLng,
       at: Date.now(),
@@ -333,6 +348,14 @@ export function AddPlaceSheet({
                   );
                 })}
               </div>
+              {category === 'other' && (
+                <input
+                  value={customType}
+                  onChange={(e) => setCustomType(e.target.value.slice(0, 60))}
+                  placeholder="What kind of place? e.g. brewery, museum café…"
+                  className="mt-2 w-full rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2 text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+              )}
             </div>
 
             <label className="mt-4 block">

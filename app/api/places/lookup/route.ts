@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor } from '@/lib/auth/request-actor';
+import { rateLimit } from '@/lib/rate-limit';
 
 /**
  * Server proxy for place autocomplete + details. Two modes:
@@ -44,6 +45,17 @@ interface PlaceDetails {
 export async function GET(request: NextRequest) {
   const { user } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  // 60/min per user. Photon (the upstream when Google is unset) caps us
+  // at ~1 req/sec by IP — our server is one IP from their POV, so we
+  // keep total throughput modest.
+  const rl = rateLimit('places-lookup', user.id, { capacity: 60, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'too many requests' },
+      { status: 429, headers: { 'retry-after': String(rl.retryAfterSec) } },
+    );
+  }
 
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token') ?? '';

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor, insertWithDemoFlag } from '@/lib/auth/request-actor';
+import { rateLimit } from '@/lib/rate-limit';
 
 const PARIS_BBOX = { minLat: 48.815, maxLat: 48.902, minLng: 2.224, maxLng: 2.470 };
 const TORONTO_BBOX = { minLat: 43.58, maxLat: 43.86, minLng: -79.64, maxLng: -79.12 };
@@ -20,6 +21,15 @@ function inCity(lat: number, lng: number) {
 export async function POST(request: NextRequest) {
   const { db, user, isDemo } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  // 10/hour per user — opening one drawer per place.
+  const rl = rateLimit('places-request', user.id, { capacity: 10, windowMs: 60 * 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'too many submissions — try again later' },
+      { status: 429, headers: { 'retry-after': String(rl.retryAfterSec) } },
+    );
+  }
 
   const body = (await request.json().catch(() => null)) as {
     name?: string;

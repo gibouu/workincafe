@@ -69,5 +69,8 @@ export async function GET(
     right_now_seating: liveStatusObj?.seating ?? 'No recent live updates',
   };
 
-  return NextResponse.json({ place, rating: rating ?? null, liveStatus: liveStatus ?? null });
+  return NextResponse.json(
+    { place, rating: rating ?? null, liveStatus: liveStatus ?? null },
+    { headers: { 'cache-control': 'public, s-maxage=30, stale-while-revalidate=300' } },
+  );
 }

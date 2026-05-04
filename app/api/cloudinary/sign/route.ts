@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor } from '@/lib/auth/request-actor';
 import { signCloudinaryUpload, CLOUDINARY_CLOUD_NAME } from '@/lib/cloudinary';
+import { rateLimit } from '@/lib/rate-limit';
 
 /**
  * Issues a short-lived signature for a direct browser → Cloudinary upload.
@@ -18,6 +19,16 @@ export async function POST(request: NextRequest) {
 
   const { user } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  // 30/min per user — generous (one full review with 4 photos = 4
+  // signatures). Caps a runaway client from burning Cloudinary credits.
+  const rl = rateLimit('cloudinary-sign', user.id, { capacity: 30, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'too many requests' },
+      { status: 429, headers: { 'retry-after': String(rl.retryAfterSec) } },
+    );
+  }
 
   const body = (await request.json().catch(() => null)) as {
     folder?: string;

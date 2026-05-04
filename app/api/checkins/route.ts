@@ -5,10 +5,20 @@ import {
   resolvePlaceIdForActor,
 } from '@/lib/auth/request-actor';
 import { isWithin } from '@/app/api/_shared/geo-check';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   const { db, user, isDemo } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  // 10/min per user — check-ins are quick taps with bursts allowed.
+  const rl = rateLimit('checkins', user.id, { capacity: 10, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'too many check-ins — slow down' },
+      { status: 429, headers: { 'retry-after': String(rl.retryAfterSec) } },
+    );
+  }
 
   const body = (await request.json().catch(() => null)) as {
     place_id?: string;

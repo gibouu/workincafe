@@ -5,6 +5,7 @@ import {
   resolvePlaceIdForActor,
 } from '@/lib/auth/request-actor';
 import { isWithin } from '@/app/api/_shared/geo-check';
+import { rateLimit } from '@/lib/rate-limit';
 
 interface Body {
   place_id?: string;
@@ -41,6 +42,16 @@ function isValidRating10(value: unknown): value is number | null {
 export async function POST(request: NextRequest) {
   const { db, user, isDemo } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+
+  // 5/min per user — a real review takes longer than 12s to fill out.
+  // Caps fast-script abuse without bothering legitimate reviewers.
+  const rl = rateLimit('reviews', user.id, { capacity: 5, windowMs: 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: 'too many reviews — slow down' },
+      { status: 429, headers: { 'retry-after': String(rl.retryAfterSec) } },
+    );
+  }
 
   const body = (await request.json().catch(() => null)) as Body | null;
   if (!body?.place_id || typeof body.overall_rating !== 'number') {
