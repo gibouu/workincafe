@@ -21,13 +21,23 @@ type OsmCity = 'paris' | 'toronto';
 
 const SUPPORTED: OsmCity[] = ['paris', 'toronto'];
 
-const CATEGORY_MAP: Record<string, string> = {
+// Map (amenity | shop | tourism) tag values → our place_category enum.
+// OSM tagging is split: cafés are amenity=cafe but bakeries are shop=bakery,
+// specialty coffee roasters use shop=coffee, hotels are tourism=hotel.
+const AMENITY_MAP: Record<string, string> = {
   cafe: 'cafe',
-  bakery: 'bakery',
   library: 'library',
   coworking_space: 'coworking',
   fast_food: 'fast_food',
   restaurant: 'restaurant',
+  ice_cream: 'cafe',
+  internet_cafe: 'cafe',
+};
+const SHOP_MAP: Record<string, string> = {
+  bakery: 'bakery',
+  pastry: 'bakery',
+  coffee: 'cafe',
+  tea: 'cafe',
 };
 
 interface OverpassElement {
@@ -107,11 +117,13 @@ async function seedCity(city: OsmCity) {
       const lng = el.lon ?? el.center?.lon;
       if (!tags.name || lat === undefined || lng === undefined) return null;
       const amenity = tags.amenity;
+      const shop = tags.shop;
       const tourism = tags.tourism;
-      // CATEGORY_MAP[amenity] can be undefined for amenities outside our taxonomy
-      // (e.g. amenity=bar). Fall back to tourism=hotel mapping, then 'other'.
+      // Resolve in priority order: amenity → shop → tourism → 'other'.
+      // None of the maps cover every value; we fall through silently.
       const category =
-        (amenity && CATEGORY_MAP[amenity]) ||
+        (amenity && AMENITY_MAP[amenity]) ||
+        (shop && SHOP_MAP[shop]) ||
         (tourism === 'hotel' ? 'hotel' : 'other');
       const address = [tags['addr:housenumber'], tags['addr:street']].filter(Boolean).join(' ');
       return {
@@ -140,8 +152,21 @@ async function seedCity(city: OsmCity) {
     .filter((p): p is PlaceInsert => p !== null);
 
   // Dedup + quality filter (spec §11.2: require website OR phone OR brand).
+  // Quality gate: keep anything that has at least one piece of meaningful
+  // tagging beyond just a name + lat/lng. The original gate required
+  // website/phone/brand which dropped most cafés (OSM data is sparse on
+  // contact info). This widens to also accept hours, an address, cuisine,
+  // or internet_access — proxies for "someone bothered to tag this place
+  // with substance."
   const deduped = [...new Map(places.map((p) => [p.normalized_name_hash, p])).values()].filter(
-    (p) => p.website || p.phone || p.brand,
+    (p) =>
+      p.website ||
+      p.phone ||
+      p.brand ||
+      p.hours_json ||
+      p.address ||
+      (p.osm_tags as { cuisine?: unknown; internet_access?: unknown } | null)?.cuisine ||
+      (p.osm_tags as { cuisine?: unknown; internet_access?: unknown } | null)?.internet_access,
   );
 
   // Work-conducive hours filter — drop dinner-only / split-shift restaurants

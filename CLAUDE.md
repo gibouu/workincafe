@@ -115,7 +115,7 @@ GOOGLE_PLACES_API_KEY=                                                    # opti
 
 Sign in with Apple is configured in the Supabase Dashboard (Services ID + JWT secret), not in app env.
 
-`GOOGLE_PLACES_API_KEY` runbook: enable **Places API (New)** in Google Cloud Console → Credentials → create an API key → restrict to HTTP referrer (`https://workin.cafe/*`, `http://localhost:3000/*`) → enable billing on the project. Without the key, `AddPlaceSheet` falls back gracefully (search box hidden; manual entry still works) and `/api/places/lookup` returns 503.
+`GOOGLE_PLACES_API_KEY` is **optional**. When present, `/api/places/lookup` uses Google Places API (New) for richer business data. When absent, it falls back to **Photon** (Komoot, OSM-based, no key, free) — same response shape, so `AddPlaceSheet` works either way. Photon coverage matches our seed (both pull from OSM), so any place in OSM is findable. To enable Google: Google Cloud Console → enable Places API (New) + billing → create an API key → restrict to HTTP referrer (`https://workin.cafe/*`, `http://localhost:3000/*`) → paste into `.env.local`.
 
 ## Gotchas worth remembering
 
