@@ -37,6 +37,25 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+// Placeholder defaults for fields the slim /api/places payload doesn't
+// ship. The real values land on click via /api/places/[id]. These are
+// only used to satisfy the DemoPlace shape in MapContainer rendering.
+const DEMO_PLACE_DEFAULTS = {
+  address: '',
+  neighborhood: '',
+  rating: 0,
+  review_count: 0,
+  avg_spend_eur: 0,
+  wifi: 'moderate',
+  noise: 'moderate',
+  outlets: 'some',
+  seats: 'some',
+  lighting: 'good',
+  tabletime_hours: 0,
+  right_now_noise: 'No recent live updates',
+  right_now_seating: 'No recent live updates',
+} as const;
+
 export default function MapPage() {
   const [selectedPlace, setSelectedPlace] = useState<DemoPlace | null>(null);
   const [geolocating, setGeolocating] = useState(false);
@@ -124,8 +143,10 @@ export default function MapPage() {
   const filters = useFilters();
   const activeFilterCount = useFilters((s) => s.activeCount());
 
-  // Load real places from Supabase. Falls back to demo array on empty
-  // response (so the demo experience still works against an empty DB).
+  // Load real places from Supabase. The full payload (capped at 2500/city,
+  // sorted by name) feeds the sidebar and the card. The slim payload below
+  // — id/name/category/lat/lng/brand only, bbox-bounded — drives the map
+  // markers so we never ship the entire city to the browser at once.
   const [livePlaces, setLivePlaces] = useState<DemoPlace[] | null>(null);
   useEffect(() => {
     let aborted = false;
@@ -142,6 +163,61 @@ export default function MapPage() {
     };
   }, [city]);
 
+  // Slim viewport-bounded fetch for the map markers.
+  interface SlimPlace {
+    id: string;
+    name: string;
+    category: DemoPlace['category'];
+    lat: number;
+    lng: number;
+    brand: string | null;
+  }
+  const [mapPlaces, setMapPlaces] = useState<SlimPlace[]>([]);
+  const lastBboxRef = useRef<[number, number, number, number] | null>(null);
+  useEffect(() => {
+    setMapPlaces([]);
+    lastBboxRef.current = null;
+  }, [city]);
+
+  const fetchMapBbox = useMemo(() => {
+    let inflight: AbortController | null = null;
+    return (bbox: [number, number, number, number]) => {
+      if (inflight) inflight.abort();
+      const ctrl = new AbortController();
+      inflight = ctrl;
+      const [w, s, e, n] = bbox;
+      const url = `/api/places?city=${encodeURIComponent(city)}&bbox=${w},${s},${e},${n}`;
+      fetch(url, { signal: ctrl.signal })
+        .then((r) => (r.ok ? r.json() : { places: [] }))
+        .then((data: { places?: SlimPlace[] }) => {
+          if (Array.isArray(data.places)) setMapPlaces(data.places);
+        })
+        .catch(() => null);
+    };
+    // SlimPlace shape is local; only city changes invalidate.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [city]);
+
+  const onViewportChange = useMemo(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    return (bbox: [number, number, number, number]) => {
+      const last = lastBboxRef.current;
+      // Skip if movement was tiny (under ~10% of viewport span).
+      if (last) {
+        const lastWidth = last[2] - last[0];
+        const lastHeight = last[3] - last[1];
+        const dx = Math.abs(bbox[0] - last[0]) + Math.abs(bbox[2] - last[2]);
+        const dy = Math.abs(bbox[1] - last[1]) + Math.abs(bbox[3] - last[3]);
+        if (dx < lastWidth * 0.1 && dy < lastHeight * 0.1) return;
+      }
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        lastBboxRef.current = bbox;
+        fetchMapBbox(bbox);
+      }, 250);
+    };
+  }, [fetchMapBbox]);
+
   const sourcePlaces: DemoPlace[] = livePlaces ?? cityMeta.places;
 
   const liveUpdate = useLiveUpdatePrompt(sourcePlaces);
@@ -157,6 +233,26 @@ export default function MapPage() {
       return true;
     });
   }, [sourcePlaces, filters]);
+
+  // The map renders the slim bbox-bounded set when we have one; otherwise
+  // it falls back to the full city slice. We adapt slim rows to DemoPlace
+  // with safe defaults so MapContainer's existing types still hold.
+  const visibleMapPlaces: DemoPlace[] = useMemo(() => {
+    const source: DemoPlace[] =
+      mapPlaces.length > 0
+        ? mapPlaces.map((p) => ({
+            ...DEMO_PLACE_DEFAULTS,
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            lat: p.lat,
+            lng: p.lng,
+            brand: p.brand,
+          }))
+        : visiblePlaces;
+    if (filters.categories.size === 0) return source;
+    return source.filter((p) => filters.categories.has(p.category));
+  }, [mapPlaces, visiblePlaces, filters.categories]);
 
   // Pan to the active city's center whenever it changes.
   useEffect(() => {
@@ -186,6 +282,17 @@ export default function MapPage() {
     setSelectedPlace(place);
     setPanel('place');
     mapRef.current?.panTo(place.lat, place.lng);
+    // Hydrate from /api/places/[id] when the slim payload was the source
+    // (most fields will be defaults). Cheap no-op if the row was already
+    // a fully-populated sidebar row.
+    if (place.address === '' && place.review_count === 0) {
+      void fetch(`/api/places/${encodeURIComponent(place.id)}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data: { place?: DemoPlace } | null) => {
+          if (data?.place) setSelectedPlace((curr) => (curr?.id === place.id ? data.place! : curr));
+        })
+        .catch(() => null);
+    }
   };
 
   const handleOpenAddPlace = () => {
@@ -256,8 +363,9 @@ export default function MapPage() {
         <MapContainer
           ref={mapRef}
           center={cityMeta.center}
-          places={visiblePlaces}
+          places={visibleMapPlaces}
           onSelectPlace={handleSelectPlace}
+          onViewportChange={onViewportChange}
         />
         <TopRightControls
           onFilter={() => setFilterOpen(true)}

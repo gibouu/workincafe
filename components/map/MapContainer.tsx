@@ -80,6 +80,8 @@ function renderClusterBubble(count: number): string {
 export interface MapHandle {
   panTo: (lat: number, lng: number) => void;
   getCenter: () => { lat: number; lng: number } | null;
+  /** Returns [west, south, east, north] in lng/lat for the current viewport. */
+  getBoundsBbox: () => [number, number, number, number] | null;
   setUserLocation: (lat: number, lng: number) => void;
 }
 
@@ -101,8 +103,10 @@ export const MapContainer = forwardRef<
     places: DemoPlace[];
     center: { lat: number; lng: number };
     onSelectPlace: (place: DemoPlace) => void;
+    /** Fires (debounced upstream) on every moveend with the new viewport. */
+    onViewportChange?: (bbox: [number, number, number, number]) => void;
   }
->(function MapContainer({ places, center, onSelectPlace }, ref) {
+>(function MapContainer({ places, center, onSelectPlace, onViewportChange }, ref) {
   const initialCenterRef = useRef(center);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -111,10 +115,15 @@ export const MapContainer = forwardRef<
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const onSelectRef = useRef(onSelectPlace);
+  const onViewportRef = useRef(onViewportChange);
 
   useEffect(() => {
     onSelectRef.current = onSelectPlace;
   }, [onSelectPlace]);
+
+  useEffect(() => {
+    onViewportRef.current = onViewportChange;
+  }, [onViewportChange]);
 
   const index = useMemo(() => {
     const features: PointFeature<PlaceProps>[] = places.map((p) => ({
@@ -151,6 +160,12 @@ export const MapContainer = forwardRef<
         const c = map.getCenter();
         return { lat: c.lat, lng: c.lng };
       },
+      getBoundsBbox: () => {
+        const map = mapRef.current;
+        if (!map) return null;
+        const b = map.getBounds();
+        return [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+      },
       setUserLocation: (lat: number, lng: number) => {
         const map = mapRef.current;
         if (!map) return;
@@ -183,9 +198,19 @@ export const MapContainer = forwardRef<
       });
       mapRef.current = map;
 
+      const emitViewport = () => {
+        const cb = onViewportRef.current;
+        if (!cb) return;
+        const b = map.getBounds();
+        cb([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+      };
       map.on('load', () => {
-        if (!cancelled) setReady(true);
+        if (!cancelled) {
+          setReady(true);
+          emitViewport();
+        }
       });
+      map.on('moveend', emitViewport);
       map.on('error', (e) => {
         if (!cancelled) {
           const msg = e?.error?.message ?? 'Failed to load map tiles';

@@ -1,5 +1,19 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import type { PlaceCategory } from '@/lib/categories';
+
+interface PlaceRow {
+  id: string;
+  name: string;
+  address: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  country: string | null;
+  category: PlaceCategory;
+  lat: number;
+  lng: number;
+  brand: string | null;
+}
 
 export async function GET(
   _request: Request,
@@ -8,9 +22,9 @@ export async function GET(
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: place, error } = await supabase
+  const { data: row, error } = await supabase
     .from('places')
-    .select('*')
+    .select('id, name, address, neighborhood, city, country, category, lat, lng, brand')
     .eq('id', id)
     .maybeSingle();
 
@@ -20,12 +34,40 @@ export async function GET(
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  if (!place) return NextResponse.json({ error: 'not found' }, { status: 404 });
+  if (!row) return NextResponse.json({ error: 'not found' }, { status: 404 });
+  const r = row as PlaceRow;
 
   const [{ data: rating }, { data: liveStatus }] = await Promise.all([
     supabase.from('mv_place_ratings').select('*').eq('place_id', id).maybeSingle(),
     supabase.from('mv_current_live_status').select('*').eq('place_id', id).maybeSingle(),
   ]);
+
+  // Adapt to the DemoPlace shape so the card / sidebar render without a
+  // second mapping layer. Ratings come from the materialized view; live
+  // status drives the "Right now" line.
+  const ratingObj = rating as { study_spot_rating?: number; rating_count?: number } | null;
+  const liveStatusObj = liveStatus as { noise?: string; seating?: string } | null;
+  const place = {
+    id: r.id,
+    name: r.name,
+    address: r.address ?? '',
+    neighborhood: r.neighborhood ?? '',
+    category: r.category,
+    lat: r.lat,
+    lng: r.lng,
+    brand: r.brand,
+    rating: ratingObj?.study_spot_rating ?? 0,
+    review_count: ratingObj?.rating_count ?? 0,
+    avg_spend_eur: 0,
+    wifi: 'moderate' as const,
+    noise: 'moderate' as const,
+    outlets: 'some' as const,
+    seats: 'some' as const,
+    lighting: 'good' as const,
+    tabletime_hours: 0,
+    right_now_noise: liveStatusObj?.noise ?? 'No recent live updates',
+    right_now_seating: liveStatusObj?.seating ?? 'No recent live updates',
+  };
 
   return NextResponse.json({ place, rating: rating ?? null, liveStatus: liveStatus ?? null });
 }

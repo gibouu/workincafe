@@ -120,11 +120,12 @@ async function seedCity(city: OsmCity) {
       const shop = tags.shop;
       const tourism = tags.tourism;
       // Resolve in priority order: amenity → shop → tourism → 'other'.
-      // None of the maps cover every value; we fall through silently.
+      // tourism=hotel|hostel|guest_house|motel all collapse to our 'hotel'
+      // category since the use case is identical (lobby work spot).
       const category =
         (amenity && AMENITY_MAP[amenity]) ||
         (shop && SHOP_MAP[shop]) ||
-        (tourism === 'hotel' ? 'hotel' : 'other');
+        (tourism && /^(hotel|hostel|guest_house|motel)$/.test(tourism) ? 'hotel' : 'other');
       const address = [tags['addr:housenumber'], tags['addr:street']].filter(Boolean).join(' ');
       return {
         name: tags.name,
