@@ -16,6 +16,7 @@ import { readFile } from 'node:fs/promises';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { isWorkConducive } from '../lib/places/work-conducive';
+import { looksLikeApartmentBuilding } from '../lib/places/looks-like-apartment';
 
 type OsmCity = 'paris' | 'toronto';
 
@@ -174,8 +175,14 @@ async function seedCity(city: OsmCity) {
   // and fast-food. Cafes / bakeries / libraries / coworking / hotel pass
   // through unchanged. See lib/places/work-conducive.ts.
   let droppedByHours = 0;
+  let droppedByApartment = 0;
   const droppedByCategory: Record<string, number> = {};
   const unique = deduped.filter((p) => {
+    // Apartment-building filter — only applies to category=hotel.
+    if (p.category === 'hotel' && looksLikeApartmentBuilding(p.name)) {
+      droppedByApartment++;
+      return false;
+    }
     const raw = (p.hours_json as { raw?: string } | null)?.raw ?? null;
     const ok = isWorkConducive(p.category, raw);
     if (!ok) {
@@ -186,8 +193,11 @@ async function seedCity(city: OsmCity) {
   });
 
   console.log(
-    `[osm] ${city}: ${json.elements.length} raw → ${deduped.length} after dedup/quality → ${unique.length} after hours filter`,
+    `[osm] ${city}: ${json.elements.length} raw → ${deduped.length} after dedup/quality → ${unique.length} after hours+apartment filter`,
   );
+  if (droppedByApartment > 0) {
+    console.log(`[osm] ${city}: apartment filter dropped ${droppedByApartment} hotel-tagged résidences/student housing`);
+  }
   if (droppedByHours > 0) {
     console.log(
       `[osm] ${city}: hours filter dropped ${droppedByHours} (${Object.entries(droppedByCategory)
