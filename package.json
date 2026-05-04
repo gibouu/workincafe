@@ -12,7 +12,8 @@
     "seed:toronto": "tsx --env-file=.env.local scripts/seed-osm.ts toronto",
     "migrate:photos": "tsx --env-file=.env.local scripts/migrate-photos-to-cloudinary.ts",
     "prune:hours": "tsx --env-file=.env.local scripts/prune-non-work-conducive.ts",
-    "prune:residences": "tsx --env-file=.env.local scripts/prune-apartment-residences.ts"
+    "prune:residences": "tsx --env-file=.env.local scripts/prune-apartment-residences.ts",
+    "enrich:foursquare": "tsx --env-file=.env.local scripts/enrich-from-foursquare.ts"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.7",

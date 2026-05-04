@@ -22,7 +22,6 @@ import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
 import { ReviewForm } from '@/components/review/ReviewForm';
 import type { DemoReview } from '@/lib/demo/reviews';
 import { formatStayLimit } from '@/lib/format/stay-limit';
-import { hoursStatus } from '@/lib/places/hours-status';
 
 const WIFI_ICON: Record<WifiBucket, PhosphorIconName> = {
   fast: 'WifiHigh',
@@ -234,8 +233,6 @@ export function PlaceCardBody({
           You can post again later when conditions change.
         </p>
 
-        <HoursRow place={place} />
-
         <div className="mt-5">
           <div className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">
             Study vitals
@@ -435,30 +432,3 @@ function RightNowRow({ icon, text }: { icon: PhosphorIconName; text: string }) {
   );
 }
 
-function HoursRow({ place }: { place: DemoPlace }) {
-  const status = hoursStatus(place.hours_raw ?? null);
-  const dotColor =
-    status.state === 'open'
-      ? 'bg-accent-green'
-      : status.state === 'closed'
-        ? 'bg-sys-gray-4'
-        : 'bg-sys-gray-3';
-  const textColor =
-    status.state === 'open'
-      ? 'text-accent-green'
-      : status.state === 'closed'
-        ? 'text-[var(--text-primary)]'
-        : 'text-[var(--text-tertiary)]';
-  return (
-    <div className="mt-4 flex items-center gap-2 rounded-xl border border-[var(--surface-border)] bg-white/70 px-3 py-2.5 text-[13px]">
-      <Icon name="Clock" size={14} className="text-[var(--text-secondary)]" />
-      <span className={`inline-block h-2 w-2 rounded-full ${dotColor}`} />
-      <span className={`font-semibold ${textColor}`}>{status.rawLabel}</span>
-      {status.raw && status.state !== 'unknown' && (
-        <span className="ml-auto truncate text-[11px] text-[var(--text-tertiary)]" title={status.raw}>
-          {status.raw}
-        </span>
-      )}
-    </div>
-  );
-}
