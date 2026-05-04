@@ -1,10 +1,10 @@
 import type { PlaceCategory } from '@/lib/categories';
 
-export type WifiBucket = 'fast' | 'moderate' | 'slow';
-export type NoiseBucket = 'quiet' | 'moderate' | 'loud';
-export type OutletsBucket = 'many' | 'some' | 'none';
-export type SeatsBucket = 'plenty' | 'some' | 'full';
-export type LightingBucket = 'good' | 'dim';
+export type WifiBucket = 'fast' | 'moderate' | 'slow' | 'unknown';
+export type NoiseBucket = 'quiet' | 'moderate' | 'loud' | 'unknown';
+export type OutletsBucket = 'many' | 'some' | 'none' | 'unknown';
+export type SeatsBucket = 'plenty' | 'some' | 'full' | 'unknown';
+export type LightingBucket = 'good' | 'dim' | 'unknown';
 
 export interface DemoPlace {
   id: string;
@@ -25,6 +25,8 @@ export interface DemoPlace {
   tabletime_hours: number;
   right_now_noise: string;
   right_now_seating: string;
+  /** OSM `opening_hours` raw string when available (e.g. `Mo-Fr 09:00-18:00`). */
+  hours_raw?: string | null;
 }
 
 export const PARIS_DEMO_PLACES: DemoPlace[] = [

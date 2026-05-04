@@ -32,6 +32,15 @@ function cellColor(score: number | null): string {
 }
 
 export function NoiseHeatmap({ place }: { place: DemoPlace }) {
+  // Until reviews populate the materialized view, the heatmap has no real
+  // signal — synthetic colors lie about reality. Show an empty state.
+  if (place.noise === 'unknown') {
+    return (
+      <div className="rounded-xl bg-sys-gray-6 px-4 py-5 text-center text-[12px] text-[var(--text-secondary)]">
+        No noise readings yet. Live updates from the next visitors will fill this in.
+      </div>
+    );
+  }
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">

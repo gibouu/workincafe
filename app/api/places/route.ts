@@ -13,6 +13,7 @@ interface FullPlaceRow {
   lat: number;
   lng: number;
   brand: string | null;
+  hours_json: { raw?: string } | null;
 }
 
 interface SlimPlaceRow {
@@ -95,7 +96,7 @@ export async function GET(request: NextRequest) {
   // ── Full city dump (legacy / sidebar path) ─────────────────────────────
   const { data: rawPlaces, error: pErr } = await supabase
     .from('places')
-    .select('id, name, address, neighborhood, city, country, category, lat, lng, brand')
+    .select('id, name, address, neighborhood, city, country, category, lat, lng, brand, hours_json')
     .eq('city', cityName)
     .order('name', { ascending: true })
     .limit(MAX_FULL);
@@ -130,14 +131,17 @@ export async function GET(request: NextRequest) {
       rating: r?.study_spot_rating ?? 0,
       review_count: r?.rating_count ?? 0,
       avg_spend_eur: 0,
-      wifi: 'moderate' as const,
-      noise: 'moderate' as const,
-      outlets: 'some' as const,
-      seats: 'some' as const,
-      lighting: 'good' as const,
+      // Vitals come from reviews. Until anyone reviews this place, we
+      // surface 'unknown' explicitly rather than guessing 'moderate'.
+      wifi: 'unknown' as const,
+      noise: 'unknown' as const,
+      outlets: 'unknown' as const,
+      seats: 'unknown' as const,
+      lighting: 'unknown' as const,
       tabletime_hours: 0,
       right_now_noise: 'No recent live updates',
       right_now_seating: 'No recent live updates',
+      hours_raw: p.hours_json?.raw ?? null,
     };
   });
 

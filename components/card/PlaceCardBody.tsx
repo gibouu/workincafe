@@ -22,48 +22,57 @@ import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
 import { ReviewForm } from '@/components/review/ReviewForm';
 import type { DemoReview } from '@/lib/demo/reviews';
 import { formatStayLimit } from '@/lib/format/stay-limit';
+import { hoursStatus } from '@/lib/places/hours-status';
 
 const WIFI_ICON: Record<WifiBucket, PhosphorIconName> = {
   fast: 'WifiHigh',
   moderate: 'WifiMedium',
   slow: 'WifiLow',
+  unknown: 'WifiSlash',
 };
 const WIFI_LABEL: Record<WifiBucket, string> = {
   fast: 'Fast',
   moderate: 'OK',
   slow: 'Slow',
+  unknown: 'Unknown',
 };
 
 const NOISE_ICON: Record<NoiseBucket, PhosphorIconName> = {
   quiet: 'SpeakerSimpleLow',
   moderate: 'SpeakerSimpleLow',
   loud: 'SpeakerSimpleHigh',
+  unknown: 'SpeakerSimpleSlash',
 };
 const NOISE_LABEL: Record<NoiseBucket, string> = {
   quiet: 'Quiet',
   moderate: 'Moderate',
   loud: 'Loud',
+  unknown: 'Unknown',
 };
 
 const OUTLETS_LABEL: Record<OutletsBucket, string> = {
   many: 'Many',
   some: 'Some',
   none: 'None',
+  unknown: 'Unknown',
 };
 
 const SEATS_LABEL: Record<SeatsBucket, string> = {
   plenty: 'Plenty',
   some: 'Some',
   full: 'Full',
+  unknown: 'Unknown',
 };
 
 const LIGHTING_ICON: Record<LightingBucket, PhosphorIconName> = {
   good: 'Sun',
   dim: 'SunDim',
+  unknown: 'SunDim',
 };
 const LIGHTING_LABEL: Record<LightingBucket, string> = {
   good: 'Good',
   dim: 'Dim',
+  unknown: 'Unknown',
 };
 
 export function PlaceCardBody({
@@ -224,6 +233,8 @@ export function PlaceCardBody({
           A live review describes what&apos;s happening right now. A full review describes a visit.
           You can post again later when conditions change.
         </p>
+
+        <HoursRow place={place} />
 
         <div className="mt-5">
           <div className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">
@@ -420,6 +431,34 @@ function RightNowRow({ icon, text }: { icon: PhosphorIconName; text: string }) {
     <div className="flex items-center gap-3 px-4 py-3">
       <Icon name={icon} size={20} className="text-[var(--text-secondary)] shrink-0" />
       <div className="text-[14px] text-[var(--text-primary)]">{text}</div>
+    </div>
+  );
+}
+
+function HoursRow({ place }: { place: DemoPlace }) {
+  const status = hoursStatus(place.hours_raw ?? null);
+  const dotColor =
+    status.state === 'open'
+      ? 'bg-accent-green'
+      : status.state === 'closed'
+        ? 'bg-sys-gray-4'
+        : 'bg-sys-gray-3';
+  const textColor =
+    status.state === 'open'
+      ? 'text-accent-green'
+      : status.state === 'closed'
+        ? 'text-[var(--text-primary)]'
+        : 'text-[var(--text-tertiary)]';
+  return (
+    <div className="mt-4 flex items-center gap-2 rounded-xl border border-[var(--surface-border)] bg-white/70 px-3 py-2.5 text-[13px]">
+      <Icon name="Clock" size={14} className="text-[var(--text-secondary)]" />
+      <span className={`inline-block h-2 w-2 rounded-full ${dotColor}`} />
+      <span className={`font-semibold ${textColor}`}>{status.rawLabel}</span>
+      {status.raw && status.state !== 'unknown' && (
+        <span className="ml-auto truncate text-[11px] text-[var(--text-tertiary)]" title={status.raw}>
+          {status.raw}
+        </span>
+      )}
     </div>
   );
 }

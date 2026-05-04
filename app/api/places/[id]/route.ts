@@ -13,6 +13,7 @@ interface PlaceRow {
   lat: number;
   lng: number;
   brand: string | null;
+  hours_json: { raw?: string } | null;
 }
 
 export async function GET(
@@ -24,7 +25,7 @@ export async function GET(
 
   const { data: row, error } = await supabase
     .from('places')
-    .select('id, name, address, neighborhood, city, country, category, lat, lng, brand')
+    .select('id, name, address, neighborhood, city, country, category, lat, lng, brand, hours_json')
     .eq('id', id)
     .maybeSingle();
 
@@ -59,14 +60,15 @@ export async function GET(
     rating: ratingObj?.study_spot_rating ?? 0,
     review_count: ratingObj?.rating_count ?? 0,
     avg_spend_eur: 0,
-    wifi: 'moderate' as const,
-    noise: 'moderate' as const,
-    outlets: 'some' as const,
-    seats: 'some' as const,
-    lighting: 'good' as const,
+    wifi: 'unknown' as const,
+    noise: 'unknown' as const,
+    outlets: 'unknown' as const,
+    seats: 'unknown' as const,
+    lighting: 'unknown' as const,
     tabletime_hours: 0,
     right_now_noise: liveStatusObj?.noise ?? 'No recent live updates',
     right_now_seating: liveStatusObj?.seating ?? 'No recent live updates',
+    hours_raw: r.hours_json?.raw ?? null,
   };
 
   return NextResponse.json(
