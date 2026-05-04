@@ -6,14 +6,14 @@ interface Body {
   work_style?: 'quiet_focus' | 'brainstormer' | 'idea_bouncer' | 'company_only' | null;
   looking_for?: string[];
   industry?: string[];
-  gender?: 'woman' | 'man' | 'non_binary' | 'prefer_not_to_say' | null;
+  gender?: 'woman' | 'man' | 'prefer_not_to_say' | null;
   open_to?: string[];
   bio?: string;
   active?: boolean;
 }
 
 const WORK_STYLES = new Set(['quiet_focus', 'brainstormer', 'idea_bouncer', 'company_only']);
-const GENDERS = new Set(['woman', 'man', 'non_binary', 'prefer_not_to_say']);
+const GENDERS = new Set(['woman', 'man', 'prefer_not_to_say']);
 
 /**
  * Detects "the table doesn't exist yet" across the various error shapes

@@ -1,6 +1,6 @@
 import { FriendsBody } from '@/components/friends/FriendsBody';
 
-export const metadata = { title: 'Friends · Work in Cafe' };
+export const metadata = { title: 'Cowork · Work in Cafe' };
 
 export default function FriendsRoute() {
   return (

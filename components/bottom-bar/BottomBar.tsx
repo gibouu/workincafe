@@ -20,10 +20,10 @@ export function BottomBar() {
   if (HIDDEN_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     return null;
   }
-  // Active slot: on the map page (desktop), reflect the panel mode; on mobile
-  // and on dedicated routes, reflect the URL.
+  // Active slot: on the map page (any viewport), reflect the panel mode; on
+  // dedicated routes, reflect the URL.
   const active: SlotKey =
-    isDesktop && isMapPage
+    isMapPage
       ? panel === 'profile'
         ? 'profile'
         : panel === 'friends'
@@ -36,15 +36,15 @@ export function BottomBar() {
           : 'work';
 
   const goProfile = () => {
-    if (isDesktop && isMapPage) setPanel(panel === 'profile' ? null : 'profile');
+    if (isMapPage) setPanel(panel === 'profile' ? null : 'profile');
     else router.push('/profile');
   };
   const goWork = () => {
-    if (isDesktop && isMapPage) setPanel(null);
+    if (isMapPage) setPanel(null);
     else router.push('/');
   };
   const goFriends = () => {
-    if (isDesktop && isMapPage) setPanel(panel === 'friends' ? null : 'friends');
+    if (isMapPage) setPanel(panel === 'friends' ? null : 'friends');
     else router.push('/waitlist/partners');
   };
 
@@ -69,7 +69,7 @@ export function BottomBar() {
         />
         <Slot
           icon="UsersThree"
-          label="Friends"
+          label="Cowork"
           active={active === 'friends'}
           onClick={goFriends}
         />

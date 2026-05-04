@@ -16,7 +16,7 @@ export interface FriendProfileInitial {
 }
 
 type WorkStyle = 'quiet_focus' | 'brainstormer' | 'idea_bouncer' | 'company_only';
-type Gender = 'woman' | 'man' | 'non_binary' | 'prefer_not_to_say';
+type Gender = 'woman' | 'man' | 'prefer_not_to_say';
 
 type Step = 'occupation' | 'work_style' | 'looking_for' | 'industry' | 'identity' | 'bio';
 
@@ -70,14 +70,12 @@ const INDUSTRIES = [
 const GENDERS: { value: Gender; label: string }[] = [
   { value: 'woman', label: 'Woman' },
   { value: 'man', label: 'Man' },
-  { value: 'non_binary', label: 'Non-binary' },
   { value: 'prefer_not_to_say', label: 'Prefer not to say' },
 ];
 
 const OPEN_TO = [
   { value: 'women', label: 'Women' },
   { value: 'men', label: 'Men' },
-  { value: 'non_binary', label: 'Non-binary' },
   { value: 'anyone', label: 'Anyone' },
 ];
 

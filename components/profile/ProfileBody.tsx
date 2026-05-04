@@ -43,7 +43,7 @@ export function ProfileBody({
 
   if (!me?.signedIn) {
     return (
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
         <Header title="Profile" compact={compact} onClose={onClose} />
         <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)]">
@@ -67,7 +67,7 @@ export function ProfileBody({
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <Header title="Profile" compact={compact} onClose={onClose} />
       <div
         className={`${

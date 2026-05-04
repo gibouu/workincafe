@@ -12,8 +12,8 @@ export default function AuthPage() {
   const router = useRouter();
 
   const getSafeNext = () => {
-    const next = new URLSearchParams(window.location.search).get('next') ?? '/profile';
-    return next.startsWith('/') && !next.startsWith('//') ? next : '/profile';
+    const next = new URLSearchParams(window.location.search).get('next') ?? '/';
+    return next.startsWith('/') && !next.startsWith('//') ? next : '/';
   };
 
   const signIn = async (provider: 'google' | 'apple') => {

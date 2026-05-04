@@ -97,14 +97,14 @@ export function FriendsBody({
 
   if (!signedIn) {
     return (
-      <div className="flex flex-1 flex-col">
-        <Header title="Find a partner" compact={compact} onClose={onClose} />
+      <div className="flex min-h-0 flex-1 flex-col">
+        <Header title="Cowork" compact={compact} onClose={onClose} />
         <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-tint text-accent">
             <Icon name="UsersThree" size={28} weight="fill" />
           </div>
           <h2 className="mt-4 text-[18px] font-semibold text-[var(--text-primary)]">
-            Sign in to find a study partner
+            Sign in to cowork
           </h2>
           <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
             We&apos;ll set up a quick profile (occupation, work style, what you&apos;re looking for)
@@ -123,8 +123,8 @@ export function FriendsBody({
 
   if (editing) {
     return (
-      <div className="flex flex-1 flex-col">
-        <Header title="Your friend profile" compact={compact} onClose={onClose} />
+      <div className="flex min-h-0 flex-1 flex-col">
+        <Header title="Your cowork profile" compact={compact} onClose={onClose} />
         <FriendProfileWizard
           initial={initial}
           compact={compact}
@@ -138,8 +138,8 @@ export function FriendsBody({
   }
 
   return (
-    <div className="flex flex-1 flex-col">
-      <Header title="Your friend profile" compact={compact} onClose={onClose} />
+    <div className="flex min-h-0 flex-1 flex-col">
+      <Header title="Your cowork profile" compact={compact} onClose={onClose} />
       <div
         className={`${
           compact ? 'min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4' : 'mx-auto w-full max-w-2xl px-5 pt-6'

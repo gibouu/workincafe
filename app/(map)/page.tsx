@@ -8,6 +8,8 @@ import { PlaceCard } from '@/components/card/PlaceCard';
 import { FloatingPlaceCard } from '@/components/card/FloatingPlaceCard';
 import { FloatingProfileCard } from '@/components/card/FloatingProfileCard';
 import { FloatingFriendsCard } from '@/components/card/FloatingFriendsCard';
+import { ProfileSheet } from '@/components/card/ProfileSheet';
+import { CoworkSheet } from '@/components/card/CoworkSheet';
 import { TopRightControls } from '@/components/map/TopRightControls';
 import { PlaceSidebar } from '@/components/layout/PlaceSidebar';
 import { CitySwitcher } from '@/components/layout/CitySwitcher';
@@ -197,25 +199,46 @@ export default function MapPage() {
       return;
     }
     setGeolocating(true);
+
+    const applyFix = (pos: GeolocationPosition) => {
+      mapRef.current?.setUserLocation(pos.coords.latitude, pos.coords.longitude);
+      mapRef.current?.panTo(pos.coords.latitude, pos.coords.longitude);
+      setGeolocating(false);
+    };
+
+    // Mobile gets a real GPS fix in 1–3s. Desktop Safari often hangs on
+    // high-accuracy and silently times out — when it does, fall back to
+    // WiFi/cell triangulation, which returns immediately.
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        mapRef.current?.setUserLocation(pos.coords.latitude, pos.coords.longitude);
-        mapRef.current?.panTo(pos.coords.latitude, pos.coords.longitude);
-        setGeolocating(false);
+      applyFix,
+      (highErr) => {
+        if (highErr.code === highErr.PERMISSION_DENIED) {
+          setGeolocating(false);
+          const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+          showToast(
+            isIOS
+              ? 'Location blocked. Tap “AA” in the URL bar → Website Settings → Allow Location, then retry.'
+              : 'Location permission blocked. Allow it in browser settings, then refresh.',
+            { tone: 'error' },
+          );
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          applyFix,
+          (lowErr) => {
+            setGeolocating(false);
+            const msg =
+              lowErr.code === lowErr.POSITION_UNAVAILABLE
+                ? 'Location unavailable. Check Privacy → Location Services.'
+                : lowErr.code === lowErr.TIMEOUT
+                  ? 'Location timed out. Try again.'
+                  : 'Could not get your location.';
+            showToast(msg, { tone: 'error' });
+          },
+          { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 },
+        );
       },
-      (err) => {
-        setGeolocating(false);
-        const msg =
-          err.code === err.PERMISSION_DENIED
-            ? 'Location permission blocked. Allow it in browser settings, then refresh.'
-            : err.code === err.POSITION_UNAVAILABLE
-              ? 'Location unavailable. Check macOS Privacy → Location Services.'
-              : err.code === err.TIMEOUT
-                ? 'Location timed out. Try again.'
-                : 'Could not get your location.';
-        showToast(msg, { tone: 'error' });
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
     );
   };
 
@@ -292,13 +315,30 @@ export default function MapPage() {
       </main>
 
       {!isDesktop && (
-        <PlaceCard
-          place={selectedPlace}
-          open={selectedPlace !== null}
-          onOpenChange={(open) => {
-            if (!open) setSelectedPlace(null);
-          }}
-        />
+        <>
+          <PlaceCard
+            place={selectedPlace}
+            open={selectedPlace !== null}
+            onOpenChange={(open) => {
+              if (!open) {
+                setSelectedPlace(null);
+                setPanel(null);
+              }
+            }}
+          />
+          <ProfileSheet
+            open={panel === 'profile'}
+            onOpenChange={(open) => {
+              if (!open) setPanel(null);
+            }}
+          />
+          <CoworkSheet
+            open={panel === 'friends'}
+            onOpenChange={(open) => {
+              if (!open) setPanel(null);
+            }}
+          />
+        </>
       )}
 
       <FilterSheet open={filterOpen} onOpenChange={setFilterOpen} />
