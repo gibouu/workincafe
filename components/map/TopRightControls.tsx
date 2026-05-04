@@ -2,7 +2,6 @@
 
 import type { AriaAttributes, ReactNode } from 'react';
 import { Icon } from '@/components/icons/Icon';
-import { useLayout } from '@/lib/store/layout';
 
 export function TopRightControls({
   onFilter,
@@ -17,12 +16,10 @@ export function TopRightControls({
   filterCount?: number;
   showFilter?: boolean;
 }) {
-  const cardOpen = useLayout((s) => s.cardOpen);
-  // Card is at right-4 with width 360 — shift the controls just past it on
-  // desktop when the panel is open so they don't get hidden behind it.
-  const rightClass = cardOpen ? 'right-4 md:right-[392px]' : 'right-4';
+  // Sits on the LEFT just above the bottom-left "+" button so the right side
+  // stays free for the floating place card.
   return (
-    <div className={`pointer-events-none absolute top-4 ${rightClass} z-30 flex flex-col gap-2 transition-[right] duration-200`}>
+    <div className="pointer-events-none absolute bottom-[150px] left-4 z-30 flex flex-col gap-2">
       {showFilter && onFilter && (
         <div className="relative">
           <PillButton aria-label="Filter" onClick={onFilter}>

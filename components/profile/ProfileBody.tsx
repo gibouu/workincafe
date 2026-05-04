@@ -84,11 +84,6 @@ export function ProfileBody({
           {me.email && (
             <div className="mt-1 text-[12px] text-[var(--text-secondary)]">{me.email}</div>
           )}
-          {me.isDemo && (
-            <div className="mt-2 rounded-full bg-accent-amber-tint px-3 py-1 text-[11px] font-medium text-accent-amber">
-              Demo mode
-            </div>
-          )}
         </div>
 
         <div className="mt-6">

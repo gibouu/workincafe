@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await db
     .from('favorites')
-    .select('place_id, created_at')
+    .select('place_id, created_at, place:places(id, name, address, neighborhood, category)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

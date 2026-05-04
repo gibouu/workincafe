@@ -16,7 +16,7 @@ When you discover a load-bearing rule, add it to `docs/conventions.md` instead o
 
 ## Project: Work in Cafe
 
-Map-first PWA at `workin.cafe` for finding places to work or study — cafés, bakeries, libraries, coworking, hotel lobbies, restaurants. Next.js 15 App Router + Apple MapKit JS + Supabase + PostGIS, Phosphor Icons, `vaul` drawers. Two launch cities: Paris + Toronto. The canonical design + decisions document is **`workin-cafe-build-spec.md`** — treat it as the source of truth for what ships in MVP and what's deferred.
+Map-first PWA at `workin.cafe` for finding places to work or study — cafés, bakeries, libraries, coworking, hotel lobbies, restaurants. Next.js 15 App Router + MapLibre GL JS (OpenFreeMap vector tiles) + Supabase + PostGIS, Phosphor Icons, `vaul` drawers. Two launch cities: Paris + Toronto. The canonical design + decisions document is **`workin-cafe-build-spec.md`** — treat it as the source of truth for what ships in MVP and what's deferred.
 
 ## Commands
 
@@ -29,7 +29,7 @@ npm run seed:paris  # run OSM Overpass seed for Paris (requires Supabase env + a
 npx tsx scripts/seed-osm.ts toronto   # Toronto seed (no npm alias yet)
 ```
 
-CI (`.github/workflows/ci.yml`) runs `npm ci && npm run lint && npm run typecheck && npm run build` on every PR with *blank* Apple MapKit keys — build must not throw on missing runtime env; runtime code checks env per request.
+CI (`.github/workflows/ci.yml`) runs `npm ci && npm run lint && npm run typecheck && npm run build` on every PR. The map uses public OpenFreeMap tiles, so no map-related secrets are needed at build time.
 
 ## Architecture: big picture
 
@@ -42,11 +42,12 @@ CI (`.github/workflows/ci.yml`) runs `npm ci && npm run lint && npm run typechec
 
 ### Map rendering (components/map/MapContainer.tsx)
 
-- `loadMapKit()` in `lib/mapkit/client.ts` lazily injects Apple's CDN script and hands back a hand-rolled subset of the MapKit JS type surface (typings are deliberately narrow — add only what you need).
-- `MapContainer` is a `forwardRef` exposing a `MapHandle` (`panTo`, `getCenter`) so the page can imperatively move the map (used by search, city switch, geolocate, add-a-place).
-- Two `useEffect`s: one initialises the map once, one re-syncs annotations whenever `places` or `ready` changes. **Don't merge them** — the map instance is expensive to recreate.
-- Annotations use `supercluster` to cluster at low zoom. The factory callback must return an `HTMLElement`, so Phosphor icons are serialized via `renderToStaticMarkup(<Icon />)` and set as `innerHTML`. If you need a new marker variant, extend `renderPlaceBubble` / `renderClusterBubble`.
-- Native MapKit POIs are restricted via `map.pointsOfInterestFilter` to `Cafe`, `Bakery`, `Library`, `Hotel`, `Restaurant`, `FoodMarket`. Coworking + fast-food come from custom annotations only.
+- MapLibre GL JS (`maplibre-gl` package) renders OpenFreeMap vector tiles (style URL: `https://tiles.openfreemap.org/styles/positron`, overridable via `NEXT_PUBLIC_MAP_STYLE_URL`). No API key, no token signing, no origin allowlist.
+- `MapContainer` is a `forwardRef` exposing a `MapHandle` (`panTo`, `getCenter`, `setUserLocation`) so the page can imperatively move the map and drop the blue user-location dot.
+- Two `useEffect`s: one initialises the map once, one re-syncs markers whenever `places` or `ready` changes. **Don't merge them** — the map instance is expensive to recreate.
+- Markers use `supercluster` to cluster at low zoom. Each marker is a wrapper `<div>` MapLibre positions via transform; the styled bubble lives inside as a child. **Never put inline `transform` on the wrapper** — it overrides MapLibre's positioning and the pin flies to (0,0) on hover/click.
+- Phosphor icons are serialized via `renderToStaticMarkup(<Icon />)` and set as `innerHTML`. If you need a new marker variant, extend `renderPlaceBubble` / `renderClusterBubble`.
+- Attribution is rendered separately via `<AttributionPill />` (bottom-left); MapLibre's built-in attribution is suppressed via `attributionControl: false`.
 
 ### Place card: one body, two shells
 
@@ -103,12 +104,11 @@ Runbook is in `supabase/README.md`. Migrations are split into three files (apply
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-APPLE_TEAM_ID=
-APPLE_KEY_ID=
-APPLE_MAPKIT_PRIVATE_KEY=   # .p8 contents, real newlines or \n-escaped on one line
-NEXT_PUBLIC_APPLE_MAPKIT_ORIGIN=https://workin.cafe
-OVERPASS_ENDPOINT=https://overpass-api.de/api/interpreter   # optional
+NEXT_PUBLIC_MAP_STYLE_URL=https://tiles.openfreemap.org/styles/positron   # optional override
+OVERPASS_ENDPOINT=https://overpass-api.de/api/interpreter                  # optional, only for seed scripts
 ```
+
+Sign in with Apple is configured in the Supabase Dashboard (Services ID + JWT secret), not in app env.
 
 ## Gotchas worth remembering
 

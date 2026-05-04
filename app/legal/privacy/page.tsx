@@ -26,8 +26,9 @@ export default function PrivacyPage() {
 
       <h2 className="mt-6 text-[20px] font-semibold">Where it lives</h2>
       <p className="mt-2">
-        Supabase (EU region) for user data, reviews, and place submissions. Apple MapKit JS handles
-        map tiles. OpenStreetMap contributors provide baseline place data. Vercel hosts the app.
+        Supabase (EU region) for user data, reviews, and place submissions. OpenFreeMap serves vector
+        map tiles built from OpenStreetMap. OpenStreetMap contributors provide baseline place data.
+        Vercel hosts the app.
       </p>
 
       <h2 className="mt-6 text-[20px] font-semibold">Your rights (GDPR)</h2>

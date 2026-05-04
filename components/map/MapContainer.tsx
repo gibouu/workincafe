@@ -1,24 +1,20 @@
 'use client';
 
+import 'maplibre-gl/dist/maplibre-gl.css';
+import maplibregl from 'maplibre-gl';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import Supercluster from 'supercluster';
 import type { AnyProps, PointFeature, ClusterFeature } from 'supercluster';
-import {
-  loadMapKit,
-  type MapKitMap,
-  type MapKitAnnotation,
-  type MapKitGlobal,
-  type MapKitRegion,
-} from '@/lib/mapkit/client';
 import { Icon } from '@/components/icons/Icon';
 import { categoryMeta } from '@/lib/categories';
 import { brandLogoFor } from '@/lib/brand-logos';
 import { type DemoPlace } from '@/lib/demo/paris-places';
 
-const INCLUDED_POI_KEYS = ['Cafe', 'Bakery', 'Library', 'Hotel', 'Restaurant', 'FoodMarket'] as const;
-
 type PlaceProps = { placeId: string };
+
+const TILE_STYLE_URL =
+  process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? 'https://tiles.openfreemap.org/styles/positron';
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>
@@ -26,7 +22,7 @@ function escapeHtml(s: string): string {
   );
 }
 
-function renderPlaceBubble(place: DemoPlace, size = 40): string {
+function renderPlaceBubble(place: DemoPlace, size = 24): string {
   const meta = categoryMeta(place.category);
   const brand = brandLogoFor(place.name);
   const bg = brand?.bg ?? meta.color;
@@ -61,7 +57,8 @@ function renderPlaceBubble(place: DemoPlace, size = 40): string {
 }
 
 function renderClusterBubble(count: number): string {
-  const size = count < 10 ? 44 : count < 100 ? 52 : 60;
+  const size = count < 10 ? 30 : count < 100 ? 36 : 44;
+  const fontSize = count < 10 ? 12 : count < 100 ? 12 : 11;
   return `
     <div style="
       width:${size}px;height:${size}px;border-radius:9999px;
@@ -71,24 +68,31 @@ function renderClusterBubble(count: number): string {
       box-shadow:0 1px 2px rgba(0,0,0,0.15),0 2px 6px rgba(0,0,0,0.15);
       display:flex;align-items:center;justify-content:center;
       font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;
-      font-size:${count < 100 ? 15 : 13}px;font-weight:600;
+      font-size:${fontSize}px;font-weight:600;
       cursor:pointer;transition:transform 120ms ease;
     "
-    onmouseover="this.style.transform='scale(1.06)'"
+    onmouseover="this.style.transform='scale(1.08)'"
     onmouseout="this.style.transform='scale(1)'"
     >${count}</div>
   `;
 }
 
-function zoomFromRegion(region: MapKitRegion): number {
-  // Approximate web-mercator zoom from MapKit longitude delta.
-  const span = Math.max(region.span.longitudeDelta, 0.0001);
-  return Math.log2(360 / span);
-}
-
 export interface MapHandle {
   panTo: (lat: number, lng: number) => void;
   getCenter: () => { lat: number; lng: number } | null;
+  setUserLocation: (lat: number, lng: number) => void;
+}
+
+function renderUserLocationMarker(): string {
+  return `
+    <div style="
+      width:18px;height:18px;border-radius:9999px;
+      background:#0A84FF;
+      border:3px solid #fff;
+      box-shadow:0 0 0 4px rgba(10,132,255,0.18),0 1px 4px rgba(0,0,0,0.25);
+      pointer-events:none;
+    "></div>
+  `;
 }
 
 export const MapContainer = forwardRef<
@@ -101,9 +105,9 @@ export const MapContainer = forwardRef<
 >(function MapContainer({ places, center, onSelectPlace }, ref) {
   const initialCenterRef = useRef(center);
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<MapKitMap | null>(null);
-  const mapkitRef = useRef<MapKitGlobal | null>(null);
-  const annotationsRef = useRef<MapKitAnnotation[]>([]);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const onSelectRef = useRef(onSelectPlace);
@@ -137,20 +141,28 @@ export const MapContainer = forwardRef<
     ref,
     () => ({
       panTo: (lat: number, lng: number) => {
-        const mapkit = mapkitRef.current;
         const map = mapRef.current;
-        if (!mapkit || !map) return;
-        const coord = new mapkit.Coordinate(lat, lng);
-        if (typeof map.setCenterAnimated === 'function') {
-          map.setCenterAnimated(coord, true);
-        } else {
-          map.center = coord;
-        }
+        if (!map) return;
+        map.flyTo({ center: [lng, lat], duration: 600, essential: true });
       },
       getCenter: () => {
         const map = mapRef.current;
         if (!map) return null;
-        return { lat: map.center.latitude, lng: map.center.longitude };
+        const c = map.getCenter();
+        return { lat: c.lat, lng: c.lng };
+      },
+      setUserLocation: (lat: number, lng: number) => {
+        const map = mapRef.current;
+        if (!map) return;
+        if (userMarkerRef.current) {
+          userMarkerRef.current.setLngLat([lng, lat]);
+          return;
+        }
+        const wrap = document.createElement('div');
+        wrap.innerHTML = renderUserLocationMarker();
+        userMarkerRef.current = new maplibregl.Marker({ element: wrap, anchor: 'center' })
+          .setLngLat([lng, lat])
+          .addTo(map);
       },
     }),
     [],
@@ -158,120 +170,99 @@ export const MapContainer = forwardRef<
 
   // Init map once on mount
   useEffect(() => {
+    if (!containerRef.current) return;
     let cancelled = false;
 
-    loadMapKit()
-      .then((mapkit) => {
-        if (cancelled || !containerRef.current) return;
-        mapkitRef.current = mapkit;
-        const { lat: initLat, lng: initLng } = initialCenterRef.current;
-        const map = new mapkit.Map(containerRef.current, {
-          center: new mapkit.Coordinate(initLat, initLng),
-          cameraZoomRange: new mapkit.CameraZoomRange(1, 20000),
-          showsCompass: mapkit.FeatureVisibility.Hidden,
-          showsMapTypeControl: false,
-          showsZoomControl: false,
-          colorScheme: mapkit.Map.ColorSchemes.Light,
-          mapType: mapkit.Map.MapTypes.Standard,
-        });
-        mapRef.current = map;
-
-        const includedCategories = INCLUDED_POI_KEYS
-          .map((key) => mapkit.PointOfInterestCategory[key])
-          .filter((v): v is unknown => v !== undefined);
-        try {
-          map.pointsOfInterestFilter = new mapkit.PointOfInterestFilter({
-            including: includedCategories,
-          });
-        } catch {
-          // fall back to all POIs
-        }
-
-        setReady(true);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : 'Failed to load map');
+    try {
+      const map = new maplibregl.Map({
+        container: containerRef.current,
+        style: TILE_STYLE_URL,
+        center: [initialCenterRef.current.lng, initialCenterRef.current.lat],
+        zoom: 13,
+        attributionControl: false,
       });
+      mapRef.current = map;
+
+      map.on('load', () => {
+        if (!cancelled) setReady(true);
+      });
+      map.on('error', (e) => {
+        if (!cancelled) {
+          const msg = e?.error?.message ?? 'Failed to load map tiles';
+          setError(msg);
+        }
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to init map');
+    }
 
     return () => {
       cancelled = true;
-      const map = mapRef.current;
-      if (map) {
+      for (const marker of markersRef.current) {
         try {
-          if (annotationsRef.current.length) map.removeAnnotations(annotationsRef.current);
+          marker.remove();
         } catch {
           // ignore
         }
-        if (typeof map.destroy === 'function') map.destroy();
+      }
+      markersRef.current = [];
+      if (mapRef.current) {
+        try {
+          mapRef.current.remove();
+        } catch {
+          // ignore
+        }
       }
       mapRef.current = null;
-      mapkitRef.current = null;
-      annotationsRef.current = [];
     };
   }, []);
 
-  // Recompute cluster annotations whenever places, region, or ready change
+  // Recompute cluster markers whenever places, viewport, or ready change
   useEffect(() => {
     if (!ready) return;
-    const mapkit = mapkitRef.current;
     const map = mapRef.current;
-    if (!mapkit || !map) return;
+    if (!map) return;
 
     const rebuild = () => {
-      const region = map.region;
-      const zoom = Math.max(0, Math.min(22, Math.floor(zoomFromRegion(region))));
-      // Shrink pins when the user has zoomed far in; otherwise dense areas overlap.
-      const pinSize = zoom >= 18 ? 28 : zoom >= 16 ? 32 : 40;
-      const halfLat = region.span.latitudeDelta / 2;
-      const halfLng = region.span.longitudeDelta / 2;
+      const zoom = Math.max(0, Math.min(22, Math.floor(map.getZoom())));
+      const pinSize = zoom >= 18 ? 22 : zoom >= 16 ? 24 : zoom >= 14 ? 22 : 20;
+      const bounds = map.getBounds();
       const bbox: [number, number, number, number] = [
-        region.center.longitude - halfLng,
-        region.center.latitude - halfLat,
-        region.center.longitude + halfLng,
-        region.center.latitude + halfLat,
+        bounds.getWest(),
+        bounds.getSouth(),
+        bounds.getEast(),
+        bounds.getNorth(),
       ];
       const clusters = index.getClusters(bbox, zoom);
 
-      // Remove previous
-      if (annotationsRef.current.length) {
+      // Remove previous markers
+      for (const marker of markersRef.current) {
         try {
-          map.removeAnnotations(annotationsRef.current);
+          marker.remove();
         } catch {
           // ignore
         }
-        annotationsRef.current = [];
       }
+      markersRef.current = [];
 
-      const next: MapKitAnnotation[] = [];
+      const next: maplibregl.Marker[] = [];
       for (const feature of clusters) {
         const [lng, lat] = feature.geometry.coordinates;
-        const coord = new mapkit.Coordinate(lat, lng);
 
         if ('cluster' in feature.properties && feature.properties.cluster) {
           const clusterFeature = feature as ClusterFeature<AnyProps>;
           const count = clusterFeature.properties.point_count ?? 0;
           const clusterId = clusterFeature.properties.cluster_id as number;
-          const annotation = new mapkit.Annotation(
-            coord,
-            () => {
-              const wrap = document.createElement('div');
-              wrap.innerHTML = renderClusterBubble(count);
-              return wrap.firstElementChild as HTMLElement;
-            },
-            { data: { clusterId, count } },
-          );
-          annotation.addEventListener('select', () => {
-            // Fit the cluster's bounding box so the user actually sees the places
-            // it represents. If the points are nearly co-located, fall back to a
-            // sensible minimum span so we don't max-zoom into nothing.
+          // Outer wrap is what MapLibre positions via transform — must NOT have
+          // any inline transform of its own, otherwise hover/click resets the
+          // pin to (0,0). Inner styled bubble owns the hover scale.
+          const wrap = document.createElement('div');
+          wrap.innerHTML = renderClusterBubble(count);
+          const inner = wrap.firstElementChild as HTMLElement;
+          inner.addEventListener('click', (e) => {
+            e.stopPropagation();
             const leaves = index.getLeaves(clusterId, Infinity, 0) as PointFeature<PlaceProps>[];
-            if (!mapkitRef.current || !map.setRegionAnimated) {
-              map.center = new mapkit.Coordinate(lat, lng);
-              return;
-            }
             if (leaves.length === 0) return;
-
             let minLat = Infinity;
             let maxLat = -Infinity;
             let minLng = Infinity;
@@ -283,71 +274,62 @@ export const MapContainer = forwardRef<
               if (lLng < minLng) minLng = lLng;
               if (lLng > maxLng) maxLng = lLng;
             }
-
-            // Add ~30% padding around the bbox so pins aren't at the edge.
-            const latSpan = Math.max(maxLat - minLat, 0.0008) * 1.3;
-            const lngSpan = Math.max(maxLng - minLng, 0.0008) * 1.3;
-            const centerLat = (minLat + maxLat) / 2;
-            const centerLng = (minLng + maxLng) / 2;
-
             try {
-              map.setRegionAnimated(
-                {
-                  center: new mapkitRef.current.Coordinate(centerLat, centerLng),
-                  span: { latitudeDelta: latSpan, longitudeDelta: lngSpan },
-                },
-                true,
+              map.fitBounds(
+                [
+                  [minLng, minLat],
+                  [maxLng, maxLat],
+                ],
+                { padding: 80, duration: 600, maxZoom: 18 },
               );
             } catch {
-              // ignore
+              map.flyTo({ center: [lng, lat], zoom: zoom + 2, duration: 600 });
             }
           });
-          next.push(annotation);
+          const marker = new maplibregl.Marker({ element: wrap, anchor: 'center' })
+            .setLngLat([lng, lat])
+            .addTo(map);
+          next.push(marker);
         } else {
           const placeId = (feature.properties as PlaceProps).placeId;
           const place = placesById.get(placeId);
           if (!place) continue;
-          const annotation = new mapkit.Annotation(
-            coord,
-            () => {
-              const wrap = document.createElement('div');
-              wrap.innerHTML = renderPlaceBubble(place, pinSize);
-              return wrap.firstElementChild as HTMLElement;
-            },
-            {
-              title: place.name,
-              subtitle: place.neighborhood,
-              data: { placeId: place.id },
-            },
-          );
-          annotation.addEventListener('select', () => {
+          const wrap = document.createElement('div');
+          wrap.innerHTML = renderPlaceBubble(place, pinSize);
+          const inner = wrap.firstElementChild as HTMLElement;
+          inner.addEventListener('click', (e) => {
+            e.stopPropagation();
             onSelectRef.current(place);
           });
-          next.push(annotation);
+          const marker = new maplibregl.Marker({ element: wrap, anchor: 'center' })
+            .setLngLat([lng, lat])
+            .addTo(map);
+          next.push(marker);
         }
       }
-      if (next.length) map.addAnnotations(next);
-      annotationsRef.current = next;
+      markersRef.current = next;
     };
 
     rebuild();
-    map.addEventListener('region-change-end', rebuild);
+    map.on('moveend', rebuild);
     return () => {
-      if (map.removeEventListener) {
-        try {
-          map.removeEventListener('region-change-end', rebuild);
-        } catch {
-          // ignore
-        }
+      try {
+        map.off('moveend', rebuild);
+      } catch {
+        // ignore
       }
     };
   }, [ready, index, placesById]);
 
   return (
     <div className="relative h-full w-full bg-map-bg">
-      <div ref={containerRef} className="absolute inset-0" />
+      <div
+        ref={containerRef}
+        className="absolute inset-0"
+        style={{ width: '100%', height: '100%' }}
+      />
       {!ready && !error && (
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute inset-0 bg-[var(--map-bg)]">
             <div className="absolute inset-0 shimmer" />
           </div>
@@ -361,7 +343,7 @@ export const MapContainer = forwardRef<
           <div>
             <div className="text-base font-semibold mb-1">Map unavailable</div>
             <div className="text-sys-gray text-sm max-w-sm mx-auto">
-              {error}. Add Apple MapKit keys to <code className="px-1 bg-sys-gray-6 rounded">.env.local</code> to enable the map.
+              {error}. Tile provider may be temporarily down — refresh in a moment.
             </div>
           </div>
         </div>

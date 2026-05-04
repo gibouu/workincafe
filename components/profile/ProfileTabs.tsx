@@ -1,17 +1,51 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Icon, type PhosphorIconName } from '@/components/icons/Icon';
-import { PARIS_DEMO_PLACES } from '@/lib/demo/paris-places';
-import { categoryMeta } from '@/lib/categories';
+import { categoryMeta, type PlaceCategory } from '@/lib/categories';
 import { LoyaltyCard } from '@/components/profile/LoyaltyCard';
 
 type Tab = 'places' | 'reviews' | 'stats';
 
+type FavoritePlace = {
+  id: string;
+  name: string;
+  address: string | null;
+  neighborhood: string | null;
+  category: PlaceCategory;
+};
+
+type FavoriteRow = {
+  place_id: string;
+  place: FavoritePlace | FavoritePlace[] | null;
+};
+
 export function ProfileTabs() {
   const [tab, setTab] = useState<Tab>('places');
-  const favorites = PARIS_DEMO_PLACES.slice(0, 3);
+  const [favorites, setFavorites] = useState<FavoritePlace[] | null>(null);
+
+  useEffect(() => {
+    let aborted = false;
+    fetch('/api/favorites')
+      .then((r) => (r.ok ? r.json() : { favorites: [] }))
+      .then((data: { favorites?: FavoriteRow[] }) => {
+        if (aborted) return;
+        const rows = data.favorites ?? [];
+        const places: FavoritePlace[] = [];
+        for (const row of rows) {
+          const p = Array.isArray(row.place) ? row.place[0] : row.place;
+          if (p) places.push(p);
+        }
+        setFavorites(places);
+      })
+      .catch(() => {
+        if (!aborted) setFavorites([]);
+      });
+    return () => {
+      aborted = true;
+    };
+  }, []);
 
   return (
     <div>
@@ -33,35 +67,45 @@ export function ProfileTabs() {
 
       <div className="mt-4">
         {tab === 'places' && (
-          <ul className="flex flex-col gap-2">
-            {favorites.map((p) => {
-              const meta = categoryMeta(p.category);
-              return (
-                <li key={p.id}>
-                  <Link
-                    href={`/place/${p.id}`}
-                    className="flex items-center gap-3 rounded-2xl border border-[var(--surface-border)] bg-white p-3 shadow-card hover:bg-sys-gray-6 transition"
-                  >
-                    <div
-                      className="flex h-10 w-10 items-center justify-center rounded-full text-white shadow-bubble"
-                      style={{ background: meta.color }}
+          favorites === null ? (
+            <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+              Loading…
+            </div>
+          ) : favorites.length === 0 ? (
+            <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+              No saved places yet. Tap the heart on any place to save it here.
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {favorites.map((p) => {
+                const meta = categoryMeta(p.category);
+                return (
+                  <li key={p.id}>
+                    <Link
+                      href={`/place/${p.id}`}
+                      className="flex items-center gap-3 rounded-2xl border border-[var(--surface-border)] bg-white p-3 shadow-card hover:bg-sys-gray-6 transition"
                     >
-                      <Icon name={meta.icon} size={18} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[14px] font-semibold text-[var(--text-primary)]">
-                        {p.name}
+                      <div
+                        className="flex h-10 w-10 items-center justify-center rounded-full text-white shadow-bubble"
+                        style={{ background: meta.color }}
+                      >
+                        <Icon name={meta.icon} size={18} />
                       </div>
-                      <div className="truncate text-[12px] text-[var(--text-secondary)]">
-                        {p.address} · {p.neighborhood}
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[14px] font-semibold text-[var(--text-primary)]">
+                          {p.name}
+                        </div>
+                        <div className="truncate text-[12px] text-[var(--text-secondary)]">
+                          {[p.address, p.neighborhood].filter(Boolean).join(' · ')}
+                        </div>
                       </div>
-                    </div>
-                    <Icon name="Heart" weight="fill" size={16} className="text-accent-red" />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+                      <Icon name="Heart" weight="fill" size={16} className="text-accent-red" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )
         )}
 
         {tab === 'reviews' && (

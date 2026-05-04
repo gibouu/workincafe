@@ -18,9 +18,3 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
-        env:
-          # Build must work without real keys; runtime code checks env at request time.
-          APPLE_TEAM_ID: ''
-          APPLE_KEY_ID: ''
-          APPLE_MAPKIT_PRIVATE_KEY: ''
-          NEXT_PUBLIC_APPLE_MAPKIT_ORIGIN: https://workin.cafe

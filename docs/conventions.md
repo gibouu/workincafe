@@ -49,11 +49,15 @@ Both `PlaceCard` (mobile drawer) and `FloatingPlaceCard` (desktop panel) wrap th
 
 ## Map-init effects must not be merged
 
-`MapContainer.tsx` has two `useEffect`s: one initialises the MapKit instance, the other syncs annotations. Don't merge them — the MapKit instance is expensive to recreate, and merging causes the map to flash on every place change.
+`MapContainer.tsx` has two `useEffect`s: one initialises the MapLibre instance, the other syncs markers. Don't merge them — the map instance is expensive to recreate, and merging causes the map to flash on every place change.
 
-## Rendering Phosphor icons in MapKit annotations
+## MapLibre marker wrappers must have no inline `transform`
 
-MapKit annotation factories return raw `HTMLElement`. Use `renderToStaticMarkup(<Icon ... />)` and assign as `innerHTML` (see `renderPlaceBubble` / `renderClusterBubble`). Don't try to mount React inside MapKit annotations.
+The wrapper `<div>` passed to `new maplibregl.Marker({ element })` is positioned by MapLibre via inline `transform: translate3d(...)`. If the wrapper itself has any `style.transform` (hover scale, animation, etc.), MapLibre's positioning is overwritten and the pin flies to (0,0). **Put hover scale / animations on a child element**, not on the wrapper.
+
+## Rendering Phosphor icons in MapLibre markers
+
+The marker factory needs raw `HTMLElement`. Use `renderToStaticMarkup(<Icon ... />)` and assign as `innerHTML` (see `renderPlaceBubble` / `renderClusterBubble`). Don't try to mount React inside markers.
 
 ## `'use client'` checklist before merge
 

@@ -65,7 +65,7 @@ Other localStorage keys: `wic:onboarded`, `wic:favorites`, `wic:pending:{review,
 
 | Component | File | When it renders | Notes |
 | --- | --- | --- | --- |
-| `MapContainer` | `components/map/MapContainer.tsx` | Always | MapKit JS + supercluster; `forwardRef` exposes `panTo` / `getCenter` |
+| `MapContainer` | `components/map/MapContainer.tsx` | Always | MapLibre GL JS + OpenFreeMap tiles + supercluster; `forwardRef` exposes `panTo` / `getCenter` / `setUserLocation` |
 | `PlaceSidebar` | `components/layout/PlaceSidebar.tsx` | `md:` and up | Place list + search + filter button (filter button only on desktop) |
 | `BottomBar` | `components/bottom-bar/BottomBar.tsx` | All viewports, all routes except `/welcome`, `/auth`, `/review/new` | Profile / Work spots / Meetups; mounted in root layout |
 | `PlaceCard` | `components/card/PlaceCard.tsx` | `< md`, place selected | Vaul drawer at fixed `h-[88dvh]` (single snap) |

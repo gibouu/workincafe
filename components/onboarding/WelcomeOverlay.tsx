@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Icon, type PhosphorIconName } from '@/components/icons/Icon';
 
 interface Slide {
@@ -28,13 +27,12 @@ const SLIDES: Slide[] = [
     icon: 'NavigationArrow',
     tint: '#FF9500',
     title: 'Locate yourself precisely',
-    body: 'We start near where you are using a rough IP location. Tap the arrow in the top-right to ask for precise GPS — only when you actually need it.',
+    body: 'We start near where you are using a rough IP location. Tap the arrow on the bottom-left to ask for precise GPS — only when you actually need it.',
   },
 ];
 
-export default function WelcomePage() {
+export function WelcomeOverlay({ onDismiss }: { onDismiss: () => void }) {
   const [step, setStep] = useState(0);
-  const router = useRouter();
 
   const dismiss = () => {
     try {
@@ -42,7 +40,7 @@ export default function WelcomePage() {
     } catch {
       // ignore
     }
-    router.replace('/');
+    onDismiss();
   };
 
   const next = () => {
@@ -53,12 +51,12 @@ export default function WelcomePage() {
   const slide = SLIDES[step];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4">
-      <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-[var(--surface-border)] bg-white shadow-float">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/15 backdrop-blur-[2px] px-4">
+      <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-[var(--surface-border)] bg-white/95 shadow-float backdrop-blur-ios">
         <button
           type="button"
           onClick={dismiss}
-          aria-label="Close"
+          aria-label="Skip"
           className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)] hover:bg-sys-gray-5 transition"
         >
           <Icon name="X" size={14} />

@@ -25,9 +25,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# env files
-.env*.local
+# env files — broad pattern catches .env, .env.local, .env.vercel, .env.*.bak.*
 .env
+.env.*
+*.env
+.env*.local
+.env.local.bak*
+*.p8
 
 # vercel
 .vercel

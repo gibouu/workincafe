@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { consumePending } from '@/lib/auth/pending-submit';
 import { useToasts } from '@/lib/store/toasts';
 import { MapContainer, type MapHandle } from '@/components/map/MapContainer';
@@ -16,6 +15,7 @@ import { FilterSheet } from '@/components/filters/FilterSheet';
 import { AddPlaceSheet } from '@/components/map/AddPlaceSheet';
 import { AttributionPill } from '@/components/map/AttributionPill';
 import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
+import { WelcomeOverlay } from '@/components/onboarding/WelcomeOverlay';
 import { Icon } from '@/components/icons/Icon';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useLiveUpdatePrompt } from '@/hooks/useLiveUpdatePrompt';
@@ -43,34 +43,27 @@ export default function MapPage() {
   const [addPlaceCenter, setAddPlaceCenter] = useState<{ lat: number; lng: number } | null>(null);
   const mapRef = useRef<MapHandle>(null);
   const isDesktop = useMediaQuery('(min-width: 768px)');
-  const router = useRouter();
   const showToast = useToasts((s) => s.show);
   const setCardOpen = useLayout((s) => s.setCardOpen);
   const panel = useLayout((s) => s.panel);
   const setPanel = useLayout((s) => s.setPanel);
-  const [onboardChecked, setOnboardChecked] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   // selectedPlace and panel are mutated atomically inside event handlers
   // (handleSelectPlace, the various onClose callbacks). No sync effects —
   // they introduced a race that could clear selectedPlace before
   // setPanel('place') committed, leaving the place card empty.
   useEffect(() => () => setCardOpen(false), [setCardOpen]);
-  // Lazy listener: read cardOpen for plus-button positioning below.
-  const cardOpen = useLayout((s) => s.cardOpen);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
       const seen = window.localStorage.getItem('wic:onboarded');
-      if (!seen) {
-        router.replace('/welcome');
-        return;
-      }
+      if (!seen) setShowWelcome(true);
     } catch {
       // ignore
     }
-    setOnboardChecked(true);
-  }, [router]);
+  }, []);
 
   // Replay any pending submission saved before login.
   useEffect(() => {
@@ -169,11 +162,11 @@ export default function MapPage() {
     setSelectedPlace(null);
   }, [cityMeta.center.lat, cityMeta.center.lng]);
 
-  // On first onboard-checked render, ask the IP-geo endpoint and gently pan
-  // the map there if the result is reasonably close to the active city.
+  // Ask the IP-geo endpoint immediately on mount and gently pan the map there
+  // if the result is reasonably close to the active city. Runs alongside the
+  // welcome overlay so the map already feels live underneath the tutorial.
   const ipPannedRef = useRef(false);
   useEffect(() => {
-    if (!onboardChecked) return;
     if (ipPannedRef.current) return;
     ipPannedRef.current = true;
 
@@ -182,12 +175,10 @@ export default function MapPage() {
       .then((g) => {
         if (!g) return;
         const dKm = haversineKm(g.lat, g.lng, cityMeta.center.lat, cityMeta.center.lng);
-        // Only nudge if the user is plausibly inside the city. Otherwise stay
-        // on the city's center so the demo data stays visible.
         if (dKm < 80) mapRef.current?.panTo(g.lat, g.lng);
       })
       .catch(() => null);
-  }, [onboardChecked, cityMeta.center.lat, cityMeta.center.lng]);
+  }, [cityMeta.center.lat, cityMeta.center.lng]);
 
   const handleSelectPlace = (place: DemoPlace) => {
     setSelectedPlace(place);
@@ -201,21 +192,32 @@ export default function MapPage() {
   };
 
   const handleGeolocate = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      showToast('Location not supported in this browser', { tone: 'error' });
+      return;
+    }
     setGeolocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        mapRef.current?.setUserLocation(pos.coords.latitude, pos.coords.longitude);
         mapRef.current?.panTo(pos.coords.latitude, pos.coords.longitude);
         setGeolocating(false);
       },
-      () => setGeolocating(false),
-      { enableHighAccuracy: true, timeout: 8000 },
+      (err) => {
+        setGeolocating(false);
+        const msg =
+          err.code === err.PERMISSION_DENIED
+            ? 'Location permission blocked. Allow it in browser settings, then refresh.'
+            : err.code === err.POSITION_UNAVAILABLE
+              ? 'Location unavailable. Check macOS Privacy → Location Services.'
+              : err.code === err.TIMEOUT
+                ? 'Location timed out. Try again.'
+                : 'Could not get your location.';
+        showToast(msg, { tone: 'error' });
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   };
-
-  if (!onboardChecked) {
-    return <div className="h-full w-full bg-[var(--map-bg)]" />;
-  }
 
   return (
     <div className="flex h-full w-full">
@@ -276,16 +278,12 @@ export default function MapPage() {
           />
         )}
 
-        {/* "+" stays out of the way: hidden on mobile when a panel/drawer is
-            open, shifted left of the floating card on desktop when open. */}
         <button
           type="button"
           onClick={handleOpenAddPlace}
           aria-label="Add a place"
           title="Add a place"
-          className={`pointer-events-auto absolute bottom-[96px] z-30 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface)] text-[var(--text-primary)] shadow-float backdrop-blur-ios hover:bg-white transition-[right] duration-200 ${
-            cardOpen ? 'hidden md:flex md:right-[392px]' : 'flex right-4'
-          }`}
+          className="pointer-events-auto absolute bottom-[96px] left-4 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface)] text-[var(--text-primary)] shadow-float backdrop-blur-ios hover:bg-white"
         >
           <Icon name="Plus" size={16} weight="bold" />
         </button>
@@ -318,6 +316,19 @@ export default function MapPage() {
           if (!next && liveUpdate.place) liveUpdate.dismiss(liveUpdate.place.id);
         }}
       />
+
+      {showWelcome && (
+        <WelcomeOverlay
+          onDismiss={() => {
+            setShowWelcome(false);
+            // Trigger the precise-GPS prompt right after the tutorial finishes
+            // so the user sees the browser's "Allow location?" prompt while the
+            // map is already onscreen. Synchronous call inside the user-gesture
+            // chain keeps Safari happy.
+            handleGeolocate();
+          }}
+        />
+      )}
     </div>
   );
 }
