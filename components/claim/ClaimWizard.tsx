@@ -92,9 +92,9 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
       setSubmitError('Document must be a PDF.');
       return;
     }
-    const MAX_PDF_BYTES = 10 * 1024 * 1024;
+    const MAX_PDF_BYTES = 3 * 1024 * 1024;
     if (file.size > MAX_PDF_BYTES) {
-      setSubmitError('PDF is over 10 MB.');
+      setSubmitError('PDF is over 3 MB.');
       return;
     }
     setProofPdf({ blob: file, bytes: file.size, name: file.name });
@@ -310,7 +310,7 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
             </Section>
             <Section
               title="Document (optional)"
-              subtitle="Business registration, utility bill, lease — PDF only, up to 10 MB."
+              subtitle="Business registration, utility bill, lease — PDF only, up to 3 MB."
             >
               <ProofPdfSlot pdf={proofPdf} onPick={onPdfFile} onClear={() => setProofPdf(null)} />
             </Section>
@@ -501,7 +501,7 @@ function ProofPdfSlot({
               Attach a PDF
             </div>
             <div className="text-[11px] text-[var(--text-tertiary)]">
-              Business doc, lease, utility bill — up to 10 MB.
+              Business doc, lease, utility bill — up to 3 MB.
             </div>
           </div>
           <input

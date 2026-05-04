@@ -34,7 +34,13 @@ export const PHOTO_SLOT_META: Record<PhotoSlot, PhotoSlotMeta> = {
 const MAX_DIMENSION = 1600;
 const QUALITY = 0.85;
 
-const MAX_INPUT_BYTES = 25 * 1024 * 1024;
+// Hard cap on the original file the user picks. Most phone photos are 3–5 MB
+// JPEG / 4–8 MB HEIC, so 10 MB lets every modern phone in. The canvas
+// re-encode shrinks the result well below the OUTPUT cap.
+const MAX_INPUT_BYTES = 10 * 1024 * 1024;
+// Hard cap on what we actually upload after resize/recompress. With four
+// slots that's 12 MB max per review.
+const MAX_OUTPUT_BYTES = 3 * 1024 * 1024;
 const ACCEPTED_MIME = new Set([
   'image/jpeg',
   'image/png',
@@ -75,7 +81,7 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
     throw new Error('Only JPEG, PNG, WebP, and HEIC images are accepted.');
   }
   if (file.size > MAX_INPUT_BYTES) {
-    throw new Error('That image is over 25 MB.');
+    throw new Error('That image is over 10 MB. Try a smaller one.');
   }
   const img = await loadImage(file);
   const longestEdge = Math.max(img.naturalWidth, img.naturalHeight);
@@ -94,6 +100,9 @@ export async function preparePhoto(file: File): Promise<PreparedPhoto> {
     canvas.toBlob(resolve, 'image/jpeg', QUALITY),
   );
   if (!blob) throw new Error('Encoding failed');
+  if (blob.size > MAX_OUTPUT_BYTES) {
+    throw new Error('Photo is too detailed to fit under 3 MB even after resizing.');
+  }
 
   return { blob, width, height, bytes: blob.size };
 }
