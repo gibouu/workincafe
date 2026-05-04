@@ -33,7 +33,6 @@ import { weatherCondition } from '@/lib/weather/codes';
 import { Chip } from '@/components/ui/Chip';
 import { ChipRow } from '@/components/ui/ChipRow';
 import { Section } from '@/components/ui/Section';
-import { createClient as createBrowserClient } from '@/lib/supabase/client';
 import { PHOTO_SLOTS, type PhotoSlot } from '@/lib/review/photos';
 
 type GeoState =
@@ -457,23 +456,64 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
   const uploadPhotos = async (reviewId: string) => {
     const slotsWithPhotos = PHOTO_SLOTS.filter((s) => Boolean(photos[s])) as PhotoSlot[];
     if (slotsWithPhotos.length === 0) return;
-    const supabase = createBrowserClient();
-    const uploaded: { slot: PhotoSlot; path: string; width: number; height: number; bytes: number }[] = [];
+
+    const folder = `reviews/${reviewId}`;
+    const uploaded: {
+      slot: PhotoSlot;
+      cloudinary_public_id: string;
+      cloudinary_version: string;
+      width: number;
+      height: number;
+      bytes: number;
+    }[] = [];
+
     await Promise.all(
       slotsWithPhotos.map(async (slot) => {
         const prepared = photos[slot];
         if (!prepared) return;
-        const path = `${reviewId}/${slot}.jpg`;
-        const { error } = await supabase.storage
-          .from('review-photos')
-          .upload(path, prepared.blob, { contentType: 'image/jpeg', upsert: true });
-        if (error) return;
+
+        const signResp = await fetch('/api/cloudinary/sign', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ folder, public_id: slot }),
+        });
+        if (!signResp.ok) return;
+        const sig = (await signResp.json()) as {
+          signature: string;
+          timestamp: number;
+          api_key: string;
+          cloud_name: string;
+          folder: string;
+          public_id?: string;
+        };
+
+        const fd = new FormData();
+        fd.append('file', prepared.blob);
+        fd.append('api_key', sig.api_key);
+        fd.append('timestamp', String(sig.timestamp));
+        fd.append('signature', sig.signature);
+        fd.append('folder', sig.folder);
+        if (sig.public_id) fd.append('public_id', sig.public_id);
+
+        const upResp = await fetch(
+          `https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`,
+          { method: 'POST', body: fd },
+        );
+        if (!upResp.ok) return;
+        const result = (await upResp.json()) as {
+          public_id: string;
+          version: number;
+          width: number;
+          height: number;
+          bytes: number;
+        };
         uploaded.push({
           slot,
-          path,
-          width: prepared.width,
-          height: prepared.height,
-          bytes: prepared.bytes,
+          cloudinary_public_id: result.public_id,
+          cloudinary_version: String(result.version),
+          width: result.width ?? prepared.width,
+          height: result.height ?? prepared.height,
+          bytes: result.bytes ?? prepared.bytes,
         });
       }),
     );

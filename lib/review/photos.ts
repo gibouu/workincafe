@@ -34,6 +34,15 @@ export const PHOTO_SLOT_META: Record<PhotoSlot, PhotoSlotMeta> = {
 const MAX_DIMENSION = 1600;
 const QUALITY = 0.85;
 
+const MAX_INPUT_BYTES = 25 * 1024 * 1024;
+const ACCEPTED_MIME = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+]);
+
 export interface PreparedPhoto {
   blob: Blob;
   width: number;
@@ -62,6 +71,12 @@ async function loadImage(file: File): Promise<HTMLImageElement> {
  * round-trip strips EXIF metadata as a side effect — basic privacy hygiene.
  */
 export async function preparePhoto(file: File): Promise<PreparedPhoto> {
+  if (!ACCEPTED_MIME.has(file.type)) {
+    throw new Error('Only JPEG, PNG, WebP, and HEIC images are accepted.');
+  }
+  if (file.size > MAX_INPUT_BYTES) {
+    throw new Error('That image is over 25 MB.');
+  }
   const img = await loadImage(file);
   const longestEdge = Math.max(img.naturalWidth, img.naturalHeight);
   const scale = longestEdge > MAX_DIMENSION ? MAX_DIMENSION / longestEdge : 1;

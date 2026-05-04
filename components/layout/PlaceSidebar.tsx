@@ -161,10 +161,10 @@ function PlaceRow({
       </div>
       <div className="shrink-0 text-right">
         <div className="text-[13px] font-semibold text-[var(--text-primary)]">
-          {place.rating.toFixed(1)}
+          {place.review_count > 0 ? place.rating.toFixed(1) : '—'}
         </div>
         <div className="text-[10px] text-[var(--text-secondary)]">
-          {place.review_count} rev
+          {place.review_count > 0 ? `${place.review_count} rev` : 'No reviews'}
         </div>
       </div>
     </button>

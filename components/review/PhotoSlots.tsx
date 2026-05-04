@@ -140,7 +140,7 @@ function PhotoSlotCard({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
         capture="environment"
         onChange={onFileChange}
         className="hidden"

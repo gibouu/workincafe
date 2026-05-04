@@ -2,10 +2,14 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor } from '@/lib/auth/request-actor';
 
 const ALLOWED_SLOTS = new Set(['menu', 'inside', 'outside', 'special']);
+const PUBLIC_ID_RE = /^reviews\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+$/;
+const VERSION_RE = /^v?\d{1,16}$/;
+const MAX_BYTES = 5 * 1024 * 1024;
 
 interface PhotoRow {
   slot: string;
-  path: string;
+  cloudinary_public_id: string;
+  cloudinary_version?: string | null;
   width?: number | null;
   height?: number | null;
   bytes?: number | null;
@@ -24,7 +28,14 @@ export async function POST(
 
   const { id: reviewId } = await params;
   const body = (await request.json().catch(() => null)) as Body | null;
-  const photos = body?.photos?.filter((p) => p && ALLOWED_SLOTS.has(p.slot) && typeof p.path === 'string') ?? [];
+  const photos =
+    body?.photos?.filter((p) => {
+      if (!p || !ALLOWED_SLOTS.has(p.slot)) return false;
+      if (typeof p.cloudinary_public_id !== 'string' || !PUBLIC_ID_RE.test(p.cloudinary_public_id)) return false;
+      if (p.cloudinary_version != null && !VERSION_RE.test(String(p.cloudinary_version))) return false;
+      if (typeof p.bytes === 'number' && p.bytes > MAX_BYTES) return false;
+      return true;
+    }) ?? [];
   if (photos.length === 0) {
     return NextResponse.json({ ok: true, inserted: 0 });
   }
@@ -32,7 +43,8 @@ export async function POST(
   const rows = photos.map((p) => ({
     review_id: reviewId,
     slot: p.slot,
-    path: p.path,
+    cloudinary_public_id: p.cloudinary_public_id,
+    cloudinary_version: p.cloudinary_version ?? null,
     width: typeof p.width === 'number' ? p.width : null,
     height: typeof p.height === 'number' ? p.height : null,
     bytes: typeof p.bytes === 'number' ? p.bytes : null,

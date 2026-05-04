@@ -11,7 +11,7 @@ export function ReviewList({ reviews }: { reviews: DemoReview[] }) {
   if (reviews.length === 0) {
     return (
       <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
-        No reviews yet — be the first. Full review flow ships in Phase 3.
+        No reviews yet — be the first.
       </div>
     );
   }

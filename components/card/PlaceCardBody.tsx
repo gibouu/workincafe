@@ -20,7 +20,7 @@ import { ReviewList } from '@/components/review/ReviewList';
 import { AllReviewsSheet } from '@/components/review/AllReviewsSheet';
 import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
 import { ReviewForm } from '@/components/review/ReviewForm';
-import { reviewsForPlace, type DemoReview } from '@/lib/demo/reviews';
+import type { DemoReview } from '@/lib/demo/reviews';
 import { formatStayLimit } from '@/lib/format/stay-limit';
 
 const WIFI_ICON: Record<WifiBucket, PhosphorIconName> = {
@@ -79,7 +79,6 @@ export function PlaceCardBody({
   const [liveUpdateOpen, setLiveUpdateOpen] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
 
-  const demoFallback = useMemo(() => reviewsForPlace(place.id, 5), [place.id]);
   const [realReviews, setRealReviews] = useState<DemoReview[] | null>(null);
   useEffect(() => {
     let aborted = false;
@@ -95,8 +94,7 @@ export function PlaceCardBody({
       aborted = true;
     };
   }, [place.id]);
-  const allReviews: DemoReview[] =
-    realReviews === null ? demoFallback : realReviews.length > 0 ? realReviews : demoFallback;
+  const allReviews: DemoReview[] = useMemo(() => realReviews ?? [], [realReviews]);
   const previewReviews = useMemo(() => allReviews.slice(0, 3), [allReviews]);
   const realReviewCount = realReviews?.length ?? 0;
   const [favorite, setFavorite] = useState(() => {
@@ -183,10 +181,10 @@ export function PlaceCardBody({
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-2xl bg-accent-tint p-3 text-center">
             <div className="text-[22px] font-semibold text-accent">
-              {place.rating.toFixed(1)}
+              {realReviewCount > 0 ? place.rating.toFixed(1) : '—'}
             </div>
             <div className="text-[11px] text-accent mt-0.5">
-              Rating · {place.review_count}
+              {realReviewCount > 0 ? `Rating · ${realReviewCount}` : 'No reviews yet'}
             </div>
           </div>
           <div className="rounded-2xl bg-accent-green-tint p-3 text-center">
@@ -277,7 +275,7 @@ export function PlaceCardBody({
         <div className="mt-6">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-[13px] font-semibold text-[var(--text-primary)]">
-              Reviews ({realReviewCount > 0 ? realReviewCount : place.review_count})
+              Reviews ({realReviewCount})
             </div>
             <button
               type="button"

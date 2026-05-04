@@ -53,6 +53,7 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
   const [name, setName] = useState('');
   const [proofType, setProofType] = useState<ProofType | null>(null);
   const [proofPhoto, setProofPhoto] = useState<PreparedPhoto | null>(null);
+  const [proofPdf, setProofPdf] = useState<{ blob: Blob; bytes: number; name: string } | null>(null);
   const [proofNotes, setProofNotes] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
@@ -85,6 +86,20 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
     }
   };
 
+  const onPdfFile = (file: File) => {
+    setSubmitError(null);
+    if (file.type !== 'application/pdf') {
+      setSubmitError('Document must be a PDF.');
+      return;
+    }
+    const MAX_PDF_BYTES = 10 * 1024 * 1024;
+    if (file.size > MAX_PDF_BYTES) {
+      setSubmitError('PDF is over 10 MB.');
+      return;
+    }
+    setProofPdf({ blob: file, bytes: file.size, name: file.name });
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
@@ -92,13 +107,22 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
     setSubmitError(null);
     try {
       let proofPath: string | null = null;
-      if (proofPhoto) {
+      if (proofPhoto || proofPdf) {
         const supabase = createBrowserClient();
-        const path = `${Date.now()}/${place.id}.jpg`;
-        const { error } = await supabase.storage
-          .from('claim-proofs')
-          .upload(path, proofPhoto.blob, { contentType: 'image/jpeg', upsert: true });
-        if (!error) proofPath = path;
+        const stamp = Date.now();
+        if (proofPdf) {
+          const path = `${stamp}/${place.id}.pdf`;
+          const { error } = await supabase.storage
+            .from('claim-proofs')
+            .upload(path, proofPdf.blob, { contentType: 'application/pdf', upsert: true });
+          if (!error) proofPath = path;
+        } else if (proofPhoto) {
+          const path = `${stamp}/${place.id}.jpg`;
+          const { error } = await supabase.storage
+            .from('claim-proofs')
+            .upload(path, proofPhoto.blob, { contentType: 'image/jpeg', upsert: true });
+          if (!error) proofPath = path;
+        }
       }
 
       const resp = await fetch('/api/place-claims', {
@@ -284,6 +308,12 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
             >
               <ProofPhotoSlot photo={proofPhoto} onPick={onPhotoFile} onClear={() => setProofPhoto(null)} />
             </Section>
+            <Section
+              title="Document (optional)"
+              subtitle="Business registration, utility bill, lease — PDF only, up to 10 MB."
+            >
+              <ProofPdfSlot pdf={proofPdf} onPick={onPdfFile} onClear={() => setProofPdf(null)} />
+            </Section>
             <Section title="Notes (optional)">
               <textarea
                 value={proofNotes}
@@ -311,6 +341,7 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
                 value={PROOF_OPTIONS.find((o) => o.value === proofType)?.label ?? '—'}
               />
               <ReviewRow label="Photo attached" value={proofPhoto ? 'Yes' : 'No'} />
+              <ReviewRow label="Document attached" value={proofPdf ? proofPdf.name : 'No'} />
               {proofNotes && <ReviewRow label="Notes" value={proofNotes} />}
             </dl>
           </Section>
@@ -414,8 +445,68 @@ function ProofPhotoSlot({
           </div>
           <input
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
             capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onPick(f);
+              e.target.value = '';
+            }}
+          />
+        </label>
+      )}
+    </div>
+  );
+}
+
+function ProofPdfSlot({
+  pdf,
+  onPick,
+  onClear,
+}: {
+  pdf: { blob: Blob; bytes: number; name: string } | null;
+  onPick: (file: File) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-[var(--surface-border)] bg-white">
+      {pdf ? (
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <Icon name="FileText" size={22} className="shrink-0 text-[var(--text-secondary)]" />
+            <div className="min-w-0">
+              <div className="truncate text-[13px] font-semibold text-[var(--text-primary)]">
+                {pdf.name}
+              </div>
+              <div className="text-[11px] text-[var(--text-tertiary)]">
+                {(pdf.bytes / 1024 / 1024).toFixed(1)} MB
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClear}
+            aria-label="Remove document"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)] hover:bg-sys-gray-5"
+          >
+            <Icon name="X" size={12} />
+          </button>
+        </div>
+      ) : (
+        <label className="flex cursor-pointer items-center gap-3 px-4 py-3">
+          <Icon name="FileText" size={22} className="text-[var(--text-secondary)]" />
+          <div className="min-w-0 flex-1">
+            <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+              Attach a PDF
+            </div>
+            <div className="text-[11px] text-[var(--text-tertiary)]">
+              Business doc, lease, utility bill — up to 10 MB.
+            </div>
+          </div>
+          <input
+            type="file"
+            accept="application/pdf"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
