@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/icons/Icon';
 import { type DemoPlace } from '@/lib/demo/paris-places';
 import { categoryMeta } from '@/lib/categories';
@@ -10,6 +10,17 @@ import { useCity, CITIES } from '@/lib/store/city';
 
 function normalize(s: string) {
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+interface SearchHit {
+  id: string;
+  name: string;
+  address: string | null;
+  neighborhood: string | null;
+  category: DemoPlace['category'];
+  brand: string | null;
+  lat: number;
+  lng: number;
 }
 
 export function PlaceSidebar({
@@ -29,13 +40,61 @@ export function PlaceSidebar({
   const city = useCity((s) => s.city);
   const cityLabel = CITIES[city].label;
 
+  // Server-side search hits the full DB (not just the in-memory 2,500
+  // alphabetical slice). Falls back to in-memory filter when the query
+  // is empty or the API errors.
+  const [searchHits, setSearchHits] = useState<DemoPlace[] | null>(null);
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setSearchHits(null);
+      return;
+    }
+    const ctrl = new AbortController();
+    const t = setTimeout(() => {
+      const url = `/api/places/search?city=${encodeURIComponent(cityLabel)}&q=${encodeURIComponent(q)}&limit=25`;
+      fetch(url, { signal: ctrl.signal })
+        .then((r) => (r.ok ? r.json() : { places: [] }))
+        .then((data: { places?: SearchHit[] }) => {
+          const hits = (data.places ?? []).map<DemoPlace>((p) => ({
+            id: p.id,
+            name: p.name,
+            address: p.address ?? '',
+            neighborhood: p.neighborhood ?? '',
+            category: p.category,
+            lat: p.lat,
+            lng: p.lng,
+            brand: p.brand,
+            rating: 0,
+            review_count: 0,
+            avg_spend_eur: 0,
+            wifi: 'moderate',
+            noise: 'moderate',
+            outlets: 'some',
+            seats: 'some',
+            lighting: 'good',
+            tabletime_hours: 0,
+            right_now_noise: 'No recent live updates',
+            right_now_seating: 'No recent live updates',
+          }));
+          setSearchHits(hits);
+        })
+        .catch(() => null);
+    }, 200);
+    return () => {
+      ctrl.abort();
+      clearTimeout(t);
+    };
+  }, [query, cityLabel]);
+
   const shownPlaces = useMemo(() => {
+    if (searchHits) return searchHits;
     const q = normalize(query.trim());
     if (!q) return places;
     return places.filter(
       (p) => normalize(p.name).includes(q) || normalize(p.address).includes(q),
     );
-  }, [places, query]);
+  }, [places, query, searchHits]);
 
   return (
     <aside className="hidden md:flex h-full w-[320px] shrink-0 flex-col border-r border-[var(--surface-border)] bg-white/70 backdrop-blur-ios">
@@ -107,9 +166,6 @@ export function PlaceSidebar({
         )}
       </div>
 
-      <div className="border-t border-[var(--surface-border)] px-5 py-3 text-[11px] text-[var(--text-secondary)]">
-        {shownPlaces.length} of {places.length} places · {cityLabel}
-      </div>
     </aside>
   );
 }

@@ -59,9 +59,6 @@ export function CitySwitcher({ compact = false }: { compact?: boolean }) {
               >
                 <div>
                   <div>{meta.label}</div>
-                  <div className="text-[11px] text-[var(--text-secondary)]">
-                    {meta.places.length} places · {meta.country}
-                  </div>
                 </div>
                 {active && <Icon name="Check" size={14} />}
               </button>
