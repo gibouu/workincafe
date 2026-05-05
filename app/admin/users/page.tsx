@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Icon } from '@/components/icons/Icon';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
 import { AdminUserSearch } from '@/components/admin/AdminUserSearch';
 
 interface AuthUserLite {
@@ -24,6 +25,7 @@ async function loadAdmins(currentUserId: string | null): Promise<{
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { admins: [], selfId: null };
+  if (!isEmailAllowlisted(user.email)) return { admins: [], selfId: user.id };
 
   const { data: me } = await supabase
     .from('users')

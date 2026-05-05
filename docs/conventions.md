@@ -103,6 +103,20 @@ The anon client RLS-scopes everything to `auth.uid()`. To read another user's em
 
 Migration `009_admin_bootstrap.sql` ensures the first row inserted into `public.users` is auto-promoted to `is_admin = true`. Don't add a parallel app-side bootstrap — the trigger is race-safe via `pg_advisory_xact_lock` and idempotent. Subsequent admin grants happen via `/admin/users`.
 
+## Admin access requires both `is_admin` AND email allowlist (when set)
+
+Admin gating is dual-layered:
+
+1. **`is_admin` boolean** on `public.users` — the DB-level flag.
+2. **`ADMIN_EMAIL_ALLOWLIST` env var** — comma-separated emails. When set, only those emails can access `/admin/*`, even if `is_admin = true` on their row.
+
+Use `isEmailAllowlisted(email)` from `lib/auth/admin-allowlist.ts` in addition to (never instead of) the `is_admin` check. When the env var is unset, `isEmailAllowlisted` returns `true` for everyone — preserves legacy behaviour.
+
+- ✅ Middleware gates `/admin/*` paths on the allowlist (route + page protection).
+- ✅ Admin API routes call `isEmailAllowlisted` before the `is_admin` query (defence-in-depth).
+- ✅ Admin server components do the same in their data-load functions.
+- ❌ Don't ship a new admin route or page that only checks `is_admin` — pair it with the allowlist call.
+
 ## Stripe gating goes through `lib/payments/env.ts:isStripeEnabled()`
 
 Anything that hits the Stripe SDK must short-circuit when `STRIPE_SECRET_KEY` is unset and fall back to the demo path. `lib/payments/stripe.ts` throws on use without keys — guard with `isStripeEnabled()` first. Webhook + onboard routes return 503 when disabled. The owner UI's `PayoutsCard` reads the same gate via the `/api/stripe/onboard` GET endpoint and shows a "Demo mode" badge instead of the connect button.
