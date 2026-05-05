@@ -9,7 +9,7 @@ Before re-grepping the codebase, check:
 - **[`ARCHITECTURE.md`](ARCHITECTURE.md)** — flat index of routes, API routes, stores, UI surfaces, auth flow, and demo-vs-live data rules. Read this when you need "where does X live?".
 - **[`docs/conventions.md`](docs/conventions.md)** — invariants that, if violated locally, create global bugs (Phosphor `'use client'`, category visuals source of truth, demo fallback contract, supercluster `[lng, lat]`, single-card-body rule, etc.). Read this before refactors.
 - **[`docs/supabase-auth-setup.md`](docs/supabase-auth-setup.md)** — operator runbook for enabling Google + Apple in Supabase. Read this only when wiring auth providers.
-- **[`docs/outstanding.md`](docs/outstanding.md)** — living list of unfinished work and decisions to make. Update when deferring or shipping.
+- **GitHub Issues** — planned work and bug reports. List open: `gh issue list`. The pre-2026-05-05 snapshot is at `docs/archive/outstanding-2026-05-05.md` for context only.
 - **[`workin-cafe-build-spec.md`](workin-cafe-build-spec.md)** — canonical product spec. Source of truth for MVP scope and decisions.
 
 When you discover a load-bearing rule, add it to `docs/conventions.md` instead of leaving it implicit. When you add a new route / API / store / surface, update the relevant table in `ARCHITECTURE.md`.
