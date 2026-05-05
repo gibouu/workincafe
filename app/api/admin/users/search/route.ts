@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor } from '@/lib/auth/request-actor';
+import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 interface Body {
@@ -25,6 +26,9 @@ interface AuthListResponse {
 export async function POST(request: NextRequest) {
   const { db, user } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  if (!isEmailAllowlisted(user.email)) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
 
   const { data: me } = await db
     .from('users')

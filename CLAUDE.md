@@ -113,6 +113,7 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=                                        # mirr
 GOOGLE_PLACES_API_KEY=                                                    # optional; enables Google Places autocomplete in AddPlaceSheet
 FOURSQUARE_API_KEY=                                                       # optional; backfills phone/website/address via npm run enrich:foursquare (free tier)
 YELP_API_KEY=                                                             # optional; seeds synthetic ratings + hours via npm run enrich:yelp (5k calls/day free)
+ADMIN_EMAIL_ALLOWLIST=                                                    # optional; comma-separated emails. When set, /admin requires email ∈ list AND is_admin=true. Empty = legacy behaviour (is_admin only).
 ```
 
 Sign in with Apple is configured in the Supabase Dashboard (Services ID + JWT secret), not in app env.
