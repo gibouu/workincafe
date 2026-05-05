@@ -86,6 +86,14 @@ export async function GET(request: NextRequest) {
   const bias =
     Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 
+  // Address-only mode: skip the POI-biased backends and hit Photon without
+  // venue tag filters. Used by /places/new as a GPS fallback when the user
+  // would rather type the address. PlaceId stays `osm:…`, so detail
+  // lookups go through the existing photonPlaceDetails branch.
+  if (searchParams.get('kind') === 'address') {
+    return photonAddressAutocomplete(q, bias);
+  }
+
   if (googleKey) return googleAutocomplete(googleKey, token, q);
   if (fsqKey) return foursquareAutocomplete(fsqKey, q, bias);
   return photonAutocomplete(q);
@@ -352,19 +360,45 @@ async function photonAutocomplete(q: string): Promise<NextResponse> {
   return NextResponse.json({ predictions });
 }
 
+// Address-mode autocomplete: same Photon endpoint, no `osm_tag` filter so
+// streets / house numbers / districts are eligible too. Used as a GPS
+// fallback in /places/new — the user types an address, picks a suggestion,
+// and the resulting lat/lng locks in for submission. Optional (lat,lng)
+// bias nudges Photon to rank nearby results higher.
+async function photonAddressAutocomplete(
+  q: string,
+  bias: { lat: number; lng: number } | null,
+): Promise<NextResponse> {
+  const url = new URL('https://photon.komoot.io/api/');
+  url.searchParams.set('q', q);
+  url.searchParams.set('limit', '8');
+  url.searchParams.set('lang', 'en');
+  if (bias) {
+    url.searchParams.set('lat', String(bias.lat));
+    url.searchParams.set('lon', String(bias.lng));
+  }
+  const resp = await fetch(url.toString());
+  if (!resp.ok) {
+    return NextResponse.json({ error: 'photon failed', status: resp.status }, { status: 502 });
+  }
+  const data = (await resp.json()) as { features?: PhotonFeature[] };
+  const predictions: AutocompletePrediction[] = (data.features ?? []).map(featureToPrediction);
+  return NextResponse.json({ predictions });
+}
+
 async function photonPlaceDetails(placeId: string): Promise<NextResponse> {
   // placeId format from Photon predictions: "osm:<osm_type>/<osm_id>"
   const m = placeId.match(/^osm:([NWR])\/(\d+)$/);
   if (!m) return NextResponse.json({ error: 'invalid placeId' }, { status: 400 });
   const [, osmType, osmId] = m;
   // Photon's public API doesn't expose a "by id" endpoint; do a free-text
-  // re-query with high limit and filter to the matching osm_id.
-  // (For typical add-place usage the autocomplete result already carried
-  // everything we need, so we re-encode it here from the cached prediction.)
+  // re-query with high limit and filter to the matching osm_id+type. We
+  // intentionally do NOT pass `osm_tag` here so address-mode predictions
+  // (no POI tag match) also rehydrate. The post-hoc id+type filter is
+  // already strong enough — osm_ids are unique within a type.
   const url = new URL('https://photon.komoot.io/api/');
   url.searchParams.set('q', osmId);
   url.searchParams.set('limit', '40');
-  for (const tag of PHOTON_TAGS) url.searchParams.append('osm_tag', tag);
   const resp = await fetch(url.toString());
   if (!resp.ok) return NextResponse.json({ error: 'photon failed', status: resp.status }, { status: 502 });
   const data = (await resp.json()) as { features?: PhotonFeature[] };
@@ -393,8 +427,22 @@ async function photonPlaceDetails(placeId: string): Promise<NextResponse> {
 function featureToPrediction(f: PhotonFeature): AutocompletePrediction {
   const t = f.properties.osm_type?.[0] ?? 'N';
   const placeId = `osm:${t}/${f.properties.osm_id}`;
-  const primary = f.properties.name ?? '';
-  const sec = [f.properties.street, f.properties.city, f.properties.country].filter(Boolean).join(', ');
+  // For POI hits, `name` is set ("Café de la Paix"). For pure-address hits
+  // (street/housenumber lookups), `name` is often empty — fall back to
+  // "<housenumber> <street>" so the user sees something meaningful.
+  const houseStreet = [f.properties.housenumber, f.properties.street]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+  const primary = f.properties.name ?? houseStreet ?? '';
+  const sec = [
+    f.properties.name ? houseStreet : null,
+    f.properties.postcode,
+    f.properties.city,
+    f.properties.country,
+  ]
+    .filter(Boolean)
+    .join(', ');
   return {
     placeId,
     text: [primary, sec].filter(Boolean).join(' — '),
