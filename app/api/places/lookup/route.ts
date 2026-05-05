@@ -5,22 +5,26 @@ import { rateLimit } from '@/lib/rate-limit';
 /**
  * Server proxy for place autocomplete + details. Two modes:
  *
- *   GET /api/places/lookup?q=<query>&token=<sessionToken>
- *     → Autocomplete. Returns trimmed predictions.
+ *   GET /api/places/lookup?q=<query>&token=<sessionToken>&lat=<lat>&lng=<lng>
+ *     → Autocomplete. Returns trimmed predictions. lat/lng are optional
+ *       location-bias hints used by the Foursquare backend.
  *
  *   GET /api/places/lookup?placeId=<id>&token=<sessionToken>
- *     → Place details. Returns the trimmed payload AddPlaceSheet uses.
+ *     → Place details. Returns the trimmed payload the wizard uses.
  *
- * Backend selection:
- *   - If GOOGLE_PLACES_API_KEY is set → Google Places API (New). Best
- *     business-data coverage but billed.
- *   - Otherwise → Photon (Komoot, OSM-based, no key, free). Same response
- *     shape so the client doesn't care which backend served it. The
- *     placeId for Photon is `osm:<type>/<id>` so we can refetch details
- *     from the Photon get-by-id endpoint.
+ * Backend selection (autocomplete):
+ *   1. GOOGLE_PLACES_API_KEY → Google Places API (New). Best business-data
+ *      coverage but billed.
+ *   2. FOURSQUARE_API_KEY → Foursquare Places API (post-2025). Free tier,
+ *      strong global POI coverage including small indie shops Photon misses.
+ *   3. Photon (Komoot, OSM-based, no key, free) — last resort.
  *
- * Gated to authenticated users so the Google key (when present) is not a
- * free public proxy.
+ * Detail backend is picked by the placeId prefix the prediction carried:
+ *   - `osm:<type>/<id>` → Photon
+ *   - `fsq:<fsq_place_id>` → Foursquare
+ *   - anything else → Google (when key present)
+ *
+ * Gated to authenticated users so paid keys are not free public proxies.
  */
 
 const PLACES_AUTOCOMPLETE_URL = 'https://places.googleapis.com/v1/places:autocomplete';
@@ -60,19 +64,31 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token') ?? '';
   const placeId = searchParams.get('placeId');
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+  const googleKey = process.env.GOOGLE_PLACES_API_KEY;
+  const fsqKey = process.env.FOURSQUARE_API_KEY;
 
   if (placeId) {
-    return apiKey
-      ? googlePlaceDetails(apiKey, token, placeId)
-      : photonPlaceDetails(placeId);
+    if (placeId.startsWith('osm:')) return photonPlaceDetails(placeId);
+    if (placeId.startsWith('fsq:')) {
+      if (!fsqKey) return NextResponse.json({ error: 'foursquare unavailable' }, { status: 503 });
+      return foursquarePlaceDetails(fsqKey, placeId);
+    }
+    if (googleKey) return googlePlaceDetails(googleKey, token, placeId);
+    return NextResponse.json({ error: 'unknown placeId backend' }, { status: 400 });
   }
 
   const q = searchParams.get('q')?.trim();
   if (!q || q.length < 2) {
     return NextResponse.json({ predictions: [] satisfies AutocompletePrediction[] });
   }
-  return apiKey ? googleAutocomplete(apiKey, token, q) : photonAutocomplete(q);
+  const lat = parseFloat(searchParams.get('lat') ?? '');
+  const lng = parseFloat(searchParams.get('lng') ?? '');
+  const bias =
+    Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+
+  if (googleKey) return googleAutocomplete(googleKey, token, q);
+  if (fsqKey) return foursquareAutocomplete(fsqKey, q, bias);
+  return photonAutocomplete(q);
 }
 
 async function googleAutocomplete(apiKey: string, token: string, q: string): Promise<NextResponse> {
@@ -157,6 +173,130 @@ async function googlePlaceDetails(apiKey: string, token: string, placeId: string
     lat: data.location.latitude,
     lng: data.location.longitude,
     types: data.types ?? [],
+  };
+  return NextResponse.json(out);
+}
+
+// ── Foursquare Places API (post-2025) ───────────────────────────────────
+// https://docs.foursquare.com/developer/reference/place-search
+// Bearer auth + X-Places-Api-Version header. Free tier covers search,
+// place details, address, phone, website, social handles, primary
+// category. Rating/hours are paid-tier — not used here.
+//
+// We accept an optional (lat,lng) bias from the wizard so results rank
+// by proximity. Without bias we still get global ranking by relevance,
+// which is fine but less helpful for "the café across the street".
+
+const FSQ_SEARCH_URL = 'https://places-api.foursquare.com/places/search';
+const FSQ_DETAILS_BASE = 'https://places-api.foursquare.com/places';
+const FSQ_API_VERSION = '2025-06-17';
+
+interface FsqSearchResult {
+  fsq_place_id: string;
+  name: string;
+  location?: {
+    address?: string;
+    locality?: string;
+    region?: string;
+    country?: string;
+    formatted_address?: string;
+  };
+  latitude?: number;
+  longitude?: number;
+  categories?: { name: string; short_name?: string; plural_name?: string }[];
+}
+
+interface FsqDetailsResult {
+  fsq_place_id: string;
+  name: string;
+  latitude?: number;
+  longitude?: number;
+  location?: {
+    formatted_address?: string;
+    address?: string;
+    locality?: string;
+    country?: string;
+  };
+  categories?: { name: string; short_name?: string }[];
+}
+
+function fsqHeaders(apiKey: string): HeadersInit {
+  return {
+    Authorization: `Bearer ${apiKey}`,
+    'X-Places-Api-Version': FSQ_API_VERSION,
+    accept: 'application/json',
+  };
+}
+
+async function foursquareAutocomplete(
+  apiKey: string,
+  q: string,
+  bias: { lat: number; lng: number } | null,
+): Promise<NextResponse> {
+  const url = new URL(FSQ_SEARCH_URL);
+  url.searchParams.set('query', q);
+  url.searchParams.set('limit', '8');
+  if (bias) {
+    url.searchParams.set('ll', `${bias.lat},${bias.lng}`);
+    url.searchParams.set('radius', '20000');
+  }
+  const resp = await fetch(url.toString(), { headers: fsqHeaders(apiKey) });
+  if (!resp.ok) {
+    return NextResponse.json(
+      { error: 'foursquare failed', status: resp.status },
+      { status: 502 },
+    );
+  }
+  const data = (await resp.json()) as { results?: FsqSearchResult[] };
+  const predictions: AutocompletePrediction[] = (data.results ?? []).map((r) => {
+    const sec =
+      r.location?.formatted_address ||
+      [r.location?.address, r.location?.locality, r.location?.country]
+        .filter(Boolean)
+        .join(', ');
+    return {
+      placeId: `fsq:${r.fsq_place_id}`,
+      text: [r.name, sec].filter(Boolean).join(' — '),
+      primary: r.name,
+      secondary: sec,
+    };
+  });
+  return NextResponse.json({ predictions });
+}
+
+async function foursquarePlaceDetails(
+  apiKey: string,
+  placeId: string,
+): Promise<NextResponse> {
+  const fsqId = placeId.slice('fsq:'.length);
+  if (!fsqId) return NextResponse.json({ error: 'invalid placeId' }, { status: 400 });
+  const url = new URL(`${FSQ_DETAILS_BASE}/${encodeURIComponent(fsqId)}`);
+  url.searchParams.set(
+    'fields',
+    'fsq_place_id,name,latitude,longitude,location,categories',
+  );
+  const resp = await fetch(url.toString(), { headers: fsqHeaders(apiKey) });
+  if (!resp.ok) {
+    return NextResponse.json(
+      { error: 'foursquare details failed', status: resp.status },
+      { status: 502 },
+    );
+  }
+  const data = (await resp.json()) as FsqDetailsResult;
+  if (typeof data.latitude !== 'number' || typeof data.longitude !== 'number') {
+    return NextResponse.json({ error: 'no location' }, { status: 502 });
+  }
+  const types = (data.categories ?? [])
+    .flatMap((c) => [c.short_name, c.name])
+    .filter((t): t is string => Boolean(t))
+    .map((t) => t.toLowerCase());
+  const out: PlaceDetails = {
+    placeId,
+    name: data.name ?? '',
+    address: data.location?.formatted_address ?? '',
+    lat: data.latitude,
+    lng: data.longitude,
+    types,
   };
   return NextResponse.json(out);
 }

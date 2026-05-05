@@ -16,6 +16,7 @@ For the high-level product spec, see [`workin-cafe-build-spec.md`](workin-cafe-b
 | `/profile` | `app/profile/page.tsx` | Authed user profile (protected) |
 | `/place/[id]` | `app/place/[id]/page.tsx` | Full place profile (back button → `/`) |
 | `/review/new/[placeId]` | `app/review/new/[placeId]/page.tsx` | Review form; signed-out users can fill, sign-in required at submit |
+| `/places/new` | `app/places/new/page.tsx` | 2-step add-a-place wizard; reads `?lat&lng` from map center |
 | `/admin/...` | `app/admin/**` | Admin (protected): `/admin`, `/admin/place-requests`, `/admin/flagged-reviews`, `/admin/ownership-claims`, `/admin/users` |
 | `/owner` | `app/owner/page.tsx` | Owner dashboard (lists `place_owners` for the signed-in user) |
 | `/place/[id]/claim` | `app/place/[id]/claim/page.tsx` | Owner-claim wizard (proof + email) |
@@ -48,6 +49,8 @@ Protected prefixes (defined in `middleware.ts`): `/profile`, `/admin`. **`/revie
 | `/api/speedtest/{blob,upload,ping}` | edge | none | Used by `lib/measurement/speedtest.ts` |
 | `/api/auth/demo` | POST | none | Issues the demo-mode JWT cookie |
 | `/api/geo` | GET | none | Approximate lat/lng from Vercel headers; 204 in dev |
+| `/api/places/lookup` | GET | required (401) | Place autocomplete + details proxy. Backend chain: Google (`GOOGLE_PLACES_API_KEY`) → Foursquare (`FOURSQUARE_API_KEY`) → Photon. Optional `lat`/`lng` bias for Foursquare. PlaceId prefixes (`fsq:` / `osm:`) route detail lookups |
+| `/api/places/request` | POST | optional | Records an add-a-place submission; soft-503 when table missing |
 
 All write routes return 503 / 404 cleanly when the underlying table is missing — clients treat that as "demo mode acceptable" and don't surface an error.
 
@@ -78,7 +81,7 @@ Other localStorage keys: `wic:onboarded`, `wic:favorites`, `wic:pending:{review,
 | `PhotoSlots` | `components/review/PhotoSlots.tsx` | Inside ReviewForm | 2×2 grid of 4 captioned photo slots; resize + EXIF strip via canvas before upload |
 | `ScaleRow` | `components/review/ScaleRow.tsx` | (legacy) | Discrete 1–5 scale; still used by older surfaces |
 | `FilterSheet` | `components/filters/FilterSheet.tsx` | Triggered from sidebar (desktop) or top-right pill (mobile) | |
-| `AddPlaceSheet` | `components/map/AddPlaceSheet.tsx` | Triggered from "Add a place" CTA | |
+| `AddPlaceWizard` | `app/places/new/AddPlaceWizard.tsx` | At `/places/new`, reached via map's `+` CTA | 2 steps (Find / Describe); calls `/api/places/lookup` (Google → Foursquare → Photon) |
 
 Media-query split: `useMediaQuery('(min-width: 768px)')` in `app/(map)/page.tsx` chooses sidebar+floating vs bottom-bar+drawer.
 
