@@ -4,7 +4,7 @@ import {
   insertWithDemoFlag,
   resolvePlaceIdForActor,
 } from '@/lib/auth/request-actor';
-import { isWithin } from '@/app/api/_shared/geo-check';
+import { isWithin, GEO_VERIFY_METERS } from '@/app/api/_shared/geo-check';
 import { rateLimit } from '@/lib/rate-limit';
 
 interface Body {
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
   );
   if (!geoVerified) {
     return NextResponse.json(
-      { error: `too far from the place (must be within 150m)` },
+      { error: `too far from the place (must be within ${GEO_VERIFY_METERS}m)` },
       { status: 400 },
     );
   }

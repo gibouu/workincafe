@@ -7,6 +7,7 @@ import { SliderRow } from '@/components/review/SliderRow';
 import { PhotoSlots, type SlotState } from '@/components/review/PhotoSlots';
 import { categoryMeta } from '@/lib/categories';
 import { haversineMeters } from '@/lib/geo';
+import { GEO_VERIFY_METERS } from '@/app/api/_shared/geo-check';
 import { runSpeedtest, SpeedtestError, type SpeedtestPhase } from '@/lib/measurement/speedtest';
 import { runDecibelTest } from '@/lib/measurement/decibel';
 import type { DemoPlace } from '@/lib/demo/paris-places';
@@ -45,7 +46,6 @@ type GeoState =
   | { kind: 'timeout' }
   | { kind: 'unsupported' };
 
-const MAX_DISTANCE_METERS = 150;
 const FOOD_FORWARD = new Set(['restaurant', 'fast_food', 'bakery']);
 
 type WifiState =
@@ -347,7 +347,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
           { lat: place.lat, lng: place.lng },
         );
         setGeo(
-          meters <= MAX_DISTANCE_METERS
+          meters <= GEO_VERIFY_METERS
             ? { kind: 'ok', meters, lat: pos.coords.latitude, lng: pos.coords.longitude }
             : { kind: 'far', meters },
         );
@@ -1117,7 +1117,7 @@ function GeoBanner({
       <div className="mt-5 flex flex-col gap-2 rounded-2xl border border-[var(--surface-border)] bg-white px-4 py-3">
         <div className="flex items-center gap-2 text-[13px] text-[var(--text-secondary)]">
           <Icon name="MapPinLine" size={16} />
-          <span>Reviews require being within 150 m of the place.</span>
+          <span>Reviews require being within {GEO_VERIFY_METERS} m of the place.</span>
         </div>
         <button
           type="button"
@@ -1158,7 +1158,7 @@ function GeoBanner({
           <Icon name="Info" size={16} weight="fill" />
           <span>
             You’re {(geo.meters / 1000).toFixed(1)} km from {placeName}. Reviews require being within
-            150 m.
+            {' '}{GEO_VERIFY_METERS} m.
           </span>
         </div>
         <button

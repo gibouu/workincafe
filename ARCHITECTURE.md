@@ -27,7 +27,7 @@ Protected prefixes (defined in `middleware.ts`): `/profile`, `/admin`. **`/revie
 
 | Path | Method | Auth | Notes |
 | --- | --- | --- | --- |
-| `/api/reviews` | POST | required (401) | Geo-verified within 150 m; 5/user/day limit; ratings 1–10 |
+| `/api/reviews` | POST | required (401) | Geo-verified within `GEO_VERIFY_METERS` (500 m); 5/user/day limit; ratings 1–10 |
 | `/api/reviews/[id]/photos` | POST | required (401) | Records `{ slot, path }[]` rows after Storage upload; soft-503 if table missing |
 | `/api/weather` | GET | none | open-meteo proxy by `?lat&lng`; 30 min cache; soft-fail returns `{}` |
 | `/api/place-claims` | POST | required | Submit a place ownership claim |
