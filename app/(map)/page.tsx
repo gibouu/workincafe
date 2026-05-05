@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { consumePending } from '@/lib/auth/pending-submit';
 import { useToasts } from '@/lib/store/toasts';
 import { MapContainer, type MapHandle } from '@/components/map/MapContainer';
@@ -14,7 +15,6 @@ import { TopRightControls } from '@/components/map/TopRightControls';
 import { PlaceSidebar } from '@/components/layout/PlaceSidebar';
 import { CitySwitcher } from '@/components/layout/CitySwitcher';
 import { FilterSheet } from '@/components/filters/FilterSheet';
-import { AddPlaceSheet } from '@/components/map/AddPlaceSheet';
 import { AttributionPill } from '@/components/map/AttributionPill';
 import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
 import { WelcomeOverlay } from '@/components/onboarding/WelcomeOverlay';
@@ -60,8 +60,7 @@ export default function MapPage() {
   const [selectedPlace, setSelectedPlace] = useState<DemoPlace | null>(null);
   const [geolocating, setGeolocating] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [addPlaceOpen, setAddPlaceOpen] = useState(false);
-  const [addPlaceCenter, setAddPlaceCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const router = useRouter();
   const mapRef = useRef<MapHandle>(null);
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const showToast = useToasts((s) => s.show);
@@ -296,8 +295,9 @@ export default function MapPage() {
   };
 
   const handleOpenAddPlace = () => {
-    setAddPlaceCenter(mapRef.current?.getCenter() ?? null);
-    setAddPlaceOpen(true);
+    const c = mapRef.current?.getCenter() ?? null;
+    const qs = c ? `?lat=${c.lat.toFixed(6)}&lng=${c.lng.toFixed(6)}` : '';
+    router.push(`/places/new${qs}`);
   };
 
   const handleGeolocate = () => {
@@ -450,12 +450,6 @@ export default function MapPage() {
       )}
 
       <FilterSheet open={filterOpen} onOpenChange={setFilterOpen} />
-
-      <AddPlaceSheet
-        open={addPlaceOpen}
-        onOpenChange={setAddPlaceOpen}
-        center={addPlaceCenter}
-      />
 
       <LiveUpdateSheet
         place={liveUpdate.place}
