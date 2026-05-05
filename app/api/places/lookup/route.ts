@@ -47,13 +47,24 @@ interface PlaceDetails {
 }
 
 export async function GET(request: NextRequest) {
-  const { user } = await getRequestActor(request);
-  if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  const googleKey = process.env.GOOGLE_PLACES_API_KEY;
+  const fsqKey = process.env.FOURSQUARE_API_KEY;
 
-  // 60/min per user. Photon (the upstream when Google is unset) caps us
-  // at ~1 req/sec by IP — our server is one IP from their POV, so we
-  // keep total throughput modest.
-  const rl = rateLimit('places-lookup', user.id, { capacity: 60, windowMs: 60_000 });
+  // Auth + rate-limit policy:
+  // - If Google is configured (paid key), require auth so we don't act as a
+  //   free public proxy. Rate-limit per user.
+  // - If only Foursquare/Photon are configured (free), allow anonymous so
+  //   the /places/new wizard works for signed-out browsers. Rate-limit by IP.
+  const { user } = await getRequestActor(request);
+  if (googleKey && !user) {
+    return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  }
+  const rlKey =
+    user?.id ??
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    request.headers.get('x-real-ip') ??
+    'anon';
+  const rl = rateLimit('places-lookup', rlKey, { capacity: 60, windowMs: 60_000 });
   if (!rl.ok) {
     return NextResponse.json(
       { error: 'too many requests' },
@@ -64,8 +75,6 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token = searchParams.get('token') ?? '';
   const placeId = searchParams.get('placeId');
-  const googleKey = process.env.GOOGLE_PLACES_API_KEY;
-  const fsqKey = process.env.FOURSQUARE_API_KEY;
 
   if (placeId) {
     if (placeId.startsWith('osm:')) return photonPlaceDetails(placeId);
@@ -95,7 +104,15 @@ export async function GET(request: NextRequest) {
   }
 
   if (googleKey) return googleAutocomplete(googleKey, token, q);
-  if (fsqKey) return foursquareAutocomplete(fsqKey, q, bias);
+
+  // Cascade Foursquare → Photon. Foursquare has stronger business coverage,
+  // but for places not yet in their index (or ambiguous queries with no
+  // bias) it returns 0 results. Falling through to Photon (OSM) gives a
+  // second chance instead of showing an empty dropdown.
+  if (fsqKey) {
+    const fsq = await fetchFsqPredictions(fsqKey, q, bias);
+    if (fsq.length > 0) return NextResponse.json({ predictions: fsq });
+  }
   return photonAutocomplete(q);
 }
 
@@ -236,11 +253,14 @@ function fsqHeaders(apiKey: string): HeadersInit {
   };
 }
 
-async function foursquareAutocomplete(
+// Inner helper: fetches Foursquare predictions and returns the array
+// directly (empty on upstream error). Lets the GET dispatcher cascade
+// FSQ→Photon when FSQ has 0 hits without double-wrapping responses.
+async function fetchFsqPredictions(
   apiKey: string,
   q: string,
   bias: { lat: number; lng: number } | null,
-): Promise<NextResponse> {
+): Promise<AutocompletePrediction[]> {
   const url = new URL(FSQ_SEARCH_URL);
   url.searchParams.set('query', q);
   url.searchParams.set('limit', '8');
@@ -249,14 +269,9 @@ async function foursquareAutocomplete(
     url.searchParams.set('radius', '20000');
   }
   const resp = await fetch(url.toString(), { headers: fsqHeaders(apiKey) });
-  if (!resp.ok) {
-    return NextResponse.json(
-      { error: 'foursquare failed', status: resp.status },
-      { status: 502 },
-    );
-  }
+  if (!resp.ok) return [];
   const data = (await resp.json()) as { results?: FsqSearchResult[] };
-  const predictions: AutocompletePrediction[] = (data.results ?? []).map((r) => {
+  return (data.results ?? []).map((r) => {
     const sec =
       r.location?.formatted_address ||
       [r.location?.address, r.location?.locality, r.location?.country]
@@ -269,7 +284,6 @@ async function foursquareAutocomplete(
       secondary: sec,
     };
   });
-  return NextResponse.json({ predictions });
 }
 
 async function foursquarePlaceDetails(

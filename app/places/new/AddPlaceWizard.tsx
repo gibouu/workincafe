@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons/Icon';
 import { CATEGORIES, type PlaceCategory } from '@/lib/categories';
 import { useToasts } from '@/lib/store/toasts';
+import { CITIES, useCity } from '@/lib/store/city';
 
 const CATEGORY_KEYS: PlaceCategory[] = [
   'cafe',
@@ -91,12 +92,20 @@ const STEP_TITLES: Record<Step, string> = {
 const STEPS: Step[] = ['find', 'describe'];
 
 export function AddPlaceWizard({
-  center,
+  center: centerProp,
 }: {
   center: { lat: number; lng: number } | null;
 }) {
   const router = useRouter();
   const showToast = useToasts((s) => s.show);
+  const city = useCity((s) => s.city);
+  // When the wizard wasn't opened from the map (no `?lat&lng` query params),
+  // fall back to the active city's center. Without a bias, Foursquare's
+  // ambiguous-name search returns 0 hits — see #11.
+  const center = useMemo(
+    () => centerProp ?? CITIES[city]?.center ?? null,
+    [centerProp, city],
+  );
 
   const [step, setStep] = useState<Step>('find');
   const [name, setName] = useState('');
