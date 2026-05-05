@@ -1,9 +1,13 @@
-# Outstanding work
+# Outstanding work — archived snapshot (2026-05-05)
 
-Living list of what's planned but not yet shipped. Add to it when you defer something; remove items as they land. Sister docs:
-- [`../ARCHITECTURE.md`](../ARCHITECTURE.md) — what currently exists.
-- [`./conventions.md`](./conventions.md) — invariants.
-- [`./supabase-auth-setup.md`](./supabase-auth-setup.md) — operator runbook.
+> **Archived.** Current work is tracked in **[GitHub Issues](https://github.com/gibouu/workincafe/issues)**, not in this file. Items here were graduated to issues #13–#26 on 2026-05-05.
+>
+> This file is kept for context — useful when reading old commits or understanding why a piece of work was deferred. Don't add to it. Don't treat it as authoritative.
+
+Original sister docs:
+- [`../../ARCHITECTURE.md`](../../ARCHITECTURE.md) — what currently exists.
+- [`../conventions.md`](../conventions.md) — invariants.
+- [`../supabase-auth-setup.md`](../supabase-auth-setup.md) — operator runbook.
 
 ## Ideas needing a decision before work starts
 
