@@ -108,6 +108,9 @@ export function AddPlaceWizard({
   const [searching, setSearching] = useState(false);
   const [picked, setPicked] = useState<PlaceDetails | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [addressQuery, setAddressQuery] = useState('');
+  const [addressPredictions, setAddressPredictions] = useState<Prediction[]>([]);
+  const [addressSearching, setAddressSearching] = useState(false);
   const sessionTokenRef = useRef<string>(newSessionToken());
 
   // Debounced autocomplete: hits Google → Foursquare → Photon depending on
@@ -168,9 +171,77 @@ export function AddPlaceWizard({
     }
   };
 
+  // Address-mode autocomplete: same endpoint with `kind=address` so Photon
+  // returns streets/house numbers, not just POIs. Used as a GPS fallback —
+  // the user types an address and the picked suggestion locks in lat/lng.
+  useEffect(() => {
+    const q = addressQuery.trim();
+    if (q.length < 3) {
+      setAddressPredictions([]);
+      return;
+    }
+    let aborted = false;
+    setAddressSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ q, kind: 'address' });
+        if (center) {
+          params.set('lat', String(center.lat));
+          params.set('lng', String(center.lng));
+        }
+        const resp = await fetch(`/api/places/lookup?${params.toString()}`);
+        if (!resp.ok) {
+          if (!aborted) setAddressPredictions([]);
+          return;
+        }
+        const body = (await resp.json()) as { predictions?: Prediction[] };
+        if (!aborted) setAddressPredictions(body.predictions ?? []);
+      } catch {
+        if (!aborted) setAddressPredictions([]);
+      } finally {
+        if (!aborted) setAddressSearching(false);
+      }
+    }, 300);
+    return () => {
+      aborted = true;
+      clearTimeout(t);
+    };
+  }, [addressQuery, center]);
+
+  const onPickAddress = async (p: Prediction) => {
+    try {
+      const resp = await fetch(
+        `/api/places/lookup?placeId=${encodeURIComponent(p.placeId)}`,
+      );
+      if (!resp.ok) {
+        showToast('Could not look up that address', { tone: 'error' });
+        return;
+      }
+      const details = (await resp.json()) as PlaceDetails;
+      // Address pick provides lat/lng + formatted address but no name —
+      // keep whatever the user typed (or a sensible default).
+      const display = [p.primary, p.secondary].filter(Boolean).join(', ');
+      setPicked({
+        ...details,
+        // Override address with the prediction's display string; details
+        // returns only `housenumber + street`, the prediction has the city.
+        address: display || details.address,
+        // Strip types so inferCategory doesn't accidentally categorize a
+        // street as e.g. 'restaurant' from a stray osm tag.
+        types: [],
+      });
+      setAddressQuery(display);
+      setAddressPredictions([]);
+    } catch {
+      showToast('Could not look up that address', { tone: 'error' });
+    }
+  };
+
   const clearPicked = () => {
     setPicked(null);
     setPredictions([]);
+    setAddressPredictions([]);
+    setAddressQuery('');
   };
 
   const submitLat = picked?.lat ?? center?.lat ?? null;
@@ -359,6 +430,71 @@ export function AddPlaceWizard({
                 className="mt-2 w-full rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-3 text-[16px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
+
+            <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-4">
+              <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+                Or use an address
+              </div>
+              <div className="mt-1 text-[12px] text-[var(--text-secondary)]">
+                If GPS isn&apos;t working, type an address — we&apos;ll look up the
+                coordinates.
+              </div>
+              <div className="mt-2 flex items-center gap-2 rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-3 focus-within:ring-2 focus-within:ring-accent">
+                <Icon name="MapPinLine" size={16} className="text-[var(--text-tertiary)]" />
+                <input
+                  value={addressQuery}
+                  onChange={(e) => {
+                    setAddressQuery(e.target.value);
+                    if (picked && picked.types.length === 0) setPicked(null);
+                  }}
+                  placeholder="e.g. 12 rue de la Convention, Paris"
+                  className="flex-1 bg-transparent text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+                />
+                {addressSearching && (
+                  <Icon
+                    name="CircleNotch"
+                    size={16}
+                    className="animate-spin text-[var(--text-tertiary)]"
+                  />
+                )}
+              </div>
+              {addressPredictions.length > 0 && (
+                <ul className="mt-2 overflow-hidden rounded-xl border border-[var(--surface-border)] bg-white shadow-card">
+                  {addressPredictions.map((p) => (
+                    <li key={p.placeId}>
+                      <button
+                        type="button"
+                        onClick={() => onPickAddress(p)}
+                        className="block w-full px-3 py-2.5 text-left hover:bg-sys-gray-6"
+                      >
+                        <div className="text-[14px] font-medium text-[var(--text-primary)]">
+                          {p.primary || p.text}
+                        </div>
+                        {p.secondary && (
+                          <div className="text-[11px] text-[var(--text-secondary)]">
+                            {p.secondary}
+                          </div>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {picked && picked.types.length === 0 && (
+                <div className="mt-2 flex items-start gap-2 rounded-xl bg-accent-tint p-3 text-[12px] text-[var(--text-primary)]">
+                  <Icon name="MapPin" size={14} className="mt-0.5 text-accent" />
+                  <div className="flex-1">
+                    <div className="font-semibold">Address locked in</div>
+                    {picked.address && (
+                      <div className="text-[var(--text-secondary)]">{picked.address}</div>
+                    )}
+                    <div className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
+                      {picked.lat.toFixed(5)}, {picked.lng.toFixed(5)}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -438,7 +574,9 @@ export function AddPlaceWizard({
               </div>
               <div className="mt-1">
                 {picked
-                  ? `${picked.lat.toFixed(5)}, ${picked.lng.toFixed(5)} · from search`
+                  ? `${picked.lat.toFixed(5)}, ${picked.lng.toFixed(5)} · ${
+                      picked.types.length === 0 ? 'from typed address' : 'from search'
+                    }`
                   : center
                     ? `${center.lat.toFixed(5)}, ${center.lng.toFixed(5)} · from map center`
                     : 'No location captured. Open this from the map so we know where to drop the pin.'}
