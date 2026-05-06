@@ -17,6 +17,7 @@ export type PlaceCategoryDb =
 export type NoiseLevel = 'quiet' | 'moderate' | 'loud';
 export type SeatingAvailability = 'plenty' | 'some' | 'full';
 export type TemperatureLevel = 'cold' | 'comfortable' | 'warm' | 'hot';
+export type OutletsLevel = 'many' | 'some' | 'none';
 export type PlaceSource = 'apple' | 'google' | 'osm' | 'user_submitted';
 export type RequestStatus = 'pending' | 'approved' | 'rejected';
 export type FlagReason = 'spam' | 'offensive' | 'untrue' | 'irrelevant' | 'other';
