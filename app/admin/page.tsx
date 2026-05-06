@@ -1,13 +1,64 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
 import { Icon } from '@/components/icons/Icon';
-import { DEMO_PLACE_REQUESTS, DEMO_FLAGGED_REVIEWS } from '@/lib/demo/admin';
+
+interface QueueCounts {
+  placeRequests: number;
+  flaggedReviews: number;
+  ownershipClaims: number;
+  admins: number;
+}
+
+async function loadCounts(): Promise<QueueCounts> {
+  const empty: QueueCounts = {
+    placeRequests: 0,
+    flaggedReviews: 0,
+    ownershipClaims: 0,
+    admins: 0,
+  };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return empty;
+  if (!isEmailAllowlisted(user.email)) return empty;
+
+  const { data: me } = await supabase
+    .from('users')
+    .select('is_admin')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (!me?.is_admin) return empty;
+
+  const admin = createAdminClient();
+  // Each count is best-effort — if the table is missing (pre-migration), we
+  // surface 0 instead of crashing the whole page.
+  const safeCount = async (table: string, filter?: { col: string; val: string }): Promise<number> => {
+    let q = admin.from(table).select('id', { head: true, count: 'exact' });
+    if (filter) q = q.eq(filter.col, filter.val);
+    const { count, error } = await q;
+    if (error) return 0;
+    return count ?? 0;
+  };
+
+  const [placeRequests, flaggedReviews, ownershipClaims, admins] = await Promise.all([
+    safeCount('place_requests', { col: 'status', val: 'pending' }),
+    safeCount('flagged_reviews', { col: 'status', val: 'pending' }),
+    safeCount('place_claims', { col: 'status', val: 'pending' }),
+    safeCount('users', { col: 'is_admin', val: 'true' }),
+  ]);
+
+  return { placeRequests, flaggedReviews, ownershipClaims, admins };
+}
 
 export default async function AdminIndex() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const counts = await loadCounts();
 
   return (
     <div className="min-h-dvh bg-[var(--map-bg)]">
@@ -26,7 +77,7 @@ export default async function AdminIndex() {
 
         <h1 className="mt-6 text-[28px] font-bold text-[var(--text-primary)]">Moderation queues</h1>
         <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
-          Signed in as {user?.email ?? 'guest'} · ~5–15 min/day per spec §12.
+          Signed in as {user?.email ?? 'guest'}.
         </p>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -34,41 +85,30 @@ export default async function AdminIndex() {
             href="/admin/place-requests"
             icon="MapPinLine"
             title="Place requests"
-            count={DEMO_PLACE_REQUESTS.length}
+            count={counts.placeRequests}
             hint="Approve, reject with reason"
           />
           <QueueCard
             href="/admin/flagged-reviews"
             icon="Flag"
             title="Flagged reviews"
-            count={DEMO_FLAGGED_REVIEWS.length}
+            count={counts.flaggedReviews}
             hint="Dismiss, hide, or ban"
           />
           <QueueCard
             href="/admin/ownership-claims"
             icon="Storefront"
             title="Ownership claims"
-            count={0}
+            count={counts.ownershipClaims}
             hint="Approve, reject with reason"
           />
           <QueueCard
             href="/admin/users"
             icon="UsersThree"
             title="Admins"
-            count={0}
+            count={counts.admins}
             hint="Promote / demote by email"
           />
-        </div>
-
-        <div className="mt-8 rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
-          <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--text-primary)]">
-            <Icon name="Info" size={16} className="text-accent" />
-            <span>Preview only</span>
-          </div>
-          <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
-            These queues show demo data. Real data lands after the Phase 1 migration runs and users
-            submit places / flag reviews.
-          </p>
         </div>
       </div>
     </div>

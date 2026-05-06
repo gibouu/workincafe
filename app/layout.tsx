@@ -5,7 +5,7 @@ import { BottomBar } from '@/components/bottom-bar/BottomBar';
 
 export const metadata: Metadata = {
   title: 'Work in Cafe',
-  description: 'Find places to work or study outside the home — map-first, Apple-native.',
+  description: 'Find places to work or study outside the home — map-first, mobile-friendly.',
   applicationName: 'Work in Cafe',
 };
 

@@ -1,9 +1,65 @@
 import Link from 'next/link';
 import { Icon } from '@/components/icons/Icon';
-import { DEMO_PLACE_REQUESTS } from '@/lib/demo/admin';
-import { categoryMeta } from '@/lib/categories';
+import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
+import {
+  PlaceRequestRow,
+  type PlaceRequestRecord,
+} from '@/components/admin/PlaceRequestRow';
 
-export default function PlaceRequestsPage() {
+interface AuthUserLite {
+  id: string;
+  email: string | null;
+}
+
+async function loadRequests(): Promise<PlaceRequestRecord[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  if (!isEmailAllowlisted(user.email)) return [];
+
+  const { data: me } = await supabase
+    .from('users')
+    .select('is_admin')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (!me?.is_admin) return [];
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from('place_requests')
+    .select('id, name, lat, lng, address, category_suggestion, notes, created_at, submitted_by')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(100);
+  if (error || !data || data.length === 0) return [];
+
+  // Pull submitter emails in one shot (admin client only).
+  const { data: authResp } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  const emailById = new Map<string, string | null>();
+  for (const u of (authResp?.users ?? []) as AuthUserLite[]) {
+    emailById.set(u.id, u.email ?? null);
+  }
+
+  return data.map((r) => ({
+    id: r.id as string,
+    name: r.name as string,
+    lat: r.lat as number,
+    lng: r.lng as number,
+    address: (r.address as string | null) ?? null,
+    category_suggestion: (r.category_suggestion as string | null) ?? null,
+    notes: (r.notes as string | null) ?? null,
+    created_at: r.created_at as string,
+    submitter_email: emailById.get(r.submitted_by as string) ?? null,
+  }));
+}
+
+export default async function PlaceRequestsPage() {
+  const requests = await loadRequests();
+
   return (
     <div className="min-h-dvh bg-[var(--map-bg)]">
       <div className="mx-auto max-w-3xl px-5 py-6">
@@ -23,63 +79,18 @@ export default function PlaceRequestsPage() {
 
         <h1 className="mt-6 text-[28px] font-bold text-[var(--text-primary)]">Pending</h1>
         <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
-          {DEMO_PLACE_REQUESTS.length} pending · demo data
+          {requests.length === 0
+            ? 'Nothing pending. New submissions from the Add-a-place wizard land here.'
+            : `${requests.length} pending`}
         </p>
 
-        <ul className="mt-6 flex flex-col gap-3">
-          {DEMO_PLACE_REQUESTS.map((r) => {
-            const meta = categoryMeta(r.category);
-            return (
-              <li
-                key={r.id}
-                className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card"
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white shadow-bubble"
-                    style={{ background: meta.color }}
-                  >
-                    <Icon name={meta.icon} size={22} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[15px] font-semibold text-[var(--text-primary)]">
-                      {r.name}
-                    </div>
-                    <div className="text-[12px] text-[var(--text-secondary)]">
-                      {meta.label} · {r.address} · submitted {r.submittedAgo}
-                    </div>
-                    <div className="mt-1 text-[11px] text-[var(--text-tertiary)]">
-                      {r.lat.toFixed(4)}, {r.lng.toFixed(4)} · nearest existing place{' '}
-                      {r.distanceToNearestMeters < 100 ? (
-                        <span className="text-accent-red">{r.distanceToNearestMeters} m (possible duplicate)</span>
-                      ) : (
-                        <span>{r.distanceToNearestMeters} m</span>
-                      )}
-                      {' '}· by {r.submitterName}
-                    </div>
-                    {r.notes && (
-                      <div className="mt-2 text-[13px] text-[var(--text-primary)]">{r.notes}</div>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-3 flex gap-2">
-                  <button
-                    type="button"
-                    className="flex-1 rounded-xl bg-accent-green py-2 text-[13px] font-semibold text-white hover:opacity-90 transition"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    type="button"
-                    className="flex-1 rounded-xl bg-accent-red py-2 text-[13px] font-semibold text-white hover:opacity-90 transition"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        {requests.length > 0 && (
+          <ul className="mt-6 flex flex-col gap-3">
+            {requests.map((r) => (
+              <PlaceRequestRow key={r.id} req={r} />
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
