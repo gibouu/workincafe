@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Drawer } from 'vaul';
 import { Icon, type PhosphorIconName } from '@/components/icons/Icon';
 import type { DemoPlace } from '@/lib/demo/paris-places';
@@ -82,6 +82,13 @@ function pickRotatingQuestion(placeId: string): RotatingQuestion {
   return ROTATING_QUESTIONS[idx];
 }
 
+type Step = 'now' | 'optional';
+const STEPS: Step[] = ['now', 'optional'];
+const STEP_TITLES: Record<Step, string> = {
+  now: 'Right now',
+  optional: 'Anything else?',
+};
+
 export function LiveUpdateSheet({
   place,
   open,
@@ -91,6 +98,7 @@ export function LiveUpdateSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const [step, setStep] = useState<Step>('now');
   const [noise, setNoise] = useState<Noise | null>(null);
   const [seating, setSeating] = useState<Seating | null>(null);
   const [temperature, setTemperature] = useState<Temperature | null>(null);
@@ -100,8 +108,29 @@ export function LiveUpdateSheet({
   const [wifiLoading, setWifiLoading] = useState(false);
   const [decibel, setDecibel] = useState<number | null>(null);
   const [decibelLoading, setDecibelLoading] = useState(false);
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const showToast = useToasts((s) => s.show);
   const rotating = place ? pickRotatingQuestion(place.id) : null;
+
+  // Best-effort auth status check on open. Used for the inline sign-in hint
+  // so users see "you'll be asked to sign in to save" before they fill the
+  // form, instead of finding out only at submit (the original UX).
+  useEffect(() => {
+    if (!open) return;
+    let aborted = false;
+    fetch('/api/me')
+      .then((r) => (r.ok ? r.json() : { signedIn: false }))
+      .then((data: { signedIn?: boolean }) => {
+        if (!aborted) setSignedIn(Boolean(data.signedIn));
+      })
+      .catch(() => {
+        if (!aborted) setSignedIn(false);
+      });
+    return () => {
+      aborted = true;
+    };
+  }, [open]);
 
   const runWifi = async () => {
     setWifiLoading(true);
@@ -130,6 +159,7 @@ export function LiveUpdateSheet({
   };
 
   const reset = () => {
+    setStep('now');
     setNoise(null);
     setSeating(null);
     setTemperature(null);
@@ -137,6 +167,7 @@ export function LiveUpdateSheet({
     setRotatingAnswer(null);
     setWifiMbps(null);
     setDecibel(null);
+    setSubmitting(false);
   };
 
   const handleClose = (next: boolean) => {
@@ -144,9 +175,23 @@ export function LiveUpdateSheet({
     onOpenChange(next);
   };
 
-  const canSubmit = noise !== null && seating !== null && temperature !== null && outlets !== null;
+  const canAdvance =
+    noise !== null && seating !== null && temperature !== null && outlets !== null;
+  const stepIndex = STEPS.indexOf(step);
+  const isLast = stepIndex === STEPS.length - 1;
+
+  const goNext = () => {
+    if (!canAdvance) return;
+    setStep(STEPS[stepIndex + 1]);
+  };
+  const goBack = () => {
+    if (stepIndex === 0) handleClose(false);
+    else setStep(STEPS[stepIndex - 1]);
+  };
+
   const onSubmit = async () => {
-    if (!canSubmit || !place) return;
+    if (!canAdvance || !place || submitting) return;
+    setSubmitting(true);
     const body = {
       place_id: place.id,
       noise_level: noise,
@@ -156,7 +201,7 @@ export function LiveUpdateSheet({
       ...(wifiMbps !== null ? { wifi_mbps: wifiMbps } : {}),
       ...(decibel !== null ? { decibel_db: decibel } : {}),
       ...(rotating && rotatingAnswer
-        ? { rotating_question: rotating.key, rotating_answer: rotatingAnswer }
+        ? { rotating_question: rotating.prompt, rotating_answer: rotatingAnswer }
         : {}),
     };
     try {
@@ -167,17 +212,19 @@ export function LiveUpdateSheet({
       });
       if (resp.status === 401) {
         savePending('live-update', place.id, body);
-        const nextPath = typeof window !== 'undefined'
-          ? window.location.pathname + window.location.search
-          : '/';
+        const nextPath =
+          typeof window !== 'undefined'
+            ? window.location.pathname + window.location.search
+            : '/';
         window.location.assign(buildAuthRedirect(nextPath, 'live-update'));
         return;
       }
-      // Treat 404/503 (table missing) the same as success in the demo.
+      // 404/503 (table/column missing) → still treat as success in demo mode.
       showToast(`Update shared for ${place.name}`);
       handleClose(false);
     } catch {
       showToast('Could not share update', { tone: 'error' });
+      setSubmitting(false);
     }
   };
 
@@ -192,6 +239,12 @@ export function LiveUpdateSheet({
           {place ? (
             <FormBody
               place={place}
+              step={step}
+              stepIndex={stepIndex}
+              isLast={isLast}
+              canAdvance={canAdvance}
+              signedIn={signedIn}
+              submitting={submitting}
               noise={noise}
               setNoise={setNoise}
               seating={seating}
@@ -209,9 +262,10 @@ export function LiveUpdateSheet({
               decibel={decibel}
               decibelLoading={decibelLoading}
               onRunSound={runSound}
-              canSubmit={canSubmit}
-              onSubmit={onSubmit}
               onClose={() => handleClose(false)}
+              goBack={goBack}
+              goNext={goNext}
+              onSubmit={onSubmit}
             />
           ) : null}
         </Drawer.Content>
@@ -220,30 +274,14 @@ export function LiveUpdateSheet({
   );
 }
 
-function FormBody({
-  place,
-  noise,
-  setNoise,
-  seating,
-  setSeating,
-  temperature,
-  setTemperature,
-  outlets,
-  setOutlets,
-  rotating,
-  rotatingAnswer,
-  setRotatingAnswer,
-  wifiMbps,
-  wifiLoading,
-  onRunWifi,
-  decibel,
-  decibelLoading,
-  onRunSound,
-  canSubmit,
-  onSubmit,
-  onClose,
-}: {
+interface FormBodyProps {
   place: DemoPlace;
+  step: Step;
+  stepIndex: number;
+  isLast: boolean;
+  canAdvance: boolean;
+  signedIn: boolean | null;
+  submitting: boolean;
   noise: Noise | null;
   setNoise: (v: Noise) => void;
   seating: Seating | null;
@@ -261,69 +299,177 @@ function FormBody({
   decibel: number | null;
   decibelLoading: boolean;
   onRunSound: () => void;
-  canSubmit: boolean;
-  onSubmit: () => void;
   onClose: () => void;
-}) {
+  goBack: () => void;
+  goNext: () => void;
+  onSubmit: () => void;
+}
+
+function FormBody(props: FormBodyProps) {
+  const { place, step, stepIndex, isLast, canAdvance, signedIn, submitting, onClose, goBack, goNext, onSubmit } = props;
   const meta = categoryMeta(place.category);
   return (
     <>
-      <div className="flex items-start justify-between gap-3 px-5 pt-3">
-        <div className="flex items-center gap-3">
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-full text-white shadow-bubble"
-            style={{ background: meta.color }}
-          >
-            <Icon name={meta.icon} size={18} />
-          </div>
-          <div>
-            <div className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">
-              Live review
+      <header className="border-b border-[var(--surface-border)] px-5 pb-3 pt-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-bubble"
+              style={{ background: meta.color }}
+            >
+              <Icon name={meta.icon} size={18} />
             </div>
-            <div className="text-[17px] font-semibold text-[var(--text-primary)]">{place.name}</div>
+            <div className="min-w-0">
+              <div className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">
+                Step {stepIndex + 1} of {STEPS.length} · {STEP_TITLES[step]}
+              </div>
+              <div className="truncate text-[17px] font-semibold text-[var(--text-primary)]">
+                {place.name}
+              </div>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)]"
+          >
+            <Icon name="X" size={14} />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          className="flex h-7 w-7 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)]"
-        >
-          <Icon name="X" size={14} />
-        </button>
-      </div>
+        <div className="mt-3 flex gap-1">
+          {STEPS.map((s, i) => (
+            <div
+              key={s}
+              className={`h-1 flex-1 rounded-full transition-colors ${
+                i <= stepIndex ? 'bg-accent' : 'bg-sys-gray-5'
+              }`}
+            />
+          ))}
+        </div>
+      </header>
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
-        <p className="text-[13px] text-[var(--text-secondary)]">
-          Help someone else decide — takes 30 seconds.
-        </p>
+        {signedIn === false && (
+          <div className="mb-4 flex items-start gap-2 rounded-2xl border border-[var(--surface-border)] bg-accent-tint p-3 text-[12px] text-[var(--text-primary)]">
+            <Icon name="Info" size={14} className="mt-0.5 shrink-0 text-accent" />
+            <div>
+              You&apos;re not signed in. Fill this out — we&apos;ll save your draft and ask you to
+              sign in only when you submit.
+            </div>
+          </div>
+        )}
 
-        <Question label="How loud is it right now?">
-          <Pill icon="SpeakerSimpleLow" label="Quiet" active={noise === 'quiet'} onClick={() => setNoise('quiet')} />
-          <Pill icon="SpeakerSimpleLow" label="Moderate" active={noise === 'moderate'} onClick={() => setNoise('moderate')} />
-          <Pill icon="SpeakerSimpleHigh" label="Loud" active={noise === 'loud'} onClick={() => setNoise('loud')} />
-        </Question>
+        {step === 'now' ? <StepNow {...props} /> : <StepOptional {...props} />}
+      </div>
 
-        <Question label="Seats available?">
-          <Pill icon="Armchair" label="Plenty" active={seating === 'plenty'} onClick={() => setSeating('plenty')} />
-          <Pill icon="Armchair" label="Some" active={seating === 'some'} onClick={() => setSeating('some')} />
-          <Pill icon="Armchair" label="Full" active={seating === 'full'} onClick={() => setSeating('full')} />
-        </Question>
+      <div className="border-t border-[var(--surface-border)] p-4">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={goBack}
+            disabled={submitting}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60"
+            aria-label={stepIndex === 0 ? 'Cancel' : 'Back'}
+          >
+            <Icon name="ArrowLeft" size={20} />
+          </button>
+          <div className="flex-1">
+            {isLast ? (
+              <button
+                type="button"
+                onClick={onSubmit}
+                disabled={!canAdvance || submitting}
+                className="w-full rounded-2xl bg-accent py-3.5 text-[15px] font-semibold text-white hover:opacity-90 disabled:bg-sys-gray-4 disabled:cursor-not-allowed transition"
+              >
+                {submitting ? 'Submitting…' : 'Share update'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={!canAdvance}
+                className="w-full rounded-2xl bg-accent py-3.5 text-[15px] font-semibold text-white hover:opacity-90 disabled:bg-sys-gray-4 disabled:cursor-not-allowed transition"
+              >
+                Continue
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
 
-        <Question label="Temperature">
-          <Pill icon="Thermometer" label="Cold" active={temperature === 'cold'} onClick={() => setTemperature('cold')} />
-          <Pill icon="Thermometer" label="Comfy" active={temperature === 'comfortable'} onClick={() => setTemperature('comfortable')} />
-          <Pill icon="Thermometer" label="Warm" active={temperature === 'warm'} onClick={() => setTemperature('warm')} />
-          <Pill icon="Thermometer" label="Hot" active={temperature === 'hot'} onClick={() => setTemperature('hot')} />
-        </Question>
+function StepNow({
+  noise,
+  setNoise,
+  seating,
+  setSeating,
+  temperature,
+  setTemperature,
+  outlets,
+  setOutlets,
+}: FormBodyProps) {
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-[13px] text-[var(--text-secondary)]">
+        Tap one in each row. Helps someone else decide — takes 30 seconds.
+      </p>
 
-        <Question label="Outlets">
-          <Pill icon="Plug" label="Many" active={outlets === 'many'} onClick={() => setOutlets('many')} />
-          <Pill icon="Plug" label="Some" active={outlets === 'some'} onClick={() => setOutlets('some')} />
-          <Pill icon="Plug" label="None" active={outlets === 'none'} onClick={() => setOutlets('none')} />
-        </Question>
+      <Question label="How loud is it right now?">
+        <Pill icon="SpeakerSimpleLow" label="Quiet" active={noise === 'quiet'} onClick={() => setNoise('quiet')} />
+        <Pill icon="SpeakerSimpleLow" label="Moderate" active={noise === 'moderate'} onClick={() => setNoise('moderate')} />
+        <Pill icon="SpeakerSimpleHigh" label="Loud" active={noise === 'loud'} onClick={() => setNoise('loud')} />
+      </Question>
 
-        <div className="mt-5 grid grid-cols-2 gap-2">
+      <Question label="Seats available?">
+        <Pill icon="Armchair" label="Plenty" active={seating === 'plenty'} onClick={() => setSeating('plenty')} />
+        <Pill icon="Armchair" label="Some" active={seating === 'some'} onClick={() => setSeating('some')} />
+        <Pill icon="Armchair" label="Full" active={seating === 'full'} onClick={() => setSeating('full')} />
+      </Question>
+
+      <Question label="Temperature">
+        <Pill icon="Thermometer" label="Cold" active={temperature === 'cold'} onClick={() => setTemperature('cold')} />
+        <Pill icon="Thermometer" label="Comfy" active={temperature === 'comfortable'} onClick={() => setTemperature('comfortable')} />
+        <Pill icon="Thermometer" label="Warm" active={temperature === 'warm'} onClick={() => setTemperature('warm')} />
+        <Pill icon="Thermometer" label="Hot" active={temperature === 'hot'} onClick={() => setTemperature('hot')} />
+      </Question>
+
+      <Question label="Outlets">
+        <Pill icon="Plug" label="Many" active={outlets === 'many'} onClick={() => setOutlets('many')} />
+        <Pill icon="Plug" label="Some" active={outlets === 'some'} onClick={() => setOutlets('some')} />
+        <Pill icon="Plug" label="None" active={outlets === 'none'} onClick={() => setOutlets('none')} />
+      </Question>
+    </div>
+  );
+}
+
+function StepOptional({
+  rotating,
+  rotatingAnswer,
+  setRotatingAnswer,
+  wifiMbps,
+  wifiLoading,
+  onRunWifi,
+  decibel,
+  decibelLoading,
+  onRunSound,
+}: FormBodyProps) {
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-[13px] text-[var(--text-secondary)]">
+        All optional — skip and submit if you&apos;re in a hurry.
+      </p>
+
+      <div>
+        <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+          Quick measurements
+        </div>
+        <div className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+          We process audio locally and never upload it.
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2">
           <MeasurementButton
             icon="WifiHigh"
             label="Wi-Fi"
@@ -339,56 +485,35 @@ function FormBody({
             onClick={onRunSound}
           />
         </div>
-        <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
-          Optional. We process audio locally and never upload it.
-        </p>
+      </div>
 
-        {rotating && (
-          <div className="mt-5 rounded-2xl border border-dashed border-[var(--surface-border)] p-3">
-            <div className="flex items-center justify-between">
-              <div className="text-[12px] font-semibold text-[var(--text-primary)]">
-                {rotating.prompt}
-              </div>
-              <span className="rounded-full bg-sys-gray-6 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-secondary)]">
-                Optional
-              </span>
-            </div>
-            <p className="mt-1 text-[11px] text-[var(--text-tertiary)]">
-              Helps fill missing place info. Skip if you&apos;re not sure.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {rotating.options.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() =>
-                    setRotatingAnswer(rotatingAnswer === opt.value ? null : opt.value)
-                  }
-                  className={`rounded-full border px-3 py-1.5 text-[12px] font-medium transition ${
-                    rotatingAnswer === opt.value
-                      ? 'border-transparent bg-accent text-white'
-                      : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+      {rotating && (
+        <div>
+          <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+            {rotating.prompt}
           </div>
-        )}
-      </div>
-
-      <div className="border-t border-[var(--surface-border)] p-4">
-        <button
-          type="button"
-          disabled={!canSubmit}
-          onClick={onSubmit}
-          className="w-full rounded-2xl bg-accent py-3.5 text-[15px] font-semibold text-white hover:opacity-90 disabled:bg-sys-gray-4 disabled:cursor-not-allowed transition"
-        >
-          Submit update
-        </button>
-      </div>
-    </>
+          <div className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+            Helps fill missing place info.
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {rotating.options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setRotatingAnswer(rotatingAnswer === opt.value ? null : opt.value)}
+                className={`rounded-full border px-3 py-2 text-[13px] font-medium transition ${
+                  rotatingAnswer === opt.value
+                    ? 'border-transparent bg-accent text-white'
+                    : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -425,7 +550,7 @@ function MeasurementButton({
 
 function Question({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mt-5 first:mt-4">
+    <div>
       <div className="mb-2 text-[13px] font-semibold text-[var(--text-primary)]">{label}</div>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
