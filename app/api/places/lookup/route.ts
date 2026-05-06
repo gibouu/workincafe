@@ -400,16 +400,68 @@ async function photonAddressAutocomplete(
   return NextResponse.json({ predictions });
 }
 
+// PlaceId scheme for Photon predictions:
+//
+//   osm:b64:<base64url-of-{lat,lng,name,addr,tags}>
+//
+// We embed the prediction's payload directly in the placeId so the detail
+// endpoint can rehydrate without a second Photon call. Photon's public API
+// has no "by id" lookup — the previous approach (free-text re-query of
+// the bare osm_id) failed for nameless rows since their text isn't in the
+// search index. See #31.
+//
+// We still fall back to the legacy `osm:<type>/<id>` format on detail if a
+// stale prediction shows up (cached client, in-flight session, etc.) —
+// best-effort, may still 404.
+
+interface PhotonInline {
+  lat: number;
+  lng: number;
+  name: string;
+  addr: string;
+  tags: string[];
+}
+
+function encodePhotonPlaceId(p: PhotonInline): string {
+  const json = JSON.stringify(p);
+  // Buffer.from is available in the Node runtime that powers this route.
+  const b64 = Buffer.from(json, 'utf8').toString('base64url');
+  return `osm:b64:${b64}`;
+}
+
+function decodePhotonPlaceId(placeId: string): PhotonInline | null {
+  if (!placeId.startsWith('osm:b64:')) return null;
+  try {
+    const b64 = placeId.slice('osm:b64:'.length);
+    const json = Buffer.from(b64, 'base64url').toString('utf8');
+    const data = JSON.parse(json) as PhotonInline;
+    if (typeof data.lat !== 'number' || typeof data.lng !== 'number') return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 async function photonPlaceDetails(placeId: string): Promise<NextResponse> {
-  // placeId format from Photon predictions: "osm:<osm_type>/<osm_id>"
+  // New inline-encoded format — no upstream call, just decode and respond.
+  const inline = decodePhotonPlaceId(placeId);
+  if (inline) {
+    const out: PlaceDetails = {
+      placeId,
+      name: inline.name ?? '',
+      address: inline.addr ?? '',
+      lat: inline.lat,
+      lng: inline.lng,
+      types: inline.tags ?? [],
+    };
+    return NextResponse.json(out);
+  }
+
+  // Legacy format `osm:<type>/<id>` — best-effort re-query; may 404 for
+  // nameless rows. Still useful for any stale prediction surfaces.
   const m = placeId.match(/^osm:([NWR])\/(\d+)$/);
   if (!m) return NextResponse.json({ error: 'invalid placeId' }, { status: 400 });
   const [, osmType, osmId] = m;
-  // Photon's public API doesn't expose a "by id" endpoint; do a free-text
-  // re-query with high limit and filter to the matching osm_id+type. We
-  // intentionally do NOT pass `osm_tag` here so address-mode predictions
-  // (no POI tag match) also rehydrate. The post-hoc id+type filter is
-  // already strong enough — osm_ids are unique within a type.
   const url = new URL('https://photon.komoot.io/api/');
   url.searchParams.set('q', osmId);
   url.searchParams.set('limit', '40');
@@ -439,8 +491,6 @@ async function photonPlaceDetails(placeId: string): Promise<NextResponse> {
 }
 
 function featureToPrediction(f: PhotonFeature): AutocompletePrediction {
-  const t = f.properties.osm_type?.[0] ?? 'N';
-  const placeId = `osm:${t}/${f.properties.osm_id}`;
   // For POI hits, `name` is set ("Café de la Paix"). For pure-address hits
   // (street/housenumber lookups), `name` is often empty — fall back to
   // "<housenumber> <street>" so the user sees something meaningful.
@@ -457,6 +507,22 @@ function featureToPrediction(f: PhotonFeature): AutocompletePrediction {
   ]
     .filter(Boolean)
     .join(', ');
+  const [lng, lat] = f.geometry.coordinates;
+  const tags: string[] = [];
+  if (f.properties.osm_key && f.properties.osm_value) {
+    tags.push(`${f.properties.osm_key}:${f.properties.osm_value}`);
+    tags.push(f.properties.osm_value);
+  }
+  const addressParts = [f.properties.housenumber, f.properties.street, f.properties.city].filter(
+    Boolean,
+  );
+  const placeId = encodePhotonPlaceId({
+    lat,
+    lng,
+    name: f.properties.name ?? '',
+    addr: addressParts.join(' ').trim(),
+    tags,
+  });
   return {
     placeId,
     text: [primary, sec].filter(Boolean).join(' — '),
