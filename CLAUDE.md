@@ -117,6 +117,7 @@ ADMIN_EMAIL_ALLOWLIST=                                                    # opti
 RESEND_API_KEY=                                                           # optional; enables transactional emails (claim-decision notifications, future). When unset, sendEmail() is a no-op.
 EMAIL_FROM=                                                               # optional; defaults to "WorkInCafé <noreply@workin.cafe>". Must be a verified sender on the Resend account.
 NEXT_PUBLIC_APP_URL=                                                      # optional; canonical app URL for email link generation. Defaults to https://workin.cafe.
+CRON_SECRET=                                                              # optional; if set, /api/cron/* requires `Authorization: Bearer <secret>` (preferred over the x-vercel-cron header gate). Set this on Vercel Cron Jobs config too.
 ```
 
 Sign in with Apple is configured in the Supabase Dashboard (Services ID + JWT secret), not in app env.
