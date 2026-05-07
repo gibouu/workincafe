@@ -12,12 +12,24 @@ export interface PlaceMenu {
   cloudinary_version: string | null;
   width: number | null;
   height: number | null;
+  file_kind?: 'image' | 'pdf';
 }
 
-function menuUrl(m: PlaceMenu): string {
+function menuImageUrl(m: PlaceMenu): string {
   if (!CLOUDINARY_CLOUD_NAME) return '';
   const version = m.cloudinary_version ? `${m.cloudinary_version}/` : '';
+  // Cloudinary auto-rasterises PDFs; this URL works for both kinds and
+  // returns a JPEG. Used for image-render and as the lightbox / iframe
+  // fallback.
   return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${version}${m.cloudinary_public_id}`;
+}
+
+function menuPdfUrl(m: PlaceMenu): string {
+  if (!CLOUDINARY_CLOUD_NAME) return '';
+  const version = m.cloudinary_version ? `${m.cloudinary_version}/` : '';
+  // Append `.pdf` so Cloudinary serves the original PDF instead of the
+  // rasterised image. The viewer iframe scrolls multi-page PDFs natively.
+  return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${version}${m.cloudinary_public_id}.pdf`;
 }
 
 export function MenuSheet({
@@ -69,8 +81,9 @@ export function MenuSheet({
             ) : (
               <ul className="flex flex-col gap-3">
                 {menus.map((m) => {
-                  const url = menuUrl(m);
-                  if (!url) return null;
+                  const isPdf = m.file_kind === 'pdf';
+                  const imageUrl = menuImageUrl(m);
+                  if (!imageUrl) return null;
                   const aspect =
                     m.width && m.height ? `${m.width} / ${m.height}` : '4 / 5';
                   return (
@@ -78,20 +91,40 @@ export function MenuSheet({
                       key={m.id}
                       className="overflow-hidden rounded-2xl border border-[var(--surface-border)] bg-white shadow-card"
                     >
-                      <div className="relative w-full" style={{ aspectRatio: aspect }}>
-                        <Image
-                          src={url}
-                          alt={m.label ?? 'Menu'}
-                          fill
-                          sizes="(max-width: 768px) 100vw, 768px"
-                          className="object-contain"
+                      {isPdf ? (
+                        // Native browser PDF viewer for multi-page PDFs.
+                        // Falls back to the rasterised image if the browser
+                        // can't embed PDFs (rare on modern devices).
+                        <iframe
+                          src={menuPdfUrl(m)}
+                          title={m.label ?? 'Menu PDF'}
+                          className="block h-[70vh] w-full border-0"
                         />
-                      </div>
-                      {m.label && (
-                        <div className="border-t border-[var(--surface-border)] px-3 py-2 text-[12px] text-[var(--text-secondary)]">
-                          {m.label}
+                      ) : (
+                        <div className="relative w-full" style={{ aspectRatio: aspect }}>
+                          <Image
+                            src={imageUrl}
+                            alt={m.label ?? 'Menu'}
+                            fill
+                            sizes="(max-width: 768px) 100vw, 768px"
+                            className="object-contain"
+                          />
                         </div>
                       )}
+                      <div className="flex items-center justify-between gap-2 border-t border-[var(--surface-border)] px-3 py-2 text-[12px] text-[var(--text-secondary)]">
+                        <span>{m.label ?? (isPdf ? 'PDF menu' : 'Menu')}</span>
+                        {isPdf && (
+                          <a
+                            href={menuPdfUrl(m)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded-full border border-[var(--surface-border)] bg-white px-2 py-1 text-[11px] font-medium text-[var(--text-primary)] hover:bg-sys-gray-6"
+                          >
+                            <Icon name="ArrowSquareOut" size={11} />
+                            <span>Open PDF</span>
+                          </a>
+                        )}
+                      </div>
                     </li>
                   );
                 })}

@@ -13,12 +13,15 @@ interface MenuRow {
   cloudinary_version: string | null;
   width: number | null;
   height: number | null;
+  file_kind: 'image' | 'pdf';
   visibility: 'public' | 'owner_only';
 }
 
 function thumbUrl(m: MenuRow): string {
   if (!CLOUDINARY_CLOUD_NAME) return '';
   const version = m.cloudinary_version ? `${m.cloudinary_version}/` : '';
+  // Cloudinary auto-rasterises PDFs to a JPEG at delivery time, so the
+  // image URL is the same shape for both file kinds. Page 1 only.
   return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${version}${m.cloudinary_public_id}`;
 }
 
@@ -61,7 +64,13 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
     setError(null);
     setBusy(true);
     try {
-      const prepared = await preparePhoto(file);
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      // Images go through preparePhoto (resize + EXIF strip + HEIC convert).
+      // PDFs upload as-is — Cloudinary handles them on the image/upload
+      // pipeline and rasterises page 1 for display.
+      const prepared = isPdf
+        ? { blob: file, width: 0, height: 0, bytes: file.size }
+        : await preparePhoto(file);
       const folder = `owner-menus/${placeId}`;
       const publicId = randomSuffix();
       const signResp = await fetch('/api/cloudinary/sign', {
@@ -112,6 +121,7 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
           width: result.width,
           height: result.height,
           bytes: result.bytes,
+          file_kind: isPdf ? 'pdf' : 'image',
         }),
       });
       if (!recordResp.ok) {
@@ -128,6 +138,7 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
           cloudinary_version: String(result.version),
           width: result.width,
           height: result.height,
+          file_kind: isPdf ? 'pdf' : 'image',
           visibility: 'public',
         },
       ]);
@@ -195,7 +206,7 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf"
           onChange={onFile}
           className="hidden"
         />
@@ -227,6 +238,11 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
                     sizes="(max-width: 640px) 50vw, 33vw"
                     className="object-cover"
                   />
+                )}
+                {m.file_kind === 'pdf' && (
+                  <span className="absolute bottom-1.5 left-1.5 z-10 rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
+                    PDF
+                  </span>
                 )}
                 <button
                   type="button"

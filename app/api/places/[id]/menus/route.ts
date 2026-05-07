@@ -10,6 +10,7 @@ interface MenuRow {
   cloudinary_version: string | null;
   width: number | null;
   height: number | null;
+  file_kind: 'image' | 'pdf';
   visibility: 'public' | 'owner_only';
 }
 
@@ -38,7 +39,7 @@ export async function GET(
   // render the toggle state.
   const { data, error } = await supabase
     .from('place_menus')
-    .select('id, label, cloudinary_public_id, cloudinary_version, width, height, visibility')
+    .select('id, label, cloudinary_public_id, cloudinary_version, width, height, file_kind, visibility')
     .eq('place_id', resolvedId)
     .order('created_at', { ascending: true });
 
