@@ -28,6 +28,7 @@ Copy each file into Supabase Dashboard → **SQL Editor** and run, in order:
 | 11 | `migrations/011_review_provenance.sql` | `source` + `source_weight` on reviews; reweighted `mv_place_ratings` |
 | 12 | `migrations/012_live_updates_v2.sql`  | LiveUpdate wizard schema additions (#13 / #30) |
 | 13 | `migrations/013_review_upscale_marker.sql` | `upscaled_at` marker column on reviews — see runbook below (#24) |
+| 14 | `migrations/014_cron_helpers.sql`     | `cron_expire_loyalty()` SECURITY DEFINER function called by the nightly Vercel Cron route (#23) |
 
 > **`Could not find the table 'public.friend_profiles'`** in your logs is expected when migration 007 hasn't been applied yet. The friend-profile API soft-handles it (returns an empty profile + the wizard renders cleanly). Apply 007 to make the error go away.
 

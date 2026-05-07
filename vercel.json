@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/expire-loyalty",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/prune-stripe-events",
+      "schedule": "30 4 * * *"
+    }
+  ]
+}
