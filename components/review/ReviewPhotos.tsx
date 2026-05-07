@@ -26,7 +26,15 @@ function rawCloudinaryUrl(p: ReviewPhoto): string {
   return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${version}${p.publicId}`;
 }
 
-export function ReviewPhotos({ photos }: { photos: ReviewPhoto[] }) {
+interface ReviewPhotosProps {
+  photos: ReviewPhoto[];
+  /** When provided, overrides the default in-place lightbox. Inline place-
+   *  card usage passes this to redirect taps into the All Reviews sheet
+   *  pre-filtered to "With photos". See #45. */
+  onPhotoTap?: (index: number) => void;
+}
+
+export function ReviewPhotos({ photos, onPhotoTap }: ReviewPhotosProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const ordered = useMemo(
@@ -54,7 +62,7 @@ export function ReviewPhotos({ photos }: { photos: ReviewPhoto[] }) {
             <li key={`${p.slot}-${p.publicId}`}>
               <button
                 type="button"
-                onClick={() => setLightboxIndex(i)}
+                onClick={() => (onPhotoTap ? onPhotoTap(i) : setLightboxIndex(i))}
                 aria-label={`Open ${SLOT_LABEL[p.slot]} photo`}
                 className="relative block h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-sys-gray-6"
               >
