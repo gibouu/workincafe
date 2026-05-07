@@ -36,7 +36,15 @@ export async function POST(request: NextRequest) {
   } | null;
 
   const folder = typeof body?.folder === 'string' ? body.folder : '';
-  const allowedFolders = /^reviews\/[A-Za-z0-9_-]+$/;
+  // Allowed folders:
+  //   reviews/<reviewId>     — review photos (per-review folder)
+  //   owner-menus/<placeId>  — owner menu uploads (per-place folder; #25)
+  // The route doesn't authorise membership of those scopes here — the
+  // record-creation endpoints (`/api/reviews/[id]/photos`,
+  // `/api/owner/places/[id]/menus`) gate ownership before persisting the
+  // cloudinary reference. So a stray signed upload to a wrong folder
+  // never surfaces in the app.
+  const allowedFolders = /^(reviews|owner-menus)\/[A-Za-z0-9_-]+$/;
   if (!allowedFolders.test(folder)) {
     return NextResponse.json({ error: 'invalid folder' }, { status: 400 });
   }

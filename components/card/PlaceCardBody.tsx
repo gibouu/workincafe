@@ -20,6 +20,7 @@ import { ReviewList } from '@/components/review/ReviewList';
 import { AllReviewsSheet } from '@/components/review/AllReviewsSheet';
 import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
 import { ReviewForm } from '@/components/review/ReviewForm';
+import { MenuSheet, type PlaceMenu } from '@/components/card/MenuSheet';
 import type { DemoReview, ReviewPhoto } from '@/lib/demo/reviews';
 import { formatStayLimit } from '@/lib/format/stay-limit';
 
@@ -86,6 +87,20 @@ export function PlaceCardBody({
   const [allReviewsOpen, setAllReviewsOpen] = useState(false);
   const [liveUpdateOpen, setLiveUpdateOpen] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menus, setMenus] = useState<PlaceMenu[]>([]);
+  useEffect(() => {
+    let aborted = false;
+    fetch(`/api/places/${encodeURIComponent(place.id)}/menus`)
+      .then((r) => (r.ok ? r.json() : { menus: [] }))
+      .then((body: { menus?: PlaceMenu[] }) => {
+        if (!aborted) setMenus(body.menus ?? []);
+      })
+      .catch(() => null);
+    return () => {
+      aborted = true;
+    };
+  }, [place.id]);
 
   const [realReviews, setRealReviews] = useState<DemoReview[] | null>(null);
   useEffect(() => {
@@ -224,6 +239,13 @@ export function PlaceCardBody({
             onClick={() => setReviewMode(true)}
           />
           <ChipButton icon="MapPinLine" label="Live review" onClick={liveReview} />
+          {menus.length > 0 && (
+            <ChipButton
+              icon="ForkKnife"
+              label={`Menu · ${menus.length}`}
+              onClick={() => setMenuOpen(true)}
+            />
+          )}
           <ChipButton
             icon="Heart"
             iconWeight={favorite ? 'fill' : 'regular'}
@@ -328,6 +350,12 @@ export function PlaceCardBody({
         place={liveUpdateOpen ? place : null}
         open={liveUpdateOpen}
         onOpenChange={setLiveUpdateOpen}
+      />
+      <MenuSheet
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        placeName={place.name}
+        menus={menus}
       />
     </div>
   );
