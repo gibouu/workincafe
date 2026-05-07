@@ -7,7 +7,9 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 type SlotKey = 'profile' | 'work' | 'friends';
 
-const HIDDEN_PREFIXES = ['/welcome', '/auth', '/review/new'];
+// `/places/new` is full-page and has its own back/Continue action bar;
+// the global pill overlapped the wizard's primary CTA on iPhone.
+const HIDDEN_PREFIXES = ['/welcome', '/auth', '/review/new', '/places/new'];
 
 export function BottomBar() {
   const router = useRouter();
