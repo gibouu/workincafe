@@ -6,7 +6,14 @@ import { FlagReviewSheet } from '@/components/review/FlagReviewSheet';
 import { ReviewPhotos } from '@/components/review/ReviewPhotos';
 import type { DemoReview } from '@/lib/demo/reviews';
 
-export function ReviewList({ reviews }: { reviews: DemoReview[] }) {
+interface ReviewListProps {
+  reviews: DemoReview[];
+  /** Override for inline place-card usage: redirect photo taps to the
+   *  "see all reviews with photos" sheet. See #45. */
+  onPhotoTap?: (review: DemoReview, photoIndex: number) => void;
+}
+
+export function ReviewList({ reviews, onPhotoTap }: ReviewListProps) {
   const [flagId, setFlagId] = useState<string | null>(null);
 
   if (reviews.length === 0) {
@@ -86,7 +93,12 @@ export function ReviewList({ reviews }: { reviews: DemoReview[] }) {
             <p className="mt-2 text-[14px] leading-relaxed text-[var(--text-primary)]">
               {r.comment}
             </p>
-            {r.photos && r.photos.length > 0 && <ReviewPhotos photos={r.photos} />}
+            {r.photos && r.photos.length > 0 && (
+              <ReviewPhotos
+                photos={r.photos}
+                onPhotoTap={onPhotoTap ? (i) => onPhotoTap(r, i) : undefined}
+              />
+            )}
           </li>
         ))}
       </ul>

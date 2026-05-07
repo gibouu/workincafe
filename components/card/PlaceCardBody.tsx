@@ -85,6 +85,7 @@ export function PlaceCardBody({
   showHero?: boolean;
 }) {
   const [allReviewsOpen, setAllReviewsOpen] = useState(false);
+  const [allReviewsInitiallyOnlyPhotos, setAllReviewsInitiallyOnlyPhotos] = useState(false);
   const [liveUpdateOpen, setLiveUpdateOpen] = useState(false);
   const [reviewMode, setReviewMode] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -319,7 +320,16 @@ export function PlaceCardBody({
               See all reviews
             </button>
           </div>
-          <ReviewList reviews={previewReviews} />
+          <ReviewList
+            reviews={previewReviews}
+            onPhotoTap={() => {
+              // Tap a thumbnail in the inline preview → open All Reviews
+              // sheet pre-filtered to "With photos" so the user can scan
+              // the rest in one place. See #45.
+              setAllReviewsInitiallyOnlyPhotos(true);
+              setAllReviewsOpen(true);
+            }}
+          />
         </div>
 
         <button
@@ -344,7 +354,11 @@ export function PlaceCardBody({
         place={place}
         reviews={allReviews}
         open={allReviewsOpen}
-        onOpenChange={setAllReviewsOpen}
+        onOpenChange={(o) => {
+          setAllReviewsOpen(o);
+          if (!o) setAllReviewsInitiallyOnlyPhotos(false);
+        }}
+        initiallyOnlyPhotos={allReviewsInitiallyOnlyPhotos}
       />
       <LiveUpdateSheet
         place={liveUpdateOpen ? place : null}
