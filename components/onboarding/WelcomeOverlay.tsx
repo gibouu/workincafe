@@ -8,6 +8,10 @@ interface Slide {
   tint: string;
   title: string;
   body: string;
+  /** Optional CTA rendered between body and pagination row. Used by the
+   *  location slide so the system permission prompt is user-initiated
+   *  (Plan B in #71 — never auto-prompt). */
+  cta?: { label: string; activeLabel: string };
 }
 
 const SLIDES: Slide[] = [
@@ -27,12 +31,22 @@ const SLIDES: Slide[] = [
     icon: 'NavigationArrow',
     tint: '#FF9500',
     title: 'Locate yourself precisely',
-    body: 'We start near where you are using a rough IP location. Tap the arrow on the bottom-left to ask for precise GPS — only when you actually need it.',
+    body: "We open the map at a rough city-level guess from your IP. Tap below to grant precise GPS — or skip and tap the arrow on the map any time.",
+    cta: { label: 'Enable precise location', activeLabel: 'Location requested' },
   },
 ];
 
-export function WelcomeOverlay({ onDismiss }: { onDismiss: () => void }) {
+export function WelcomeOverlay({
+  onDismiss,
+  onEnableLocation,
+}: {
+  onDismiss: () => void;
+  /** Fired from the location slide's CTA. Map page wires this to
+   *  `handleGeolocate` so the prompt is tied to a real button click. */
+  onEnableLocation?: () => void;
+}) {
   const [step, setStep] = useState(0);
+  const [locationRequested, setLocationRequested] = useState(false);
 
   const dismiss = () => {
     try {
@@ -49,6 +63,7 @@ export function WelcomeOverlay({ onDismiss }: { onDismiss: () => void }) {
   };
 
   const slide = SLIDES[step];
+  const showCta = Boolean(slide.cta && onEnableLocation);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/15 backdrop-blur-[2px] px-4">
@@ -76,6 +91,26 @@ export function WelcomeOverlay({ onDismiss }: { onDismiss: () => void }) {
           <p className="mt-2 text-center text-[13px] leading-snug text-[var(--text-secondary)]">
             {slide.body}
           </p>
+
+          {showCta && slide.cta && (
+            <button
+              type="button"
+              onClick={() => {
+                if (locationRequested) return;
+                setLocationRequested(true);
+                onEnableLocation?.();
+              }}
+              disabled={locationRequested}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-3 py-2.5 text-[14px] font-semibold text-white transition hover:opacity-90 disabled:bg-accent-green disabled:opacity-100"
+            >
+              <Icon
+                name={locationRequested ? 'CheckCircle' : 'NavigationArrow'}
+                size={16}
+                weight="fill"
+              />
+              <span>{locationRequested ? slide.cta.activeLabel : slide.cta.label}</span>
+            </button>
+          )}
         </div>
 
         <div className="flex items-center justify-between border-t border-[var(--surface-border)] px-5 py-3">
