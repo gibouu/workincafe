@@ -6,6 +6,7 @@ import { isOwnerOf } from '@/lib/auth/request-actor';
 import { categoryMeta } from '@/lib/categories';
 import type { PlaceCategory } from '@/lib/categories';
 import { formatCents } from '@/lib/loyalty/fees';
+import { OwnerMenuManager } from '@/components/owner/OwnerMenuManager';
 
 interface DealRow {
   id: string;
@@ -116,6 +117,10 @@ export default async function OwnerPlacePage({
               </div>
             </div>
           </Link>
+        </div>
+
+        <div className="mt-8">
+          <OwnerMenuManager placeId={place.id} />
         </div>
 
         <h2 className="mt-8 text-[15px] font-semibold text-[var(--text-primary)]">
