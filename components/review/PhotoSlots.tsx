@@ -19,9 +19,16 @@ interface PhotoSlotsProps {
 }
 
 export function PhotoSlots({ value, onChange, disabled }: PhotoSlotsProps) {
+  // Reorder: filled slots cluster left/top so the user always sees their
+  // committed photos first, with empty slots trailing. Within each group
+  // the canonical PHOTO_SLOTS order is preserved. See #41.
+  const orderedSlots = [
+    ...PHOTO_SLOTS.filter((s) => Boolean(value[s])),
+    ...PHOTO_SLOTS.filter((s) => !value[s]),
+  ];
   return (
     <div className="grid grid-cols-2 gap-3">
-      {PHOTO_SLOTS.map((slot) => (
+      {orderedSlots.map((slot) => (
         <PhotoSlotCard
           key={slot}
           slot={slot}
@@ -128,6 +135,17 @@ function PhotoSlotCard({
         >
           <Icon name="X" size={14} />
         </button>
+      )}
+      {filled && (
+        // Visual cue that tap-to-replace works. The whole card is already
+        // clickable; this just signals the gesture. See #41.
+        <span
+          className="pointer-events-none absolute bottom-9 right-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white shadow-bubble"
+          aria-hidden="true"
+          title={`Tap to replace ${meta.label} photo`}
+        >
+          <Icon name="PencilSimple" size={13} />
+        </span>
       )}
       {filled && (
         <div className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
