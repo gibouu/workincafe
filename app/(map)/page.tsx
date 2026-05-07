@@ -641,14 +641,12 @@ export default function MapPage() {
 
       {showWelcome && (
         <WelcomeOverlay
-          onDismiss={() => {
-            setShowWelcome(false);
-            // Trigger the precise-GPS prompt right after the tutorial finishes
-            // so the user sees the browser's "Allow location?" prompt while the
-            // map is already onscreen. Synchronous call inside the user-gesture
-            // chain keeps Safari happy.
-            handleGeolocate();
-          }}
+          onDismiss={() => setShowWelcome(false)}
+          // Plan B (#71): the system permission prompt is user-initiated
+          // from the location slide's "Enable precise location" CTA, never
+          // coupled to the dismiss action. The geolocate button on the
+          // map is the only other entry point.
+          onEnableLocation={handleGeolocate}
         />
       )}
 
