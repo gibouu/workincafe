@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Drawer } from 'vaul';
 import { Icon } from '@/components/icons/Icon';
 import { ReviewList } from '@/components/review/ReviewList';
@@ -40,14 +40,29 @@ export function AllReviewsSheet({
   reviews,
   open,
   onOpenChange,
+  initiallyOnlyPhotos = false,
 }: {
   place: DemoPlace;
   reviews: DemoReview[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Preselect the "With photos" filter chip — used when the sheet is opened
+   *  by tapping a photo thumbnail (issue #16). */
+  initiallyOnlyPhotos?: boolean;
 }) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('newest');
+  const [onlyWithPhotos, setOnlyWithPhotos] = useState(initiallyOnlyPhotos);
+
+  // Re-sync when caller changes the preset between opens.
+  useEffect(() => {
+    if (open) setOnlyWithPhotos(initiallyOnlyPhotos);
+  }, [open, initiallyOnlyPhotos]);
+
+  const photoCount = useMemo(
+    () => reviews.filter((r) => r.photos && r.photos.length > 0).length,
+    [reviews],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -56,6 +71,9 @@ export function AllReviewsSheet({
       list = list.filter(
         (r) => r.comment.toLowerCase().includes(q) || r.author.toLowerCase().includes(q),
       );
+    }
+    if (onlyWithPhotos) {
+      list = list.filter((r) => r.photos && r.photos.length > 0);
     }
     const sorted = [...list];
     sorted.sort((a, b) => {
@@ -71,7 +89,7 @@ export function AllReviewsSheet({
       }
     });
     return sorted;
-  }, [reviews, query, sort]);
+  }, [reviews, query, sort, onlyWithPhotos]);
 
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
@@ -141,6 +159,21 @@ export function AllReviewsSheet({
                   </button>
                 );
               })}
+              {photoCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setOnlyWithPhotos((p) => !p)}
+                  aria-pressed={onlyWithPhotos}
+                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-medium transition ${
+                    onlyWithPhotos
+                      ? 'bg-accent text-white'
+                      : 'bg-white text-[var(--text-secondary)] border border-[var(--surface-border)] hover:bg-sys-gray-6'
+                  }`}
+                >
+                  <Icon name="Camera" size={12} weight={onlyWithPhotos ? 'fill' : 'regular'} />
+                  <span>With photos · {photoCount}</span>
+                </button>
+              )}
             </div>
           </div>
 

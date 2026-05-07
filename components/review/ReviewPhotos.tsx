@@ -1,7 +1,9 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { CLOUDINARY_CLOUD_NAME } from '@/lib/cloudinary';
+import { PhotoLightbox, type LightboxPhoto } from '@/components/review/PhotoLightbox';
 import type { ReviewPhoto } from '@/lib/demo/reviews';
 
 const SLOT_LABEL: Record<ReviewPhoto['slot'], string> = {
@@ -25,35 +27,61 @@ function rawCloudinaryUrl(p: ReviewPhoto): string {
 }
 
 export function ReviewPhotos({ photos }: { photos: ReviewPhoto[] }) {
-  if (photos.length === 0) return null;
-  const ordered = [...photos].sort(
-    (a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot),
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const ordered = useMemo(
+    () => [...photos].sort((a, b) => SLOT_ORDER.indexOf(a.slot) - SLOT_ORDER.indexOf(b.slot)),
+    [photos],
   );
 
+  const lightboxPhotos = useMemo<LightboxPhoto[]>(
+    () =>
+      ordered
+        .map((p) => ({ url: rawCloudinaryUrl(p), slot: p.slot, width: p.width, height: p.height }))
+        .filter((p) => Boolean(p.url)),
+    [ordered],
+  );
+
+  if (photos.length === 0) return null;
+
   return (
-    <ul className="mt-3 flex gap-2 overflow-x-auto">
-      {ordered.map((p) => {
-        const url = rawCloudinaryUrl(p);
-        if (!url) return null;
-        return (
-          <li
-            key={`${p.slot}-${p.publicId}`}
-            className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-sys-gray-6"
-          >
-            <Image
-              src={url}
-              alt={SLOT_LABEL[p.slot]}
-              fill
-              sizes="96px"
-              className="object-cover"
-              unoptimized={false}
-            />
-            <span className="absolute bottom-1 left-1 rounded-full bg-black/55 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white">
-              {SLOT_LABEL[p.slot]}
-            </span>
-          </li>
-        );
-      })}
-    </ul>
+    <>
+      <ul className="mt-3 flex gap-2 overflow-x-auto">
+        {ordered.map((p, i) => {
+          const url = rawCloudinaryUrl(p);
+          if (!url) return null;
+          return (
+            <li key={`${p.slot}-${p.publicId}`}>
+              <button
+                type="button"
+                onClick={() => setLightboxIndex(i)}
+                aria-label={`Open ${SLOT_LABEL[p.slot]} photo`}
+                className="relative block h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-sys-gray-6"
+              >
+                <Image
+                  src={url}
+                  alt={SLOT_LABEL[p.slot]}
+                  fill
+                  sizes="96px"
+                  className="object-cover transition group-hover:opacity-90"
+                />
+                <span className="absolute bottom-1 left-1 rounded-full bg-black/55 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-white">
+                  {SLOT_LABEL[p.slot]}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <PhotoLightbox
+        photos={lightboxPhotos}
+        initialIndex={lightboxIndex ?? 0}
+        open={lightboxIndex !== null}
+        onOpenChange={(o) => {
+          if (!o) setLightboxIndex(null);
+        }}
+      />
+    </>
   );
 }
