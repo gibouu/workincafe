@@ -29,6 +29,7 @@ interface RatingRow {
   place_id: string;
   study_spot_rating: number | null;
   rating_count: number;
+  user_rating_count: number;
 }
 
 const MAX_FULL = 2500;
@@ -76,13 +77,33 @@ export async function GET(request: NextRequest) {
       if (code === '42P01') return NextResponse.json({ places: [] });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    const out = ((data ?? []) as SlimPlaceRow[]).map((p) => ({
+    // Fetch user-review counts for the bbox places so the client can
+    // bypass the category filter for places that have at least one real
+    // user review. Same `mv_place_ratings` MV the full path uses; the
+    // partial query below stays cheap (small `IN (…)` set per bbox).
+    // See #77.
+    const slimPlaces = (data ?? []) as SlimPlaceRow[];
+    const reviewedIds = new Set<string>();
+    if (slimPlaces.length > 0) {
+      const { data: ratingRows } = await supabase
+        .from('mv_place_ratings')
+        .select('place_id, user_rating_count')
+        .in('place_id', slimPlaces.map((p) => p.id))
+        .gt('user_rating_count', 0)
+        .limit(MAX_SLIM);
+      for (const r of (ratingRows ?? []) as Pick<RatingRow, 'place_id' | 'user_rating_count'>[]) {
+        if ((r.user_rating_count ?? 0) > 0) reviewedIds.add(r.place_id);
+      }
+    }
+
+    const out = slimPlaces.map((p) => ({
       id: p.id,
       name: p.name,
       category: p.category,
       lat: p.lat,
       lng: p.lng,
       brand: p.brand,
+      has_user_reviews: reviewedIds.has(p.id),
     }));
     // CDN caches the bbox response for 60 s and serves it stale up to 5 min
     // while revalidating. Place data only changes on seed/prune so this is
@@ -110,7 +131,7 @@ export async function GET(request: NextRequest) {
 
   const { data: ratings } = await supabase
     .from('mv_place_ratings')
-    .select('place_id, study_spot_rating, rating_count')
+    .select('place_id, study_spot_rating, rating_count, user_rating_count')
     .in('place_id', places.map((p) => p.id))
     .limit(MAX_FULL);
 
@@ -130,6 +151,8 @@ export async function GET(request: NextRequest) {
       brand: p.brand,
       rating: r?.study_spot_rating ?? 0,
       review_count: r?.rating_count ?? 0,
+      user_review_count: r?.user_rating_count ?? 0,
+      has_user_reviews: (r?.user_rating_count ?? 0) > 0,
       avg_spend_eur: 0,
       // Vitals come from reviews. Until anyone reviews this place, we
       // surface 'unknown' explicitly rather than guessing 'moderate'.

@@ -185,6 +185,9 @@ export default function MapPage() {
     lat: number;
     lng: number;
     brand: string | null;
+    /** True when the API found at least one `source='user'` review for
+     *  this place. Bypasses the active category filter — see #77. */
+    has_user_reviews?: boolean;
   }
   const [mapPlaces, setMapPlaces] = useState<SlimPlace[]>([]);
   const lastBboxRef = useRef<[number, number, number, number] | null>(null);
@@ -238,7 +241,13 @@ export default function MapPage() {
 
   const visiblePlaces = useMemo(() => {
     return sourcePlaces.filter((p) => {
-      if (filters.categories.size > 0 && !filters.categories.has(p.category)) return false;
+      // Category gate — but a place with at least one user review bypasses
+      // the active category filter. The default visible state on first
+      // open is cafés-only; reviewed-but-non-cafe places stay visible
+      // because someone has validated them. See #77.
+      if (filters.categories.size > 0 && !filters.categories.has(p.category)) {
+        if (!p.has_user_reviews) return false;
+      }
       if (filters.outlets && p.outlets === 'none') return false;
       if (filters.noise !== 'any' && p.noise !== filters.noise) return false;
       if (filters.wifi !== 'any' && p.wifi !== filters.wifi) return false;
@@ -262,10 +271,15 @@ export default function MapPage() {
             lat: p.lat,
             lng: p.lng,
             brand: p.brand,
+            has_user_reviews: p.has_user_reviews,
           }))
         : visiblePlaces;
     if (filters.categories.size === 0) return source;
-    return source.filter((p) => filters.categories.has(p.category));
+    // Same override as `visiblePlaces`: reviewed places ignore the
+    // category filter and always render.
+    return source.filter(
+      (p) => filters.categories.has(p.category) || Boolean(p.has_user_reviews),
+    );
   }, [mapPlaces, visiblePlaces, filters.categories]);
 
   // Pan to the active city's center whenever it changes.

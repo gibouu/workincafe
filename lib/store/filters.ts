@@ -34,10 +34,20 @@ export interface FilterState {
   activeCount: () => number;
 }
 
-// Empty set means "no category filter" — all categories visible.
-// Selecting one or more chips narrows the map to those.
+// Default narrows the map to coffee shops on first open. The store is
+// not persisted, so every reload re-applies this baseline. Selecting
+// other chips widens the view; reviewed-but-non-cafe places bypass the
+// category check via `has_user_reviews` (see #77).
+const DEFAULT_CATEGORIES: PlaceCategory[] = ['cafe'];
+
+function isDefaultCategorySet(s: Set<PlaceCategory>): boolean {
+  if (s.size !== DEFAULT_CATEGORIES.length) return false;
+  for (const c of DEFAULT_CATEGORIES) if (!s.has(c)) return false;
+  return true;
+}
+
 export const useFilters = create<FilterState>((set, get) => ({
-  categories: new Set<PlaceCategory>(),
+  categories: new Set<PlaceCategory>(DEFAULT_CATEGORIES),
   openNow: false,
   outlets: false,
   outdoor: false,
@@ -65,7 +75,7 @@ export const useFilters = create<FilterState>((set, get) => ({
   setMaxDistanceKm: (maxDistanceKm) => set({ maxDistanceKm }),
   reset: () =>
     set({
-      categories: new Set<PlaceCategory>(),
+      categories: new Set<PlaceCategory>(DEFAULT_CATEGORIES),
       openNow: false,
       outlets: false,
       outdoor: false,
@@ -79,7 +89,11 @@ export const useFilters = create<FilterState>((set, get) => ({
   activeCount: () => {
     const s = get();
     let n = 0;
-    if (s.categories.size > 0) n++;
+    // The cafe-only default isn't an "active" filter — it's the
+    // baseline the rest of the app is built around. Anything different
+    // from that (zero categories, or any non-cafe category, or extras
+    // alongside cafe) does count as active.
+    if (!isDefaultCategorySet(s.categories)) n++;
     if (s.openNow) n++;
     if (s.outlets) n++;
     if (s.outdoor) n++;
