@@ -7,12 +7,16 @@ export function TopRightControls({
   onFilter,
   onGeolocate,
   geolocating,
+  geolocateBlocked = false,
   filterCount = 0,
   showFilter = true,
 }: {
   onFilter?: () => void;
   onGeolocate?: () => void;
   geolocating?: boolean;
+  /** True when the Permissions API reports `denied`. Renders a red dot on
+   *  the geolocate button so the user knows tapping it won't prompt. */
+  geolocateBlocked?: boolean;
   filterCount?: number;
   showFilter?: boolean;
 }) {
@@ -32,14 +36,22 @@ export function TopRightControls({
           )}
         </div>
       )}
-      <PillButton aria-label="My location" onClick={onGeolocate}>
-        <Icon
-          name={geolocating ? 'CircleNotch' : 'NavigationArrow'}
-          size={20}
-          weight={geolocating ? 'regular' : 'fill'}
-          className={geolocating ? 'animate-spin' : 'text-accent'}
-        />
-      </PillButton>
+      <div className="relative">
+        <PillButton aria-label="My location" onClick={onGeolocate}>
+          <Icon
+            name={geolocating ? 'CircleNotch' : 'NavigationArrow'}
+            size={20}
+            weight={geolocating ? 'regular' : 'fill'}
+            className={geolocating ? 'animate-spin' : 'text-accent'}
+          />
+        </PillButton>
+        {geolocateBlocked && (
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-white bg-accent-red"
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -12,6 +12,15 @@ import { FloatingFriendsCard } from '@/components/card/FloatingFriendsCard';
 import { ProfileSheet } from '@/components/card/ProfileSheet';
 import { CoworkSheet } from '@/components/card/CoworkSheet';
 import { TopRightControls } from '@/components/map/TopRightControls';
+import { GeolocateBlockedBanner } from '@/components/map/GeolocateBlockedBanner';
+import {
+  probeGeolocationPermission,
+  watchGeolocationPermission,
+  readCachedPosition,
+  writeCachedPosition,
+  geolocationErrorLabel,
+  type GeolocatePermissionState,
+} from '@/lib/geolocate';
 import { PlaceSidebar } from '@/components/layout/PlaceSidebar';
 import { CitySwitcher } from '@/components/layout/CitySwitcher';
 import { CitySuggestBanner } from '@/components/layout/CitySuggestBanner';
@@ -70,6 +79,9 @@ export default function MapPage() {
   const panel = useLayout((s) => s.panel);
   const setPanel = useLayout((s) => s.setPanel);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [geolocatePermission, setGeolocatePermission] =
+    useState<GeolocatePermissionState>('unknown');
+  const [blockedBannerOpen, setBlockedBannerOpen] = useState(false);
 
   // selectedPlace and panel are mutated atomically inside event handlers
   // (handleSelectPlace, the various onClose callbacks). No sync effects —
@@ -262,14 +274,86 @@ export default function MapPage() {
     setSelectedPlace(null);
   }, [cityMeta.center.lat, cityMeta.center.lng]);
 
-  // Ask the IP-geo endpoint immediately on mount. Two side-effects:
-  //   1. If the resolved city matches a known entry in `CITIES` AND the user
-  //      has neither expressed a preference nor previously dismissed a
-  //      prompt for that city, surface a soft "Switch?" banner instead of
-  //      silently auto-switching. See #48.
-  //   2. Pan the map gently if the IP is reasonably close to the active city.
-  // Runs alongside the welcome overlay so the map already feels live
-  // underneath the tutorial.
+  // Probe the Permissions API once on mount. Used by `handleGeolocate` to
+  // short-circuit known-denied state into the recovery banner, and by the
+  // geolocate button to render its red-dot indicator. See #71.
+  useEffect(() => {
+    let unsub = () => {};
+    void probeGeolocationPermission().then((state) => {
+      setGeolocatePermission(state);
+      console.info('[geolocate] initial permission state=%s', state);
+    });
+    void watchGeolocationPermission((state) => {
+      setGeolocatePermission(state);
+      console.info('[geolocate] permission changed to=%s', state);
+    }).then((u) => {
+      unsub = u;
+    });
+    return () => unsub();
+  }, []);
+
+  // Last-known position pan: the cheapest way to get a returning user to
+  // their actual location instead of the IP-derived Boulogne-Billancourt
+  // for any French mobile carrier. See #71.
+  const cachedPanRef = useRef(false);
+  useEffect(() => {
+    if (cachedPanRef.current) return;
+    const cached = readCachedPosition();
+    if (cached) {
+      cachedPanRef.current = true;
+      console.info('[geolocate] hydrating from cache lat=%s lng=%s', cached.lat, cached.lng);
+      // Wait a tick so the map has finished init.
+      const t = setTimeout(() => {
+        mapRef.current?.setUserLocation(cached.lat, cached.lng);
+        mapRef.current?.panTo(cached.lat, cached.lng);
+      }, 200);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, []);
+
+  // If permission is already 'granted' on mount, fire `getCurrentPosition`
+  // silently — no prompt, no UI change, just an accurate pan as soon as
+  // the GPS fix lands. Re-runs once permission flips to granted (e.g. user
+  // toggled it in iOS Settings while the tab was open).
+  const silentPanFiredRef = useRef(false);
+  useEffect(() => {
+    if (silentPanFiredRef.current) return;
+    if (geolocatePermission !== 'granted') return;
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    silentPanFiredRef.current = true;
+    console.info('[geolocate] permission=granted, firing silent getCurrentPosition');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        console.info(
+          '[geolocate] silent fix lat=%s lng=%s accuracy=%sm',
+          latitude.toFixed(5),
+          longitude.toFixed(5),
+          pos.coords.accuracy,
+        );
+        writeCachedPosition(latitude, longitude);
+        mapRef.current?.setUserLocation(latitude, longitude);
+        mapRef.current?.panTo(latitude, longitude);
+      },
+      (err) => {
+        // Silent path — log only; the user didn't ask for this so don't
+        // toast.
+        console.warn(
+          '[geolocate] silent err=%s code=%d',
+          geolocationErrorLabel(err.code),
+          err.code,
+        );
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 },
+    );
+  }, [geolocatePermission]);
+
+  // Ask the IP-geo endpoint on mount for the city auto-switch decision
+  // (#18 / #48 / #49). The IP coords are intentionally NOT used as a
+  // primary "where am I?" pan anymore — they pin every French mobile
+  // user to Boulogne-Billancourt. The pan branch only runs when no
+  // cached position has hydrated.
   const ipPannedRef = useRef(false);
   const [suggestedCity, setSuggestedCity] = useState<City | null>(null);
   useEffect(() => {
@@ -312,6 +396,9 @@ export default function MapPage() {
           // via cityMeta; if they dismiss, the next mount will pan instead.
           return;
         }
+        // Skip the IP-derived pan if a cached browser position already
+        // moved us; that was an accurate fix, IP would only walk it back.
+        if (cachedPanRef.current) return;
         const dKm = haversineKm(g.lat, g.lng, cityMeta.center.lat, cityMeta.center.lng);
         if (dKm < 80) mapRef.current?.panTo(g.lat, g.lng);
       })
@@ -364,11 +451,28 @@ export default function MapPage() {
       showToast('Location not supported in this browser', { tone: 'error' });
       return;
     }
+    // If the Permissions API has already told us the user denied location
+    // for this origin, getCurrentPosition will fail synchronously without
+    // ever showing the system prompt. Surface the recovery banner instead
+    // of letting the failure look silent. See #71.
+    if (geolocatePermission === 'denied') {
+      console.warn('[geolocate] permission=denied — opening recovery banner');
+      setBlockedBannerOpen(true);
+      return;
+    }
     setGeolocating(true);
 
     const applyFix = (pos: GeolocationPosition) => {
-      mapRef.current?.setUserLocation(pos.coords.latitude, pos.coords.longitude);
-      mapRef.current?.panTo(pos.coords.latitude, pos.coords.longitude);
+      const { latitude, longitude } = pos.coords;
+      console.info(
+        '[geolocate] fix lat=%s lng=%s accuracy=%sm',
+        latitude.toFixed(5),
+        longitude.toFixed(5),
+        pos.coords.accuracy,
+      );
+      writeCachedPosition(latitude, longitude);
+      mapRef.current?.setUserLocation(latitude, longitude);
+      mapRef.current?.panTo(latitude, longitude);
       setGeolocating(false);
     };
 
@@ -378,21 +482,29 @@ export default function MapPage() {
     navigator.geolocation.getCurrentPosition(
       applyFix,
       (highErr) => {
+        console.warn(
+          '[geolocate] high-accuracy err=%s code=%d msg=%s',
+          geolocationErrorLabel(highErr.code),
+          highErr.code,
+          highErr.message,
+        );
         if (highErr.code === highErr.PERMISSION_DENIED) {
           setGeolocating(false);
-          const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
-          showToast(
-            isIOS
-              ? 'Location blocked. Tap “AA” in the URL bar → Website Settings → Allow Location, then retry.'
-              : 'Location permission blocked. Allow it in browser settings, then refresh.',
-            { tone: 'error' },
-          );
+          // Refresh cached state so the button's red dot turns on.
+          setGeolocatePermission('denied');
+          setBlockedBannerOpen(true);
           return;
         }
         navigator.geolocation.getCurrentPosition(
           applyFix,
           (lowErr) => {
             setGeolocating(false);
+            console.warn(
+              '[geolocate] low-accuracy err=%s code=%d msg=%s',
+              geolocationErrorLabel(lowErr.code),
+              lowErr.code,
+              lowErr.message,
+            );
             const msg =
               lowErr.code === lowErr.POSITION_UNAVAILABLE
                 ? 'Location unavailable. Check Privacy → Location Services.'
@@ -430,6 +542,7 @@ export default function MapPage() {
           onFilter={() => setFilterOpen(true)}
           onGeolocate={handleGeolocate}
           geolocating={geolocating}
+          geolocateBlocked={geolocatePermission === 'denied'}
           filterCount={activeFilterCount}
           showFilter={!isDesktop}
         />
@@ -538,6 +651,11 @@ export default function MapPage() {
           }}
         />
       )}
+
+      <GeolocateBlockedBanner
+        open={blockedBannerOpen}
+        onClose={() => setBlockedBannerOpen(false)}
+      />
     </div>
   );
 }
