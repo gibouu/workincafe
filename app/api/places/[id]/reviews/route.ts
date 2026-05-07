@@ -11,6 +11,13 @@ interface ReviewRow {
   geo_verified: boolean;
   created_at: string;
   users: { display_name: string | null } | null;
+  review_photos: {
+    slot: string;
+    cloudinary_public_id: string;
+    cloudinary_version: string | null;
+    width: number | null;
+    height: number | null;
+  }[] | null;
 }
 
 export async function GET(
@@ -41,7 +48,7 @@ export async function GET(
   const { data, error } = await supabase
     .from('reviews')
     .select(
-      'id, overall_rating, wifi_rating, noise_rating, seating_rating, comment, geo_verified, created_at, users(display_name)',
+      'id, overall_rating, wifi_rating, noise_rating, seating_rating, comment, geo_verified, created_at, users(display_name), review_photos(slot, cloudinary_public_id, cloudinary_version, width, height)',
     )
     .eq('place_id', resolvedId)
     .eq('is_hidden', false)

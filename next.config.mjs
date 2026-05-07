@@ -12,6 +12,13 @@ const nextConfig = {
   experimental: {
     typedRoutes: false,
   },
+  images: {
+    // Review photos live on Cloudinary; configure remotePatterns so we can
+    // render them via next/image instead of bare <img>. See #15.
+    remotePatterns: [
+      { protocol: 'https', hostname: 'res.cloudinary.com', pathname: '/**' },
+    ],
+  },
 };
 
 export default nextConfig;

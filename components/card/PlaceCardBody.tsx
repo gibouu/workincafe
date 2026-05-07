@@ -20,7 +20,7 @@ import { ReviewList } from '@/components/review/ReviewList';
 import { AllReviewsSheet } from '@/components/review/AllReviewsSheet';
 import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
 import { ReviewForm } from '@/components/review/ReviewForm';
-import type { DemoReview } from '@/lib/demo/reviews';
+import type { DemoReview, ReviewPhoto } from '@/lib/demo/reviews';
 import { formatStayLimit } from '@/lib/format/stay-limit';
 
 const WIFI_ICON: Record<WifiBucket, PhosphorIconName> = {
@@ -343,6 +343,15 @@ interface DbReview {
   geo_verified: boolean;
   created_at: string;
   users: { display_name: string | null } | null;
+  review_photos:
+    | {
+        slot: string;
+        cloudinary_public_id: string;
+        cloudinary_version: string | null;
+        width: number | null;
+        height: number | null;
+      }[]
+    | null;
 }
 
 function relativeTime(iso: string): string {
@@ -365,6 +374,8 @@ function initialsFor(name: string | null | undefined): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+const ALLOWED_PHOTO_SLOTS = new Set(['menu', 'inside', 'outside', 'special']);
+
 function mapDbReviewToDemoShape(raw: unknown): DemoReview {
   const r = raw as DbReview;
   const author = r.users?.display_name ?? 'Anonymous';
@@ -372,6 +383,15 @@ function mapDbReviewToDemoShape(raw: unknown): DemoReview {
   // half of the new range). The DemoReview shape expects 1–5 — squish 1–10
   // back down for display until the demo type is widened.
   const squish = (v: number | null) => (v == null ? undefined : Math.max(1, Math.round(v / 2)));
+  const photos = (r.review_photos ?? [])
+    .filter((p) => ALLOWED_PHOTO_SLOTS.has(p.slot))
+    .map((p) => ({
+      slot: p.slot as ReviewPhoto['slot'],
+      publicId: p.cloudinary_public_id,
+      version: p.cloudinary_version,
+      width: p.width,
+      height: p.height,
+    }));
   return {
     id: r.id,
     author,
@@ -384,6 +404,7 @@ function mapDbReviewToDemoShape(raw: unknown): DemoReview {
     comment: r.comment ?? '',
     createdAgo: relativeTime(r.created_at),
     geoVerified: r.geo_verified,
+    photos: photos.length > 0 ? photos : undefined,
   };
 }
 

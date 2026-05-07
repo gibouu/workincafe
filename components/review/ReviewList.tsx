@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Icon } from '@/components/icons/Icon';
 import { FlagReviewSheet } from '@/components/review/FlagReviewSheet';
+import { ReviewPhotos } from '@/components/review/ReviewPhotos';
 import type { DemoReview } from '@/lib/demo/reviews';
 
 export function ReviewList({ reviews }: { reviews: DemoReview[] }) {
@@ -85,6 +86,7 @@ export function ReviewList({ reviews }: { reviews: DemoReview[] }) {
             <p className="mt-2 text-[14px] leading-relaxed text-[var(--text-primary)]">
               {r.comment}
             </p>
+            {r.photos && r.photos.length > 0 && <ReviewPhotos photos={r.photos} />}
           </li>
         ))}
       </ul>
