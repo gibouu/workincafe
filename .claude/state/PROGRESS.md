@@ -1,5 +1,18 @@
 # Progress Log
 Newest first. One line per entry.
+[2026-05-07 09:56] Edit: .claude/state/PROGRESS.md
+[2026-05-07 10:00] #14: PR #33 opened — PlaceCard snap points + AddPlaceWizard/ReviewForm localStorage drafts. Why: iPhone SE reach + no draft loss on X.
+[2026-05-07 09:56] Edit: .claude/state/DECISIONS.md
+[2026-05-07 09:55] Write: .claude/state/TASKS.md
+[2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
+[2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
+[2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
+[2026-05-07 09:51] Edit: components/review/ReviewForm.tsx
+[2026-05-07 09:51] Edit: app/places/new/AddPlaceWizard.tsx
+[2026-05-07 09:50] Edit: app/places/new/AddPlaceWizard.tsx
+[2026-05-07 09:50] Edit: app/places/new/AddPlaceWizard.tsx
+[2026-05-07 09:50] Edit: app/places/new/AddPlaceWizard.tsx
+[2026-05-07 09:50] Edit: components/card/PlaceCard.tsx
 [2026-05-05 13:44] Edit: app/places/new/AddPlaceWizard.tsx
 [2026-05-05 13:44] Edit: app/places/new/AddPlaceWizard.tsx
 [2026-05-05 13:44] Edit: app/places/new/AddPlaceWizard.tsx
