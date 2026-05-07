@@ -11,6 +11,7 @@ interface MenuRow {
   width: number | null;
   height: number | null;
   file_kind: 'image' | 'pdf';
+  visibility: 'public' | 'owner_only';
 }
 
 export async function GET(
@@ -33,9 +34,12 @@ export async function GET(
     if (ref?.place_id) resolvedId = ref.place_id;
   }
 
+  // RLS filters owner_only rows for non-owners — we still ask for the
+  // column so the OwnerMenuManager (which uses this same endpoint) can
+  // render the toggle state.
   const { data, error } = await supabase
     .from('place_menus')
-    .select('id, label, cloudinary_public_id, cloudinary_version, width, height, file_kind')
+    .select('id, label, cloudinary_public_id, cloudinary_version, width, height, file_kind, visibility')
     .eq('place_id', resolvedId)
     .order('created_at', { ascending: true });
 

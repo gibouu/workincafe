@@ -14,6 +14,7 @@ interface MenuRow {
   width: number | null;
   height: number | null;
   file_kind: 'image' | 'pdf';
+  visibility: 'public' | 'owner_only';
 }
 
 function thumbUrl(m: MenuRow): string {
@@ -138,6 +139,7 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
           width: result.width,
           height: result.height,
           file_kind: isPdf ? 'pdf' : 'image',
+          visibility: 'public',
         },
       ]);
     } catch (err) {
@@ -160,6 +162,29 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
     } catch (err) {
       setMenus(prev);
       setError(err instanceof Error ? err.message : 'Delete failed');
+    }
+  };
+
+  const toggleVisibility = async (menuId: string) => {
+    setError(null);
+    const prev = menus;
+    const target = prev.find((m) => m.id === menuId);
+    if (!target) return;
+    const next = target.visibility === 'public' ? 'owner_only' : 'public';
+    setMenus((list) => list.map((m) => (m.id === menuId ? { ...m, visibility: next } : m)));
+    try {
+      const resp = await fetch(
+        `/api/owner/places/${encodeURIComponent(placeId)}/menus/${encodeURIComponent(menuId)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ visibility: next }),
+        },
+      );
+      if (!resp.ok) throw new Error(`patch failed (${resp.status})`);
+    } catch (err) {
+      setMenus(prev);
+      setError(err instanceof Error ? err.message : 'Visibility update failed');
     }
   };
 
@@ -218,6 +243,22 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
                   <span className="absolute bottom-1.5 left-1.5 z-10 rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
                     PDF
                   </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => toggleVisibility(m.id)}
+                  aria-label={m.visibility === 'public' ? 'Hide menu from public' : 'Make menu public'}
+                  title={m.visibility === 'public' ? 'Visible to everyone — tap to hide' : 'Hidden draft — tap to publish'}
+                  className={`absolute left-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full shadow-bubble ${
+                    m.visibility === 'public'
+                      ? 'bg-accent-green text-white hover:bg-accent-green/90'
+                      : 'bg-sys-gray-3 text-white hover:bg-sys-gray-2'
+                  }`}
+                >
+                  <Icon name={m.visibility === 'public' ? 'Eye' : 'EyeSlash'} size={13} />
+                </button>
+                {m.visibility === 'owner_only' && (
+                  <span className="absolute inset-0 z-0 bg-black/30" />
                 )}
                 <button
                   type="button"
