@@ -13,6 +13,7 @@ interface Body {
   height?: number | null;
   bytes?: number | null;
   label?: string | null;
+  file_kind?: 'image' | 'pdf';
 }
 
 // Owner-uploaded menu attachments. POST records a Cloudinary reference
@@ -50,6 +51,8 @@ export async function POST(
     return NextResponse.json({ error: 'cloudinary_public_id does not match place_id' }, { status: 400 });
   }
 
+  const fileKind = body.file_kind === 'pdf' ? 'pdf' : 'image';
+
   const admin = createAdminClient();
   const { data, error } = await admin
     .from('place_menus')
@@ -61,6 +64,7 @@ export async function POST(
       width: typeof body.width === 'number' ? body.width : null,
       height: typeof body.height === 'number' ? body.height : null,
       bytes: typeof body.bytes === 'number' ? body.bytes : null,
+      file_kind: fileKind,
       created_by: user.id,
     })
     .select('id')

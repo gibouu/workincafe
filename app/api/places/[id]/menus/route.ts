@@ -10,6 +10,7 @@ interface MenuRow {
   cloudinary_version: string | null;
   width: number | null;
   height: number | null;
+  file_kind: 'image' | 'pdf';
 }
 
 export async function GET(
@@ -34,7 +35,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from('place_menus')
-    .select('id, label, cloudinary_public_id, cloudinary_version, width, height')
+    .select('id, label, cloudinary_public_id, cloudinary_version, width, height, file_kind')
     .eq('place_id', resolvedId)
     .order('created_at', { ascending: true });
 
