@@ -1,32 +1,35 @@
 # Tasks
 One H2 section per task.
 
-## #17 — Map: spread overlapping pins at max zoom (PR OPEN)
-- [x] `lib/map/spread.ts` — `spreadColocated()` buckets unclustered features at zoom ≥18 by ~1m grid, fans groups out in a 5m ring with latitude-aware lng scaling.
-- [x] `MapContainer.rebuild()` — substitute displaced coords on `marker.setLngLat()` for points returned by the helper.
+## #77 — Cafe-only default + reviewed-place override (PR #84 OPEN)
+- [x] Migration `018_user_rating_count.sql` written.
+- [x] API exposes `has_user_reviews` + `user_review_count`.
+- [x] DemoPlace type extended.
+- [x] Filter store defaults to `{cafe}`; `activeCount` ignores the baseline.
+- [x] Map page filter override on `has_user_reviews`.
 - [x] Quality gate clean.
-- [x] PR #46 opened (Closes #17).
+- [ ] **Refine override** per user feedback: restaurant + `study_spot_rating ≥ 7.5` only (not any reviewed place); libraries / coworking / hotels / fast-food never surface unless filter selected. Slim payload also needs to expose `rating`.
+- [ ] Apply migration 018 (Supabase MCP reconnected — can apply directly now).
+- [ ] Merge.
 
-## Done today (2026-05-07)
-- #14 → PR #33 (467f64c): iPhone SE drawer snap points + form draft persistence.
-- #34 → PR #35 (8110328): inline FSQ mall children in autocomplete.
-- bottom-nav overlap → PR #36 (5473c4c): hide global nav on `/places/new`.
-- #15 → PR #42 (6244214): review photos render via `next/image` (`ReviewPhotos` strip + Cloudinary `remotePatterns` + API select).
-- #16 → PR #44 (259fca1): "With photos" filter chip + fullscreen `PhotoLightbox` (Esc + arrow keys + body-scroll lock).
+## Open follow-ups (filed)
+- #76 tracker (umbrella).
+- #78 independent bakeries in default visible set.
+- #79 database category audit.
+- #80 split fast_food into burger / fast-casual.
+- #81 brand→category override (Starbucks-as-fast_food fix).
+- #82 add-place "find or confirm" duplicate detection + user-validation.
+- #83 quality dedup — note: "seats always full" is a GOOD signal per user (popular work spot), don't deprioritise for that.
 
-## Open follow-ups filed today
-- #37 — mall tenant panel on place card (option 2 from #34).
-- #38 — operator-side bulk seed of mall children (option 3 from #34).
-- #39 — cache FSQ Place Details (deferred until limits bite).
-- #40 — pre-publish content moderation (Cloudinary add-on) for review photos.
-- #41 — review photo polish: edit affordance, lightbox, slot reorder (lightbox now shipped via #44; polish still open).
-- #43 — cursor pagination for AllReviewsSheet (waits for >20 reviews on a place).
-- #45 — pre-select "With photos" chip when tapping a thumbnail from the inline place card.
+## Done in this session burst
+- #71 / PR #72 geolocate (permission probe + cache + denial banner).
+- PR #73 welcome CTA — user-initiated precise location.
+- PR #75 review-submit soft sign-in prompt.
+- #56 magic-link, #58 cron, #59 menus, #61/#63 menu PDFs+visibility, #62 cloudinary prune, #64–#69 polish wave, #70 orphan prune.
+- Branch protection enabled on main (PR + `verify` required, force-push blocked, admins included).
 
-## Pending backlog (untouched)
-- #18 — auto-switch active city on IP geolocation.
-- #19 / #20 / #21 / #22 / #25 — owner / Stripe flows.
-- #23 / #24 / #28 — backend / admin sweeps.
+## Stripe-blocked (deferred)
+- #19 Stripe Checkout, #20 camera-based QR scanner.
 
 ## #6 — Admin parking lot (TRIAGE)
 - Tracker only. Items graduate to their own issues.
