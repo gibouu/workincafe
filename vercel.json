@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/prune-stripe-events",
       "schedule": "30 4 * * *"
+    },
+    {
+      "path": "/api/cron/prune-orphaned-cloudinary",
+      "schedule": "0 5 * * *"
     }
   ]
 }
