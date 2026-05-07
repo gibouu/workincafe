@@ -62,6 +62,9 @@ select
   ) as study_spot_rating,
   count(*) as rating_count,
   count(*) filter (where wr.source = 'user' and wr.is_hidden = false) as user_rating_count,
+  -- avg of source='user' ratings only — feeds the rating-threshold gate on the
+  -- map's category-filter override. Null when there are no user reviews yet.
+  avg(wr.rating) filter (where wr.source = 'user' and wr.is_hidden = false)::real as user_avg_rating,
   least(1.0, sum(wr.w) / 20.0) as confidence,
   avg(nullif(wr.wifi_rating, 0))::real        as wifi_mean,
   avg(nullif(wr.noise_rating, 0))::real       as noise_mean,

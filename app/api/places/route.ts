@@ -30,6 +30,7 @@ interface RatingRow {
   study_spot_rating: number | null;
   rating_count: number;
   user_rating_count: number;
+  user_avg_rating: number | null;
 }
 
 const MAX_FULL = 2500;
@@ -138,7 +139,7 @@ export async function GET(request: NextRequest) {
 
   const { data: ratings } = await supabase
     .from('mv_place_ratings')
-    .select('place_id, study_spot_rating, rating_count, user_rating_count')
+    .select('place_id, study_spot_rating, rating_count, user_rating_count, user_avg_rating')
     .in('place_id', places.map((p) => p.id))
     .limit(MAX_FULL);
 
@@ -159,6 +160,7 @@ export async function GET(request: NextRequest) {
       rating: r?.study_spot_rating ?? 0,
       review_count: r?.rating_count ?? 0,
       user_review_count: r?.user_rating_count ?? 0,
+      user_avg_rating: r?.user_avg_rating ?? null,
       has_user_reviews: (r?.user_rating_count ?? 0) > 0,
       avg_spend_eur: 0,
       // Vitals come from reviews. Until anyone reviews this place, we

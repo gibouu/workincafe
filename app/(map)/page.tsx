@@ -248,14 +248,14 @@ export default function MapPage() {
       // Category gate (#77): cafés always pass when in the active
       // filter set. The override for non-active categories is narrow:
       // only restaurants bypass, and only when they have at least one
-      // user review AND a study_spot_rating ≥ 7.5 (= "high enough to
+      // user review AND a study_spot_rating > 7 (= "high enough to
       // be a working spot"). McDonald's-with-a-review still does NOT
-      // surface; a beloved highly-rated trattoria does.
+      // surface; a beloved 7.8-rated trattoria does.
       if (filters.categories.size > 0 && !filters.categories.has(p.category)) {
         const isHighlyRatedRestaurant =
           p.category === 'restaurant' &&
           Boolean(p.has_user_reviews) &&
-          (p.rating ?? 0) >= 7.5;
+          (p.rating ?? 0) > 7;
         if (!isHighlyRatedRestaurant) return false;
       }
       if (filters.outlets && p.outlets === 'none') return false;
@@ -296,7 +296,7 @@ export default function MapPage() {
       return (
         p.category === 'restaurant' &&
         Boolean(p.has_user_reviews) &&
-        (p.rating ?? 0) >= 7.5
+        (p.rating ?? 0) > 7
       );
     });
   }, [mapPlaces, visiblePlaces, filters.categories]);
