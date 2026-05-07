@@ -10,6 +10,7 @@ import { Icon } from '@/components/icons/Icon';
 import { categoryMeta } from '@/lib/categories';
 import { brandLogoFor } from '@/lib/brand-logos';
 import { type DemoPlace } from '@/lib/demo/paris-places';
+import { spreadColocated } from '@/lib/map/spread';
 
 type PlaceProps = { placeId: string };
 
@@ -260,6 +261,15 @@ export const MapContainer = forwardRef<
       ];
       const clusters = index.getClusters(bbox, zoom);
 
+      // At max zoom, supercluster stops clustering — but places that share
+      // identical (or near-identical) coordinates still stack on the same
+      // pixel. Spread colocated singletons in a small ring so each is
+      // individually clickable. See #17.
+      const placeFeatures = clusters.filter(
+        (f): f is PointFeature<PlaceProps> => !('cluster' in f.properties && f.properties.cluster),
+      );
+      const displaced = spreadColocated(placeFeatures, zoom);
+
       // Remove previous markers
       for (const marker of markersRef.current) {
         try {
@@ -326,8 +336,9 @@ export const MapContainer = forwardRef<
             e.stopPropagation();
             onSelectRef.current(place);
           });
+          const coords = displaced.get(placeId) ?? [lng, lat];
           const marker = new maplibregl.Marker({ element: wrap, anchor: 'center' })
-            .setLngLat([lng, lat])
+            .setLngLat(coords)
             .addTo(map);
           next.push(marker);
         }
