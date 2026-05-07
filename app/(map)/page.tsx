@@ -296,7 +296,7 @@ export default function MapPage() {
         // `setCity()` call — null here means default-only.
         let stored: string | null = null;
         let dismissed: string | null = null;
-        const matched = matchKnownCity(g.city, g.country);
+        const matched = matchKnownCity(g.city, g.country, { lat: g.lat, lng: g.lng });
         try {
           stored = window.localStorage.getItem('wic:city');
           if (matched) {
