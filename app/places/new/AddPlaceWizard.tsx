@@ -91,6 +91,58 @@ const STEP_TITLES: Record<Step, string> = {
 };
 const STEPS: Step[] = ['find', 'describe'];
 
+// Persisted draft so tapping the X (or accidentally swiping back) doesn't
+// drop the wizard's contents — see #14.
+const DRAFT_KEY = 'wic:place-new-draft';
+interface WizardDraft {
+  step: Step;
+  name: string;
+  category: PlaceCategory;
+  customType: string;
+  notes: string;
+  search: string;
+  picked: PlaceDetails | null;
+  addressQuery: string;
+}
+function loadDraft(): WizardDraft | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<WizardDraft>;
+    if (typeof parsed !== 'object' || parsed === null) return null;
+    return {
+      step: parsed.step === 'describe' ? 'describe' : 'find',
+      name: typeof parsed.name === 'string' ? parsed.name : '',
+      category:
+        typeof parsed.category === 'string' && CATEGORY_KEYS.includes(parsed.category as PlaceCategory)
+          ? (parsed.category as PlaceCategory)
+          : 'cafe',
+      customType: typeof parsed.customType === 'string' ? parsed.customType : '',
+      notes: typeof parsed.notes === 'string' ? parsed.notes : '',
+      search: typeof parsed.search === 'string' ? parsed.search : '',
+      picked:
+        parsed.picked &&
+        typeof parsed.picked === 'object' &&
+        typeof (parsed.picked as PlaceDetails).lat === 'number' &&
+        typeof (parsed.picked as PlaceDetails).lng === 'number'
+          ? (parsed.picked as PlaceDetails)
+          : null,
+      addressQuery: typeof parsed.addressQuery === 'string' ? parsed.addressQuery : '',
+    };
+  } catch {
+    return null;
+  }
+}
+function clearDraft(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    /* noop */
+  }
+}
+
 export function AddPlaceWizard({
   center: centerProp,
 }: {
@@ -120,7 +172,68 @@ export function AddPlaceWizard({
   const [addressQuery, setAddressQuery] = useState('');
   const [addressPredictions, setAddressPredictions] = useState<Prediction[]>([]);
   const [addressSearching, setAddressSearching] = useState(false);
+  const [draftHydrated, setDraftHydrated] = useState(false);
   const sessionTokenRef = useRef<string>(newSessionToken());
+
+  // Restore prior draft on first mount so navigating away (X) doesn't lose
+  // work. Setting state after `useState` means inputs flash empty for one
+  // render — acceptable for an MVP draft.
+  useEffect(() => {
+    const draft = loadDraft();
+    if (draft) {
+      setStep(draft.step);
+      setName(draft.name);
+      setCategory(draft.category);
+      setCustomType(draft.customType);
+      setNotes(draft.notes);
+      setSearch(draft.search);
+      setPicked(draft.picked);
+      setAddressQuery(draft.addressQuery);
+      const hadContent =
+        draft.name.trim().length > 0 ||
+        draft.notes.trim().length > 0 ||
+        draft.customType.trim().length > 0 ||
+        draft.search.trim().length > 0 ||
+        draft.addressQuery.trim().length > 0 ||
+        draft.picked !== null;
+      if (hadContent) showToast('Draft restored', { tone: 'info' });
+    }
+    setDraftHydrated(true);
+    // showToast is stable from zustand; not in deps to avoid re-running.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist on any field change once the draft has been hydrated. Skip the
+  // first render so we don't immediately overwrite stored state with empties.
+  useEffect(() => {
+    if (!draftHydrated) return;
+    const hasContent =
+      name.trim().length > 0 ||
+      notes.trim().length > 0 ||
+      customType.trim().length > 0 ||
+      search.trim().length > 0 ||
+      addressQuery.trim().length > 0 ||
+      picked !== null;
+    if (!hasContent) {
+      clearDraft();
+      return;
+    }
+    try {
+      const draft: WizardDraft = {
+        step,
+        name,
+        category,
+        customType,
+        notes,
+        search,
+        picked,
+        addressQuery,
+      };
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      /* quota exceeded etc. — non-fatal */
+    }
+  }, [draftHydrated, step, name, category, customType, notes, search, picked, addressQuery]);
 
   // Debounced autocomplete: hits Google → Foursquare → Photon depending on
   // which keys are configured server-side. We pass lat/lng so Foursquare can
@@ -314,6 +427,7 @@ export function AddPlaceWizard({
         notes: record.notes || undefined,
       }),
     }).catch(() => null);
+    clearDraft();
     showToast(`${record.name} submitted for review`);
     router.push('/');
   };

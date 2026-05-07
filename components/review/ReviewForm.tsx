@@ -155,6 +155,51 @@ interface ReviewFormProps {
   onClose?: () => void;
 }
 
+// Per-place draft so the user can swipe back / tap X without losing chip,
+// slider, and comment state — see #14. Photos and live measurements are not
+// persisted (Files can't go in localStorage; tests re-run in-session).
+const REVIEW_DRAFT_PREFIX = 'wic:review-draft:';
+interface ReviewDraft {
+  stepIndex: number;
+  seating: number;
+  outlets: number;
+  temperatureFeel: number;
+  currentBusyness: number;
+  foodValue: number;
+  overall: number;
+  overallTouched: boolean;
+  wifiManual: number;
+  noiseManual: number;
+  drinkPrice: DrinkPriceBucket | null;
+  foodPrice: FoodPriceBucket | null;
+  didOrder: 'yes' | 'no' | null;
+  workFacts: WorkFact[];
+  placeType: PlaceType | null;
+  comment: string;
+}
+function reviewDraftKey(placeId: string): string {
+  return `${REVIEW_DRAFT_PREFIX}${placeId}`;
+}
+function loadReviewDraft(placeId: string): Partial<ReviewDraft> | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(reviewDraftKey(placeId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<ReviewDraft>;
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+function clearReviewDraft(placeId: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(reviewDraftKey(placeId));
+  } catch {
+    /* noop */
+  }
+}
+
 export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps) {
   const meta = categoryMeta(place.category);
   const needsFood = FOOD_FORWARD.has(place.category);
@@ -202,6 +247,98 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
   const step = STEPS[stepIndex];
   const isFirstStep = stepIndex === 0;
   const isLastStep = stepIndex === STEPS.length - 1;
+
+  // Draft restore (one-shot on mount). Photos + live measurements stay fresh.
+  const draftHydratedRef = useRef(false);
+  useEffect(() => {
+    const draft = loadReviewDraft(place.id);
+    if (draft) {
+      if (typeof draft.stepIndex === 'number' && draft.stepIndex >= 0 && draft.stepIndex < STEPS.length)
+        setStepIndex(draft.stepIndex);
+      if (typeof draft.seating === 'number') setSeating(draft.seating);
+      if (typeof draft.outlets === 'number') setOutlets(draft.outlets);
+      if (typeof draft.temperatureFeel === 'number') setTemperatureFeel(draft.temperatureFeel);
+      if (typeof draft.currentBusyness === 'number') setCurrentBusyness(draft.currentBusyness);
+      if (typeof draft.foodValue === 'number') setFoodValue(draft.foodValue);
+      if (typeof draft.overall === 'number') setOverall(draft.overall);
+      if (typeof draft.overallTouched === 'boolean') setOverallTouched(draft.overallTouched);
+      if (typeof draft.wifiManual === 'number') setWifiManual(draft.wifiManual);
+      if (typeof draft.noiseManual === 'number') setNoiseManual(draft.noiseManual);
+      if (draft.drinkPrice !== undefined) setDrinkPrice(draft.drinkPrice);
+      if (draft.foodPrice !== undefined) setFoodPrice(draft.foodPrice);
+      if (draft.didOrder !== undefined) setDidOrder(draft.didOrder);
+      if (Array.isArray(draft.workFacts)) setWorkFacts(draft.workFacts);
+      if (draft.placeType !== undefined) setPlaceType(draft.placeType);
+      if (typeof draft.comment === 'string') setComment(draft.comment);
+    }
+    draftHydratedRef.current = true;
+  }, [place.id]);
+
+  // Persist on field change (after hydration).
+  useEffect(() => {
+    if (!draftHydratedRef.current) return;
+    const hasContent =
+      stepIndex > 0 ||
+      comment.trim().length > 0 ||
+      workFacts.length > 0 ||
+      placeType !== null ||
+      drinkPrice !== null ||
+      foodPrice !== null ||
+      didOrder !== null ||
+      seating > 0 ||
+      outlets > 0 ||
+      temperatureFeel > 0 ||
+      currentBusyness > 0 ||
+      foodValue > 0 ||
+      overall > 0 ||
+      wifiManual > 0 ||
+      noiseManual > 0;
+    if (!hasContent) {
+      clearReviewDraft(place.id);
+      return;
+    }
+    try {
+      const draft: ReviewDraft = {
+        stepIndex,
+        seating,
+        outlets,
+        temperatureFeel,
+        currentBusyness,
+        foodValue,
+        overall,
+        overallTouched,
+        wifiManual,
+        noiseManual,
+        drinkPrice,
+        foodPrice,
+        didOrder,
+        workFacts,
+        placeType,
+        comment,
+      };
+      window.localStorage.setItem(reviewDraftKey(place.id), JSON.stringify(draft));
+    } catch {
+      /* quota exceeded — non-fatal */
+    }
+  }, [
+    place.id,
+    stepIndex,
+    seating,
+    outlets,
+    temperatureFeel,
+    currentBusyness,
+    foodValue,
+    overall,
+    overallTouched,
+    wifiManual,
+    noiseManual,
+    drinkPrice,
+    foodPrice,
+    didOrder,
+    workFacts,
+    placeType,
+    comment,
+  ]);
 
   const ateFood =
     didOrder === 'yes' &&
@@ -546,6 +683,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       const body = (await resp.json().catch(() => ({}))) as { error?: string; id?: string };
       if (!resp.ok) {
         if (resp.status === 404 || resp.status === 503) {
+          clearReviewDraft(place.id);
           setSubmitted(true);
           return;
         }
@@ -575,6 +713,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       if (body.id) {
         await uploadPhotos(body.id);
       }
+      clearReviewDraft(place.id);
       setSubmitted(true);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Submit failed');
