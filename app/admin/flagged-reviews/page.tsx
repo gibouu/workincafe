@@ -3,42 +3,9 @@ import { Icon } from '@/components/icons/Icon';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
+import { FlaggedReviewRow, type FlaggedReviewRecord } from '@/components/admin/FlaggedReviewRow';
 
-const REASON_LABEL: Record<string, string> = {
-  spam: 'Spam',
-  offensive: 'Offensive',
-  untrue: 'Untrue',
-  irrelevant: 'Irrelevant',
-  other: 'Other',
-};
-
-interface FlaggedReviewRow {
-  id: string;
-  reason: string;
-  notes: string | null;
-  created_at: string;
-  reviews: {
-    id: string;
-    comment: string | null;
-    overall_rating: number | null;
-    geo_verified: boolean | null;
-    user_id: string;
-    places: { name: string | null } | null;
-  } | null;
-}
-
-function timeAgo(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  const min = Math.floor(ms / 60_000);
-  if (min < 1) return 'just now';
-  if (min < 60) return `${min} min ago`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} h ago`;
-  const d = Math.floor(hr / 24);
-  return `${d} d ago`;
-}
-
-async function loadFlagged(): Promise<FlaggedReviewRow[]> {
+async function loadFlagged(): Promise<FlaggedReviewRecord[]> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -63,7 +30,7 @@ async function loadFlagged(): Promise<FlaggedReviewRow[]> {
     .order('created_at', { ascending: false })
     .limit(100);
   if (error) return [];
-  return ((data ?? []) as unknown) as FlaggedReviewRow[];
+  return ((data ?? []) as unknown) as FlaggedReviewRecord[];
 }
 
 export default async function FlaggedReviewsPage() {
@@ -96,59 +63,9 @@ export default async function FlaggedReviewsPage() {
         {flagged.length > 0 && (
           <ul className="mt-6 flex flex-col gap-3">
             {flagged.map((f) => (
-              <li
-                key={f.id}
-                className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-[15px] font-semibold text-[var(--text-primary)]">
-                      {f.reviews?.places?.name ?? '(place not found)'}
-                    </div>
-                    <div className="mt-0.5 flex items-center gap-2 text-[12px] text-[var(--text-secondary)]">
-                      <span className="rounded-full bg-accent-red-tint px-2 py-0.5 text-accent-red font-semibold">
-                        {REASON_LABEL[f.reason] ?? f.reason}
-                      </span>
-                      <span>flagged {timeAgo(f.created_at)}</span>
-                    </div>
-                  </div>
-                  {f.reviews && (
-                    <div className="shrink-0 text-right">
-                      <div className="mt-1 flex items-center gap-1 text-[10px] text-[var(--text-secondary)]">
-                        <Icon
-                          name={f.reviews.geo_verified ? 'CheckCircle' : 'Warning'}
-                          size={12}
-                          weight="fill"
-                          className={
-                            f.reviews.geo_verified ? 'text-accent-green' : 'text-accent-amber'
-                          }
-                        />
-                        <span>{f.reviews.geo_verified ? 'Geo-verified' : 'Unverified'}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {f.notes && (
-                  <div className="mt-2 rounded-xl bg-sys-gray-6 px-3 py-2 text-[12px] text-[var(--text-secondary)]">
-                    <span className="font-semibold">Reporter notes:</span> {f.notes}
-                  </div>
-                )}
-
-                {f.reviews?.comment && (
-                  <blockquote className="mt-3 border-l-2 border-sys-gray-4 pl-3 text-[13px] italic text-[var(--text-primary)]">
-                    {f.reviews.comment}
-                  </blockquote>
-                )}
-              </li>
+              <FlaggedReviewRow key={f.id} flag={f} />
             ))}
           </ul>
-        )}
-
-        {flagged.length > 0 && (
-          <div className="mt-6 rounded-2xl border border-[var(--surface-border)] bg-white p-4 text-[12px] text-[var(--text-secondary)]">
-            Dismiss / hide / ban actions land in a follow-up — these reports are read-only for now.
-          </div>
         )}
       </div>
     </div>
