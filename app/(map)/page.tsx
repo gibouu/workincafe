@@ -14,6 +14,7 @@ import { CoworkSheet } from '@/components/card/CoworkSheet';
 import { TopRightControls } from '@/components/map/TopRightControls';
 import { PlaceSidebar } from '@/components/layout/PlaceSidebar';
 import { CitySwitcher } from '@/components/layout/CitySwitcher';
+import { CitySuggestBanner } from '@/components/layout/CitySuggestBanner';
 import { FilterSheet } from '@/components/filters/FilterSheet';
 import { AttributionPill } from '@/components/map/AttributionPill';
 import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
@@ -23,7 +24,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useLiveUpdatePrompt } from '@/hooks/useLiveUpdatePrompt';
 import { useFilters } from '@/lib/store/filters';
 import { useLayout } from '@/lib/store/layout';
-import { useCity, CITIES } from '@/lib/store/city';
+import { useCity, CITIES, type City } from '@/lib/store/city';
 import { matchKnownCity } from '@/lib/demo/cities';
 import type { DemoPlace } from '@/lib/demo/paris-places';
 
@@ -263,13 +264,14 @@ export default function MapPage() {
 
   // Ask the IP-geo endpoint immediately on mount. Two side-effects:
   //   1. If the resolved city matches a known entry in `CITIES` AND the user
-  //      has never manually picked a city (`wic:city` not in localStorage),
-  //      auto-switch to that city. See #18.
-  //   2. Pan the map gently if the IP is reasonably close to the (now
-  //      possibly switched) active city.
+  //      has neither expressed a preference nor previously dismissed a
+  //      prompt for that city, surface a soft "Switch?" banner instead of
+  //      silently auto-switching. See #48.
+  //   2. Pan the map gently if the IP is reasonably close to the active city.
   // Runs alongside the welcome overlay so the map already feels live
   // underneath the tutorial.
   const ipPannedRef = useRef(false);
+  const [suggestedCity, setSuggestedCity] = useState<City | null>(null);
   useEffect(() => {
     if (ipPannedRef.current) return;
     ipPannedRef.current = true;
@@ -287,33 +289,52 @@ export default function MapPage() {
       )
       .then((g) => {
         if (!g) return;
-        // (1) Auto-switch only when the user hasn't expressed a preference.
+        // Suggestion only when:
+        //   - user has no stored preference (wic:city absent), AND
+        //   - hasn't dismissed a prompt for this specific city before.
         // Zustand persist writes to `wic:city` only after the first
         // `setCity()` call — null here means default-only.
         let stored: string | null = null;
+        let dismissed: string | null = null;
+        const matched = matchKnownCity(g.city, g.country);
         try {
           stored = window.localStorage.getItem('wic:city');
+          if (matched) {
+            dismissed = window.localStorage.getItem(`wic:city-prompt-dismissed:${matched}`);
+          }
         } catch {
           stored = null;
+          dismissed = null;
         }
-        if (stored === null) {
-          const matched = matchKnownCity(g.city, g.country);
-          if (matched && matched !== city) {
-            setCity(matched);
-            const label = CITIES[matched].label;
-            showToast(`Switched to ${label}`, { tone: 'info' });
-            // Skip the pan — the city change will recenter via cityMeta.
-            return;
-          }
+        if (stored === null && dismissed === null && matched && matched !== city) {
+          setSuggestedCity(matched);
+          // Skip the pan — if the user accepts, the city change recenters
+          // via cityMeta; if they dismiss, the next mount will pan instead.
+          return;
         }
         const dKm = haversineKm(g.lat, g.lng, cityMeta.center.lat, cityMeta.center.lng);
         if (dKm < 80) mapRef.current?.panTo(g.lat, g.lng);
       })
       .catch(() => null);
-    // Intentionally fire once on mount. setCity / showToast / city are stable
-    // store references; including them would re-fire after the auto-switch.
+    // Intentionally fire once on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const acceptCitySuggest = () => {
+    if (!suggestedCity) return;
+    setCity(suggestedCity);
+    showToast(`Switched to ${CITIES[suggestedCity].label}`, { tone: 'info' });
+    setSuggestedCity(null);
+  };
+  const dismissCitySuggest = () => {
+    if (!suggestedCity) return;
+    try {
+      window.localStorage.setItem(`wic:city-prompt-dismissed:${suggestedCity}`, '1');
+    } catch {
+      /* quota exceeded etc — non-fatal */
+    }
+    setSuggestedCity(null);
+  };
 
   const handleSelectPlace = (place: DemoPlace) => {
     setSelectedPlace(place);
@@ -412,6 +433,14 @@ export default function MapPage() {
           filterCount={activeFilterCount}
           showFilter={!isDesktop}
         />
+
+        {suggestedCity && (
+          <CitySuggestBanner
+            city={suggestedCity}
+            onAccept={acceptCitySuggest}
+            onDismiss={dismissCitySuggest}
+          />
+        )}
 
         {!isDesktop && (
           <div className="pointer-events-none absolute top-4 left-4 z-30">
