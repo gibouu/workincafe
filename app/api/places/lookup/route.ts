@@ -231,6 +231,47 @@ interface FsqSearchResult {
   categories?: { name: string; short_name?: string; plural_name?: string }[];
 }
 
+// Children of a mall come back via the `related_places` field on the parent's
+// Place Details payload. Each child is a slim Place object with an FSQ place
+// id, name, location, and primary categories. We re-expose them as autocomplete
+// predictions tagged with the parent mall so users searching for a tenant
+// (e.g. "Starbucks Beaugrenelle") still find it — chains nested in malls don't
+// surface as top-level FSQ search hits otherwise. See #34.
+interface FsqRelatedChild {
+  fsq_place_id: string;
+  name?: string;
+  location?: {
+    formatted_address?: string;
+    address?: string;
+    locality?: string;
+  };
+  categories?: { name: string; short_name?: string }[];
+}
+interface FsqRelatedPlaces {
+  related_places?: { children?: FsqRelatedChild[] };
+}
+
+// Lower-cased substrings that, when found in any of an FSQ result's category
+// names, mark that result as a mall whose tenants we should expand inline.
+// Foursquare's taxonomy uses several near-duplicate names for these — match
+// loosely so we don't miss "Outlet Mall" or "Indoor Shopping Plaza".
+const FSQ_MALL_KEYWORDS = ['shopping mall', 'mall', 'department store', 'shopping plaza'];
+
+function isMallResult(r: FsqSearchResult): boolean {
+  const cats = r.categories ?? [];
+  for (const c of cats) {
+    const n = (c.name ?? c.short_name ?? '').toLowerCase();
+    if (!n) continue;
+    if (FSQ_MALL_KEYWORDS.some((kw) => n.includes(kw))) return true;
+  }
+  return false;
+}
+
+// Cap to keep latency + response size bounded. Most malls have 50+ tenants;
+// surfacing the top 8 keeps the dropdown navigable.
+const MAX_MALLS_TO_EXPAND = 2;
+const MAX_CHILDREN_PER_MALL = 8;
+
 interface FsqDetailsResult {
   fsq_place_id: string;
   name: string;
@@ -256,6 +297,12 @@ function fsqHeaders(apiKey: string): HeadersInit {
 // Inner helper: fetches Foursquare predictions and returns the array
 // directly (empty on upstream error). Lets the GET dispatcher cascade
 // FSQ→Photon when FSQ has 0 hits without double-wrapping responses.
+//
+// When the top results include malls/department stores, we follow up with
+// one Place Details call per mall (capped at MAX_MALLS_TO_EXPAND) to fetch
+// `related_places.children` and inline tenants as additional predictions.
+// Mall-internal chains (Starbucks Beaugrenelle, Apple Store at Westfield)
+// don't show up as top-level FSQ search hits otherwise — see #34.
 async function fetchFsqPredictions(
   apiKey: string,
   q: string,
@@ -271,7 +318,9 @@ async function fetchFsqPredictions(
   const resp = await fetch(url.toString(), { headers: fsqHeaders(apiKey) });
   if (!resp.ok) return [];
   const data = (await resp.json()) as { results?: FsqSearchResult[] };
-  return (data.results ?? []).map((r) => {
+  const results = data.results ?? [];
+
+  const base: AutocompletePrediction[] = results.map((r) => {
     const sec =
       r.location?.formatted_address ||
       [r.location?.address, r.location?.locality, r.location?.country]
@@ -283,6 +332,55 @@ async function fetchFsqPredictions(
       primary: r.name,
       secondary: sec,
     };
+  });
+
+  // Identify mall hits in the top of the result list and expand their
+  // children. Run in parallel so we don't compound latency.
+  const malls = results.filter(isMallResult).slice(0, MAX_MALLS_TO_EXPAND);
+  if (malls.length === 0) return base;
+
+  const childGroups = await Promise.all(
+    malls.map((m) => fetchFsqMallChildren(apiKey, m)),
+  );
+  const childPredictions = childGroups.flat();
+  if (childPredictions.length === 0) return base;
+
+  // Place children right after their parent mall in the list. That groups
+  // tenants visually with the venue they belong to.
+  const out: AutocompletePrediction[] = [];
+  const childrenByMallId = new Map<string, AutocompletePrediction[]>();
+  for (let i = 0; i < malls.length; i++) {
+    childrenByMallId.set(`fsq:${malls[i].fsq_place_id}`, childGroups[i]);
+  }
+  for (const pred of base) {
+    out.push(pred);
+    const kids = childrenByMallId.get(pred.placeId);
+    if (kids && kids.length > 0) out.push(...kids);
+  }
+  return out;
+}
+
+async function fetchFsqMallChildren(
+  apiKey: string,
+  mall: FsqSearchResult,
+): Promise<AutocompletePrediction[]> {
+  const url = new URL(`${FSQ_DETAILS_BASE}/${encodeURIComponent(mall.fsq_place_id)}`);
+  url.searchParams.set('fields', 'related_places');
+  const resp = await fetch(url.toString(), { headers: fsqHeaders(apiKey) });
+  if (!resp.ok) return [];
+  const data = (await resp.json()) as FsqRelatedPlaces;
+  const children = data.related_places?.children ?? [];
+  return children.slice(0, MAX_CHILDREN_PER_MALL).flatMap((c) => {
+    if (!c.fsq_place_id || !c.name) return [];
+    const sec = `Inside ${mall.name}`;
+    return [
+      {
+        placeId: `fsq:${c.fsq_place_id}`,
+        text: `${c.name} — ${sec}`,
+        primary: c.name,
+        secondary: sec,
+      } satisfies AutocompletePrediction,
+    ];
   });
 }
 
