@@ -24,13 +24,17 @@ Copy each file into Supabase Dashboard → **SQL Editor** and run, in order:
 | 7 | `migrations/007_friend_profiles.sql`  | Friend profile schema (occupation, work style, looking-for, identity, bio) |
 | 8 | `migrations/008_stripe_connect.sql`   | `stripe_accounts`, `stripe_events`, payment lifecycle columns on `deal_purchases` |
 | 9 | `migrations/009_admin_bootstrap.sql`  | First user signed in is auto-promoted to admin (advisory-locked) |
+| 10 | `migrations/010_review_photos_cloudinary.sql` | Cloudinary public_id columns on `review_photos` |
+| 11 | `migrations/011_review_provenance.sql` | `source` + `source_weight` on reviews; reweighted `mv_place_ratings` |
+| 12 | `migrations/012_live_updates_v2.sql`  | LiveUpdate wizard schema additions (#13 / #30) |
+| 13 | `migrations/013_review_upscale_marker.sql` | `upscaled_at` marker column on reviews — see runbook below (#24) |
 
 > **`Could not find the table 'public.friend_profiles'`** in your logs is expected when migration 007 hasn't been applied yet. The friend-profile API soft-handles it (returns an empty profile + the wizard renders cleanly). Apply 007 to make the error go away.
 
 Or use the CLI from the repo root:
 
 ```bash
-npx supabase link --project-ref ndsrmsfqzkwbkzgkyrxr
+npx supabase link --project-ref ngpgpxgbcjdmcgipqhtl
 npx supabase db push
 ```
 
@@ -142,6 +146,21 @@ refresh materialized view concurrently public.mv_place_ratings;
 ```sql
 update public.users set is_admin = true where id = '<your auth user uuid>';
 ```
+
+## 8 · One-shot: upscale legacy 1–5 ratings to 1–10 (when needed)
+
+The 1–10 scale shipped in `005_review_v2.sql`; rows older than that sit
+in the lower half of the new range and the smoothing in
+`mv_place_ratings` absorbs the drift. Run this only when aggregate
+scores on the place card start to look visibly off.
+
+1. Apply `migrations/013_review_upscale_marker.sql` (adds `reviews.upscaled_at`).
+2. Open `scripts/upscale-legacy-ratings.sql`, edit the `legacy_cutover` value to the timestamp the 1–10 form went live in production.
+3. Run the file in **Supabase Dashboard → SQL Editor**. The script previews the candidate count via `RAISE NOTICE` before the UPDATE; review and `ROLLBACK` if the number looks off.
+4. The script ends with `REFRESH MATERIALIZED VIEW CONCURRENTLY public.mv_place_ratings;` so the place cards reflect the new averages immediately.
+
+The `upscaled_at IS NULL` filter prevents double-running, so re-applying
+the script is a no-op once the rows are upscaled.
 
 ---
 
