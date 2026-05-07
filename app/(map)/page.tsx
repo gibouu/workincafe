@@ -653,6 +653,18 @@ export default function MapPage() {
       <GeolocateBlockedBanner
         open={blockedBannerOpen}
         onClose={() => setBlockedBannerOpen(false)}
+        onManualLocation={(pick) => {
+          // Manual address fallback for users whose Safari permission state
+          // is stuck "deny" beyond what the AA → Website Settings flow can
+          // clear. Treat the chosen address as the user position: cache it
+          // (hydrates the same way as a real GPS fix on next mount) and pan
+          // immediately. See feat/manual-location-fallback.
+          writeCachedPosition(pick.lat, pick.lng);
+          mapRef.current?.setUserLocation(pick.lat, pick.lng);
+          mapRef.current?.panTo(pick.lat, pick.lng);
+          setBlockedBannerOpen(false);
+          showToast(`Location set to ${pick.label}`, { tone: 'info' });
+        }}
       />
     </div>
   );
