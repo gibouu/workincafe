@@ -1,5 +1,21 @@
 # Progress Log
 Newest first. One line per entry.
+[2026-05-07 11:04] Edit: .claude/state/PROGRESS.md
+[2026-05-07 11:02] #17/PR#46 + #16/PR#44 + #15/PR#42 — five PRs landed today; pin-spread next to merge. Why: rolling through form/review/map polish backlog.
+[2026-05-07 11:04] Edit: .claude/state/DECISIONS.md
+[2026-05-07 11:03] Write: .claude/state/TASKS.md
+[2026-05-07 11:00] Edit: components/map/MapContainer.tsx
+[2026-05-07 11:00] Edit: components/map/MapContainer.tsx
+[2026-05-07 11:00] Edit: components/map/MapContainer.tsx
+[2026-05-07 11:00] Write: lib/map/spread.ts
+[2026-05-07 10:50] Edit: components/review/PhotoLightbox.tsx
+[2026-05-07 10:50] Write: components/review/ReviewPhotos.tsx
+[2026-05-07 10:49] Write: components/review/PhotoLightbox.tsx
+[2026-05-07 10:49] Edit: components/review/AllReviewsSheet.tsx
+[2026-05-07 10:49] Edit: components/review/AllReviewsSheet.tsx
+[2026-05-07 10:49] Edit: components/review/AllReviewsSheet.tsx
+[2026-05-07 10:49] Edit: components/review/AllReviewsSheet.tsx
+[2026-05-07 10:49] Edit: components/review/AllReviewsSheet.tsx
 [2026-05-07 10:26] Edit: /Users/gibou/.claude/projects/-Users-gibou-code-github-workincafe/memory/MEMORY.md
 [2026-05-07 10:26] Write: /Users/gibou/.claude/projects/-Users-gibou-code-github-workincafe/memory/feedback_commit_pr_signature.md
 [2026-05-07 10:18] Edit: components/bottom-bar/BottomBar.tsx
