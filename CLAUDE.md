@@ -79,7 +79,7 @@ Four small stores, each in `lib/store/`:
 
 ### Auth flow
 
-Middleware (`middleware.ts`) protects `/profile` and `/admin`. **`/review/new` is intentionally NOT protected** — submit-time auth handles it: signed-out users can fill the form, and the API returns 401 only at submit, at which point the client saves the draft via `lib/auth/pending-submit.ts`, redirects to `/auth?next=...&submit=...`, and replays the submission after OAuth. Same pattern for live updates and check-ins (the "Live review" CTA on a place card). Only Google + Apple OAuth (decision D6 in spec). `/auth/callback` exchanges the code and validates `next` is a relative path. **No email/password, no magic link** — don't add them.
+Middleware (`middleware.ts`) protects `/profile` and `/admin`. **`/review/new` is intentionally NOT protected** — submit-time auth handles it: signed-out users can fill the form, and the API returns 401 only at submit, at which point the client saves the draft via `lib/auth/pending-submit.ts`, redirects to `/auth?next=...&submit=...`, and replays the submission after OAuth. Same pattern for live updates and check-ins (the "Live review" CTA on a place card). Default is Google + Apple OAuth (decision D6 in spec). `/auth/callback` exchanges the code and validates `next` is a relative path. **No email/password.** Magic-link via `signInWithOtp` is allowed but **only in owner context** — `/auth?next=/owner/...` or `/auth?next=/place/<id>/claim` reveals an "Sign in with email" entry point so an operator without Apple/Google can still claim. The consumer paths (`/`, `/review/new`, etc.) keep OAuth-only buttons.
 
 ### Measurements: real, not stubs
 
