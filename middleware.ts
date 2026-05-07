@@ -11,12 +11,36 @@ const ADMIN_PREFIX = '/admin';
 
 type CookieToSet = { name: string; value: string; options?: CookieOptions };
 
+// Module-level latch so the missing-env warning fires once per cold start
+// instead of once per request. Resets when the function instance recycles.
+let hasWarnedMissingEnv = false;
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
+  // Fail-open if Supabase env isn't configured for this environment (e.g. a
+  // Preview deploy where the env vars haven't been ticked for the Preview
+  // scope). The previous behaviour was a 500 MIDDLEWARE_INVOCATION_FAILED on
+  // every request, which bricked previews entirely. Pages still authorise via
+  // `getRequestActor` at the route level, so dropping the middleware gate
+  // here only means previews can't redirect signed-out users — they'll see
+  // the page-level 401/403 instead. Logging once per cold start so the
+  // misconfig is visible in runtime logs without spamming each request.
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    if (!hasWarnedMissingEnv) {
+      hasWarnedMissingEnv = true;
+      console.warn(
+        '[middleware] NEXT_PUBLIC_SUPABASE_URL/ANON_KEY missing — auth gate disabled. Add them to this env in Vercel project settings.',
+      );
+    }
+    return response;
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         getAll() {
