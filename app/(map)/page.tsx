@@ -24,6 +24,7 @@ import { useLiveUpdatePrompt } from '@/hooks/useLiveUpdatePrompt';
 import { useFilters } from '@/lib/store/filters';
 import { useLayout } from '@/lib/store/layout';
 import { useCity, CITIES } from '@/lib/store/city';
+import { matchKnownCity } from '@/lib/demo/cities';
 import type { DemoPlace } from '@/lib/demo/paris-places';
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -138,6 +139,7 @@ export default function MapPage() {
   }, [showToast]);
 
   const city = useCity((s) => s.city);
+  const setCity = useCity((s) => s.setCity);
   const cityMeta = CITIES[city];
   const filters = useFilters();
   const activeFilterCount = useFilters((s) => s.activeCount());
@@ -259,23 +261,59 @@ export default function MapPage() {
     setSelectedPlace(null);
   }, [cityMeta.center.lat, cityMeta.center.lng]);
 
-  // Ask the IP-geo endpoint immediately on mount and gently pan the map there
-  // if the result is reasonably close to the active city. Runs alongside the
-  // welcome overlay so the map already feels live underneath the tutorial.
+  // Ask the IP-geo endpoint immediately on mount. Two side-effects:
+  //   1. If the resolved city matches a known entry in `CITIES` AND the user
+  //      has never manually picked a city (`wic:city` not in localStorage),
+  //      auto-switch to that city. See #18.
+  //   2. Pan the map gently if the IP is reasonably close to the (now
+  //      possibly switched) active city.
+  // Runs alongside the welcome overlay so the map already feels live
+  // underneath the tutorial.
   const ipPannedRef = useRef(false);
   useEffect(() => {
     if (ipPannedRef.current) return;
     ipPannedRef.current = true;
 
     void fetch('/api/geo')
-      .then(async (r) => (r.status === 204 ? null : ((await r.json()) as { lat: number; lng: number })))
+      .then(async (r) =>
+        r.status === 204
+          ? null
+          : ((await r.json()) as {
+              lat: number;
+              lng: number;
+              city: string | null;
+              country: string | null;
+            }),
+      )
       .then((g) => {
         if (!g) return;
+        // (1) Auto-switch only when the user hasn't expressed a preference.
+        // Zustand persist writes to `wic:city` only after the first
+        // `setCity()` call — null here means default-only.
+        let stored: string | null = null;
+        try {
+          stored = window.localStorage.getItem('wic:city');
+        } catch {
+          stored = null;
+        }
+        if (stored === null) {
+          const matched = matchKnownCity(g.city, g.country);
+          if (matched && matched !== city) {
+            setCity(matched);
+            const label = CITIES[matched].label;
+            showToast(`Switched to ${label}`, { tone: 'info' });
+            // Skip the pan — the city change will recenter via cityMeta.
+            return;
+          }
+        }
         const dKm = haversineKm(g.lat, g.lng, cityMeta.center.lat, cityMeta.center.lng);
         if (dKm < 80) mapRef.current?.panTo(g.lat, g.lng);
       })
       .catch(() => null);
-  }, [cityMeta.center.lat, cityMeta.center.lng]);
+    // Intentionally fire once on mount. setCity / showToast / city are stable
+    // store references; including them would re-fire after the auto-switch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSelectPlace = (place: DemoPlace) => {
     setSelectedPlace(place);

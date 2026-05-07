@@ -48,3 +48,30 @@ export function cityForPlace(placeId: string): City {
   if (TORONTO_DEMO_PLACES.some((p) => p.id === placeId)) return 'toronto';
   return 'paris';
 }
+
+/**
+ * Resolve an IP-geo city/country pair to one of our known cities. Tries the
+ * city label first (case-insensitive); falls back to country code when the
+ * label is missing or doesn't match. Returns `null` for IPs that don't fall
+ * into a city we ship today. See #18.
+ */
+export function matchKnownCity(
+  city: string | null | undefined,
+  country: string | null | undefined,
+): City | null {
+  if (city) {
+    const lc = city.toLowerCase();
+    for (const meta of Object.values(CITIES)) {
+      if (meta.label.toLowerCase() === lc) return meta.id;
+    }
+  }
+  if (country) {
+    const cc = country.toUpperCase();
+    // Single-city-per-country mapping is fine for MVP — both Paris (FR) and
+    // Toronto (CA) are the only cities we ship in their respective countries.
+    for (const meta of Object.values(CITIES)) {
+      if (meta.country === cc) return meta.id;
+    }
+  }
+  return null;
+}
