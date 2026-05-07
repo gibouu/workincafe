@@ -2,6 +2,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor } from '@/lib/auth/request-actor';
 import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendEmail } from '@/lib/email/send';
+import {
+  claimApprovedEmail,
+  claimRejectedEmail,
+} from '@/lib/email/templates/claim-decision';
 
 interface Body {
   decision?: 'approved' | 'rejected';
@@ -32,7 +37,7 @@ export async function POST(
 
   const { data: claim, error: claimErr } = await admin
     .from('place_claims')
-    .select('id, place_id, claimant_user_id, status')
+    .select('id, place_id, claimant_user_id, claimant_email, status')
     .eq('id', claimId)
     .maybeSingle();
   if (claimErr) return NextResponse.json({ error: claimErr.message }, { status: 500 });
@@ -65,6 +70,30 @@ export async function POST(
     if (ownErr && !/duplicate key|unique/i.test(ownErr.message)) {
       return NextResponse.json({ error: ownErr.message }, { status: 500 });
     }
+  }
+
+  // Best-effort email notification — failures don't block the admin response.
+  // See #22.
+  if (claim.claimant_email) {
+    const { data: place } = await admin
+      .from('places')
+      .select('name')
+      .eq('id', claim.place_id)
+      .maybeSingle();
+    const placeName = place?.name ?? 'your place';
+    const message =
+      body.decision === 'approved'
+        ? claimApprovedEmail({
+            to: claim.claimant_email,
+            placeName,
+            placeId: claim.place_id,
+          })
+        : claimRejectedEmail({
+            to: claim.claimant_email,
+            placeName,
+            reason: body.rejection_reason ?? null,
+          });
+    void sendEmail({ to: claim.claimant_email, ...message });
   }
 
   return NextResponse.json({ ok: true });
