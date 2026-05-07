@@ -34,7 +34,7 @@ Copy each file into Supabase Dashboard → **SQL Editor** and run, in order:
 Or use the CLI from the repo root:
 
 ```bash
-npx supabase link --project-ref ndsrmsfqzkwbkzgkyrxr
+npx supabase link --project-ref ngpgpxgbcjdmcgipqhtl
 npx supabase db push
 ```
 
