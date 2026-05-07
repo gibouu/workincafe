@@ -77,34 +77,41 @@ export async function GET(request: NextRequest) {
       if (code === '42P01') return NextResponse.json({ places: [] });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    // Fetch user-review counts for the bbox places so the client can
-    // bypass the category filter for places that have at least one real
-    // user review. Same `mv_place_ratings` MV the full path uses; the
-    // partial query below stays cheap (small `IN (…)` set per bbox).
-    // See #77.
+    // Fetch rating + user-review counts so the client can apply the
+    // curated default override: cafés always show; restaurants bypass
+    // the category gate iff they have a user review AND
+    // `study_spot_rating >= 7.5`. Other categories never bypass. See #77.
     const slimPlaces = (data ?? []) as SlimPlaceRow[];
-    const reviewedIds = new Set<string>();
+    interface SlimRatingRow {
+      place_id: string;
+      study_spot_rating: number | null;
+      user_rating_count: number;
+    }
+    const ratingByPlace = new Map<string, SlimRatingRow>();
     if (slimPlaces.length > 0) {
       const { data: ratingRows } = await supabase
         .from('mv_place_ratings')
-        .select('place_id, user_rating_count')
+        .select('place_id, study_spot_rating, user_rating_count')
         .in('place_id', slimPlaces.map((p) => p.id))
-        .gt('user_rating_count', 0)
         .limit(MAX_SLIM);
-      for (const r of (ratingRows ?? []) as Pick<RatingRow, 'place_id' | 'user_rating_count'>[]) {
-        if ((r.user_rating_count ?? 0) > 0) reviewedIds.add(r.place_id);
+      for (const r of (ratingRows ?? []) as SlimRatingRow[]) {
+        ratingByPlace.set(r.place_id, r);
       }
     }
 
-    const out = slimPlaces.map((p) => ({
-      id: p.id,
-      name: p.name,
-      category: p.category,
-      lat: p.lat,
-      lng: p.lng,
-      brand: p.brand,
-      has_user_reviews: reviewedIds.has(p.id),
-    }));
+    const out = slimPlaces.map((p) => {
+      const r = ratingByPlace.get(p.id);
+      return {
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        lat: p.lat,
+        lng: p.lng,
+        brand: p.brand,
+        rating: r?.study_spot_rating ?? 0,
+        has_user_reviews: (r?.user_rating_count ?? 0) > 0,
+      };
+    });
     // CDN caches the bbox response for 60 s and serves it stale up to 5 min
     // while revalidating. Place data only changes on seed/prune so this is
     // safe — first request hits the DB, the next 100 hit Vercel's edge.
