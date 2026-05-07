@@ -1,6 +1,12 @@
 # Progress Log
 Newest first. One line per entry.
+[2026-05-07 10:10] Edit: .claude/state/TASKS.md
+[2026-05-07 10:08] Edit: app/api/places/lookup/route.ts
+[2026-05-07 10:07] Edit: app/api/places/lookup/route.ts
+[2026-05-07 10:05] Edit: .claude/state/PROGRESS.md
+[2026-05-07 10:05] Edit: .claude/state/TASKS.md
 [2026-05-07 10:00] Edit: .claude/state/PROGRESS.md
+[2026-05-07 10:08] #14/PR#33: squash-merged 467f64c, remote branch deleted. Filed #34 (mall-children FSQ crawl) from PR #33 follow-up. Why: keep mall-tenant gap tracked; bug A from #31 still open.
 [2026-05-07 10:05] #14/PR#33: Vercel preview deployed Ready, 0 review comments. Why: no actionable feedback to address.
 [2026-05-07 09:56] Edit: .claude/state/PROGRESS.md
 [2026-05-07 10:00] #14: PR #33 opened — PlaceCard snap points + AddPlaceWizard/ReviewForm localStorage drafts. Why: iPhone SE reach + no draft loss on X.
