@@ -504,34 +504,21 @@ export default function MapPage() {
     router.push(`/places/new${qs}`);
   };
 
-  const handleGeolocate = async () => {
+  const handleGeolocate = () => {
     if (!navigator.geolocation) {
       showToast('Location not supported in this browser', { tone: 'error' });
       return;
     }
-    // If the Permissions API has already told us the user denied location
-    // for this origin, getCurrentPosition will fail synchronously without
-    // ever showing the system prompt. Surface the recovery banner instead
-    // of letting the failure look silent. See #71.
-    //
-    // Re-probe before trusting the cached state — `PermissionStatus.onchange`
-    // is unreliable on iOS Safari and may miss flips made in another tab or
-    // in browser settings while the page wasn't focused. Only show the
-    // recovery banner when the OS still confirms the deny. See #89.
-    if (geolocatePermission === 'denied') {
-      const fresh = await probeGeolocationPermission();
-      if (fresh !== geolocatePermission) {
-        console.info('[geolocate] re-probe %s → %s', geolocatePermission, fresh);
-        setGeolocatePermission(fresh);
-      }
-      if (fresh === 'denied') {
-        console.warn('[geolocate] permission=denied (confirmed) — opening recovery banner');
-        setBlockedBannerOpen(true);
-        return;
-      }
-      // fresh is 'granted' or 'prompt' — fall through to getCurrentPosition,
-      // which will either succeed silently or surface the system prompt.
-    }
+    // Don't pre-block on cached permission state. Safari (especially iOS)
+    // requires the `getCurrentPosition` call to sit inside the synchronous
+    // user-gesture stack — any `await` between the click and the call
+    // breaks the gesture chain and the native prompt won't appear, even
+    // when the cached deny is stale and the user has actually re-enabled
+    // location in Settings. So we always call `getCurrentPosition` and
+    // react to the real `PERMISSION_DENIED` in the error callback below.
+    // The Permissions API probe still runs in the background (mount,
+    // visibilitychange, watchGeolocationPermission) to keep the red-dot
+    // indicator accurate — it just no longer gates the click. See #104.
     setGeolocating(true);
 
     const applyFix = (pos: GeolocationPosition) => {
