@@ -44,7 +44,7 @@ async function main() {
     const { data, error } = await sb
       .from('places')
       .select('id, name, city, category, hours_json, osm_tags')
-      .in('category', ['restaurant', 'fast_food'])
+      .in('category', ['restaurant', 'fast_food', 'fast_food_burger'])
       .not('osm_tags->osm_id', 'is', null)
       .range(from, from + PAGE - 1);
     if (error) fail(`select failed: ${error.message}`);

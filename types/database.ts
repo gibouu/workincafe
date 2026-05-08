@@ -12,6 +12,7 @@ export type PlaceCategoryDb =
   | 'hotel'
   | 'restaurant'
   | 'fast_food'
+  | 'fast_food_burger'
   | 'other';
 
 export type NoiseLevel = 'quiet' | 'moderate' | 'loud';
