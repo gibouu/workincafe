@@ -49,7 +49,7 @@ type GeoState =
   | { kind: 'timeout' }
   | { kind: 'unsupported' };
 
-const FOOD_FORWARD = new Set(['restaurant', 'fast_food', 'bakery']);
+const FOOD_FORWARD = new Set(['restaurant', 'fast_food', 'fast_food_burger', 'bakery']);
 
 type WifiState =
   | { kind: 'idle' }

@@ -32,7 +32,7 @@ const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
 const FOURTEEN_HUNDRED_MIN = 14 * 60;
 const SEVENTEEN_HUNDRED_MIN = 17 * 60;
 
-const WORK_HOURS_CATEGORIES = new Set(['restaurant', 'fast_food']);
+const WORK_HOURS_CATEGORIES = new Set(['restaurant', 'fast_food', 'fast_food_burger']);
 
 // Anchor week: Mon 2026-03-02 → Fri 2026-03-06 inclusive. Choosing a
 // non-holiday week so opening_hours.js doesn't return PH closures.

@@ -17,6 +17,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { isWorkConducive } from '../lib/places/work-conducive';
 import { looksLikeApartmentBuilding } from '../lib/places/looks-like-apartment';
+import { bucketForFastFoodBrand } from '../lib/places/fast-food-buckets';
 
 type OsmCity = 'paris' | 'toronto';
 
@@ -123,10 +124,17 @@ async function seedCity(city: OsmCity) {
       // Resolve in priority order: amenity → shop → tourism → 'other'.
       // tourism=hotel|hostel|guest_house|motel all collapse to our 'hotel'
       // category since the use case is identical (lobby work spot).
-      const category =
+      let category =
         (amenity && AMENITY_MAP[amenity]) ||
         (shop && SHOP_MAP[shop]) ||
         (tourism && /^(hotel|hostel|guest_house|motel)$/.test(tourism) ? 'hotel' : 'other');
+      // Split `amenity=fast_food` by brand: fast-casual chains (Chipotle,
+      // Pret, Cojean, Exki…) become `restaurant`; everything else becomes
+      // `fast_food_burger`. See #80 + lib/places/fast-food-buckets.ts.
+      // Backfill of existing rows is in supabase/scripts/split-fast-food.sql.
+      if (category === 'fast_food') {
+        category = bucketForFastFoodBrand(tags.brand);
+      }
       const address = [tags['addr:housenumber'], tags['addr:street']].filter(Boolean).join(' ');
       return {
         name: tags.name,
