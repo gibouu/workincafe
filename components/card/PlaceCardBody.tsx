@@ -260,6 +260,23 @@ export function PlaceCardBody({
           You can post again later when conditions change.
         </p>
 
+        {(place.coffee_review_count ?? 0) > 0 && place.coffee_rating != null && (
+          <div className="mt-3 flex items-center gap-2.5 rounded-2xl bg-accent-amber-tint px-3 py-2.5">
+            <Icon
+              name="Coffee"
+              weight="fill"
+              size={18}
+              className="text-accent-amber shrink-0"
+            />
+            <span className="text-[13px] font-medium text-[var(--text-primary)]">
+              Known for their coffee
+            </span>
+            <span className="ml-auto text-[14px] font-semibold text-accent-amber tabular-nums">
+              {place.coffee_rating.toFixed(1)}
+            </span>
+          </div>
+        )}
+
         <div className="mt-5">
           <div className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">
             Study vitals
@@ -416,7 +433,7 @@ function initialsFor(name: string | null | undefined): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-const ALLOWED_PHOTO_SLOTS = new Set(['menu', 'inside', 'outside', 'special']);
+const ALLOWED_PHOTO_SLOTS = new Set(['menu', 'inside', 'outside', 'special', 'coffee']);
 
 function mapDbReviewToDemoShape(raw: unknown): DemoReview {
   const r = raw as DbReview;

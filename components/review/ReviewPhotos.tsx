@@ -11,11 +11,13 @@ const SLOT_LABEL: Record<ReviewPhoto['slot'], string> = {
   inside: 'Inside',
   outside: 'Outside',
   special: 'Detail',
+  coffee: 'Coffee',
 };
 
 // Stable order so the strip layout doesn't jitter as different reviews come
-// back with different slot subsets.
-const SLOT_ORDER: ReviewPhoto['slot'][] = ['inside', 'menu', 'outside', 'special'];
+// back with different slot subsets. Coffee leads when present — the user
+// who tapped the coffee photo slot wanted *that* photo first.
+const SLOT_ORDER: ReviewPhoto['slot'][] = ['coffee', 'inside', 'menu', 'outside', 'special'];
 
 function rawCloudinaryUrl(p: ReviewPhoto): string {
   if (!CLOUDINARY_CLOUD_NAME) return '';

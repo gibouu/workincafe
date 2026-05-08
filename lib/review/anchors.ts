@@ -66,3 +66,27 @@ export const FOOD_VALUE_ANCHORS: SliderAnchor[] = [
   { at: 7, text: 'Generous, good value' },
   { at: 10, text: 'Huge portion — great value' },
 ];
+
+export const COFFEE_QUALITY_ANCHORS: SliderAnchor[] = [
+  { at: 1, text: 'Burnt or bitter — couldn’t finish' },
+  { at: 3, text: 'Drinkable, nothing special' },
+  { at: 5, text: 'Solid daily cup' },
+  { at: 7, text: 'Genuinely good — could taste the roast' },
+  { at: 10, text: 'Best coffee I’ve had in months' },
+];
+
+export const COFFEE_ART_ANCHORS: SliderAnchor[] = [
+  { at: 1, text: 'A blob, no shape' },
+  { at: 3, text: 'Basic heart, wobbly' },
+  { at: 5, text: 'Clean rosetta' },
+  { at: 7, text: 'Detailed swan or tulip' },
+  { at: 10, text: 'Showpiece — would screenshot it' },
+];
+
+export const COFFEE_MUG_ANCHORS: SliderAnchor[] = [
+  { at: 1, text: 'Chipped, mismatched, sad' },
+  { at: 3, text: 'Generic ceramic' },
+  { at: 5, text: 'Nice enough — heavy and warm' },
+  { at: 7, text: 'Custom branded, fits the place' },
+  { at: 10, text: 'Beautiful — handmade, distinctive' },
+];

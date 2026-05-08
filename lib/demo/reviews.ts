@@ -1,7 +1,7 @@
 // Reviews now come from the database via /api/places/[id]/reviews. The
 // pre-launch placeholder pool has been removed — the UI shows a "no reviews
 // yet" state until a real review is posted.
-export type ReviewPhotoSlot = 'menu' | 'inside' | 'outside' | 'special';
+export type ReviewPhotoSlot = 'menu' | 'inside' | 'outside' | 'special' | 'coffee';
 
 export interface ReviewPhoto {
   slot: ReviewPhotoSlot;
