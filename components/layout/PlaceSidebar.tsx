@@ -2,11 +2,34 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/icons/Icon';
+import type { PhosphorIconName } from '@/components/icons/Icon';
 import { type DemoPlace } from '@/lib/demo/paris-places';
 import { categoryMeta } from '@/lib/categories';
 import { brandLogoFor } from '@/lib/brand-logos';
 import { CitySwitcher } from '@/components/layout/CitySwitcher';
 import { useCity, CITIES } from '@/lib/store/city';
+import { haversineKm } from '@/lib/geo/distance';
+
+export interface SidebarAnchor {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
+interface LocationHit {
+  kind: 'neighborhood' | 'park' | 'street' | 'landmark';
+  label: string;
+  subLabel: string | null;
+  lat: number;
+  lng: number;
+}
+
+const KIND_ICON: Record<LocationHit['kind'], PhosphorIconName> = {
+  neighborhood: 'MapPin',
+  park: 'Tree',
+  street: 'NavigationArrow',
+  landmark: 'Star',
+};
 
 function normalize(s: string) {
   return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -29,12 +52,21 @@ export function PlaceSidebar({
   onSelect,
   onOpenFilter,
   filterCount = 0,
+  anchor,
+  onSetAnchor,
+  onClearAnchor,
 }: {
   places: DemoPlace[];
   selectedId: string | null;
   onSelect: (place: DemoPlace) => void;
   onOpenFilter?: () => void;
   filterCount?: number;
+  /** Optional anchor (neighborhood/park/street/landmark). When set, the
+   *  list re-sorts by distance from this point and a top bar shows
+   *  "Near X · clear". See #103. */
+  anchor?: SidebarAnchor | null;
+  onSetAnchor?: (anchor: SidebarAnchor) => void;
+  onClearAnchor?: () => void;
 }) {
   const [query, setQuery] = useState('');
   const city = useCity((s) => s.city);
@@ -87,14 +119,59 @@ export function PlaceSidebar({
     };
   }, [query, cityLabel]);
 
+  // Locations search — runs in parallel with the place search above.
+  // Hits /api/geocode (Photon proxy) for neighborhoods/parks/streets/
+  // landmarks bbox-bounded to the active city. Soft-fails to []. See #103.
+  const [locationHits, setLocationHits] = useState<LocationHit[]>([]);
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setLocationHits([]);
+      return;
+    }
+    const ctrl = new AbortController();
+    const t = setTimeout(() => {
+      const url = `/api/geocode?city=${encodeURIComponent(city)}&q=${encodeURIComponent(q)}`;
+      fetch(url, { signal: ctrl.signal })
+        .then((r) => (r.ok ? r.json() : { results: [] }))
+        .then((data: { results?: LocationHit[] }) => {
+          setLocationHits(Array.isArray(data.results) ? data.results : []);
+        })
+        .catch(() => null);
+    }, 200);
+    return () => {
+      ctrl.abort();
+      clearTimeout(t);
+    };
+  }, [query, city]);
+
   const shownPlaces = useMemo(() => {
-    if (searchHits) return searchHits;
-    const q = normalize(query.trim());
-    if (!q) return places;
-    return places.filter(
-      (p) => normalize(p.name).includes(q) || normalize(p.address).includes(q),
-    );
-  }, [places, query, searchHits]);
+    const base = (() => {
+      if (searchHits) return searchHits;
+      const q = normalize(query.trim());
+      if (!q) return places;
+      return places.filter(
+        (p) => normalize(p.name).includes(q) || normalize(p.address).includes(q),
+      );
+    })();
+    // When an anchor is set, re-sort by distance from it. Search-hit order
+    // wins over anchor-distance only when the user is actively typing.
+    if (anchor && !query.trim()) {
+      return [...base]
+        .map((p) => ({ p, d: haversineKm(anchor.lat, anchor.lng, p.lat, p.lng) }))
+        .sort((a, b) => a.d - b.d)
+        .map(({ p }) => p);
+    }
+    return base;
+  }, [places, query, searchHits, anchor]);
+
+  const handleLocationPick = (h: LocationHit) => {
+    if (!onSetAnchor) return;
+    onSetAnchor({ label: h.label, lat: h.lat, lng: h.lng });
+    setQuery('');
+    setLocationHits([]);
+    setSearchHits(null);
+  };
 
   return (
     <aside className="hidden md:flex h-full w-[320px] shrink-0 flex-col border-r border-[var(--surface-border)] bg-white/70 backdrop-blur-ios">
@@ -143,6 +220,60 @@ export function PlaceSidebar({
         )}
       </div>
 
+      {/* Locations dropdown — appears between the search input and the
+          place list when the user is typing and Photon returned matches.
+          Tap a location to set the sidebar anchor (#103). */}
+      {query.trim() && locationHits.length > 0 && (
+        <div className="mt-2 mx-3 overflow-hidden rounded-xl border border-[var(--surface-border)] bg-white shadow-card">
+          <div className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+            Locations
+          </div>
+          <ul className="flex flex-col">
+            {locationHits.map((h, i) => (
+              <li key={`${h.label}-${i}`}>
+                <button
+                  type="button"
+                  onClick={() => handleLocationPick(h)}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-sys-gray-6"
+                >
+                  <Icon name={KIND_ICON[h.kind]} size={16} className="text-accent" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[13px] font-medium text-[var(--text-primary)]">
+                      {h.label}
+                    </div>
+                    {h.subLabel && (
+                      <div className="truncate text-[11px] text-[var(--text-tertiary)]">
+                        {h.subLabel}
+                      </div>
+                    )}
+                  </div>
+                  <Icon name="ArrowRight" size={12} className="text-[var(--text-tertiary)]" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Anchor bar — visible whenever an anchor is active (no query). */}
+      {anchor && !query.trim() && (
+        <div className="mt-2 mx-3 flex items-center gap-2 rounded-xl bg-accent-tint px-3 py-2 text-[12px]">
+          <Icon name="MapPin" size={14} weight="fill" className="text-accent" />
+          <div className="min-w-0 flex-1 truncate font-medium text-accent">
+            Near {anchor.label}
+          </div>
+          {onClearAnchor && (
+            <button
+              type="button"
+              onClick={onClearAnchor}
+              className="text-[12px] font-medium text-accent underline-offset-2 hover:underline"
+            >
+              clear
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="mt-3 flex-1 overflow-y-auto px-2 pb-4">
         {shownPlaces.length === 0 ? (
           <div className="flex flex-col items-center justify-center pt-16 text-center">
@@ -159,6 +290,7 @@ export function PlaceSidebar({
                   place={place}
                   selected={selectedId === place.id}
                   onClick={() => onSelect(place)}
+                  anchor={anchor ?? null}
                 />
               </li>
             ))}
@@ -170,14 +302,21 @@ export function PlaceSidebar({
   );
 }
 
+function formatKm(km: number): string {
+  if (km < 1) return `${Math.round(km * 1000)} m`;
+  return `${km.toFixed(1)} km`;
+}
+
 function PlaceRow({
   place,
   selected,
   onClick,
+  anchor,
 }: {
   place: DemoPlace;
   selected: boolean;
   onClick: () => void;
+  anchor: SidebarAnchor | null;
 }) {
   const meta = categoryMeta(place.category);
   const brand = brandLogoFor(place.name);
@@ -219,7 +358,13 @@ function PlaceRow({
         <div className="text-[13px] font-semibold text-[var(--text-primary)]">
           {place.review_count > 0 ? place.rating.toFixed(1) : '—'}
         </div>
-        <div className="text-[10px] text-[var(--text-tertiary)]">/10</div>
+        {anchor ? (
+          <div className="text-[10px] text-accent">
+            {formatKm(haversineKm(anchor.lat, anchor.lng, place.lat, place.lng))}
+          </div>
+        ) : (
+          <div className="text-[10px] text-[var(--text-tertiary)]">/10</div>
+        )}
       </div>
     </button>
   );
