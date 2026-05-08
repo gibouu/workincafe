@@ -241,6 +241,12 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  // When the API returns 401, we *don't* redirect to /auth automatically.
+  // The submit button transforms into a "Sign in to post" CTA so the user
+  // has time to read the message and consciously consent to leaving the
+  // page. Tapping the CTA persists the draft via savePending and routes
+  // to /auth; consumePending replays the submission once they're back.
+  const [needsLogin, setNeedsLogin] = useState(false);
   const replayedRef = useRef(false);
 
   const [stepIndex, setStepIndex] = useState(0);
@@ -675,9 +681,11 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
         body: JSON.stringify(payload),
       });
       if (resp.status === 401) {
-        savePending('review', place.id, payload);
-        const nextPath = `/review/new/${place.id}`;
-        window.location.assign(buildAuthRedirect(nextPath, 'review'));
+        // Don't bounce the user out of the form mid-submit. Surface an
+        // inline notice + transform the submit button into a sign-in CTA;
+        // the user explicitly taps that to actually leave the page.
+        setNeedsLogin(true);
+        setSubmitting(false);
         return;
       }
       const body = (await resp.json().catch(() => ({}))) as { error?: string; id?: string };
@@ -1198,19 +1206,44 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
                 {submitError}
               </div>
             )}
-            {advanceBlockedReason && (
+            {needsLogin && (
+              <div className="mb-2 rounded-xl bg-accent-amber-tint px-3 py-2.5 text-[12px] leading-snug text-[var(--text-primary)]">
+                Sorry — you need to sign in to post a review. Tap below to
+                sign in; we&rsquo;ll submit your review automatically right
+                after. You can edit it later from your profile.
+              </div>
+            )}
+            {advanceBlockedReason && !needsLogin && (
               <div className="mb-2 text-center text-[11px] text-[var(--text-tertiary)]">
                 {advanceBlockedReason}
               </div>
             )}
             {isLastStep ? (
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="w-full rounded-2xl bg-accent py-3.5 text-[15px] font-semibold text-white hover:opacity-90 disabled:bg-sys-gray-4 disabled:cursor-not-allowed transition"
-              >
-                {submitting ? 'Submitting…' : 'Submit review'}
-              </button>
+              needsLogin ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Persist the draft and route through /auth — the existing
+                    // consumePending replay path picks it up after the user
+                    // returns and submits transparently.
+                    savePending('review', place.id, buildPayload());
+                    const nextPath = `/review/new/${place.id}`;
+                    window.location.assign(buildAuthRedirect(nextPath, 'review'));
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-3.5 text-[15px] font-semibold text-white hover:opacity-90 transition"
+                >
+                  <Icon name="SignIn" size={16} weight="fill" />
+                  <span>Sign in to post your review</span>
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  className="w-full rounded-2xl bg-accent py-3.5 text-[15px] font-semibold text-white hover:opacity-90 disabled:bg-sys-gray-4 disabled:cursor-not-allowed transition"
+                >
+                  {submitting ? 'Submitting…' : 'Submit review'}
+                </button>
+              )
             ) : (
               <button
                 type="button"
