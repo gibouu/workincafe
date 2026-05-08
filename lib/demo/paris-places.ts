@@ -32,6 +32,11 @@ export interface DemoPlace {
    *  category filter — reviewed places are "validated" and always show
    *  regardless of the curated default. See #77. */
   has_user_reviews?: boolean;
+  /** True when the place has either at least one user review OR has been
+   *  marked user-validated through the add-place wizard's "Did you mean…?"
+   *  flow (#82). Collapsed signal for the cafés-only override — reviewed
+   *  places and user-validated places both bypass the category gate. */
+  is_validated?: boolean;
   /** Same fact as `has_user_reviews`, just exposed as a count for any UI
    *  that wants to render it ("3 reviews"). Optional. */
   user_review_count?: number;

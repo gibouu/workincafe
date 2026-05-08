@@ -149,6 +149,26 @@ export default function MapPage() {
           }
         })
         .catch(() => showToast('Could not share update', { tone: 'error' }));
+      return;
+    }
+
+    if (submit === 'validate') {
+      // The add-place "Did you mean…?" flow saves the target place id and
+      // replays the validate POST after the user signs in. See #82.
+      const env = consumePending<{ placeId: string }>('validate');
+      stripParam();
+      if (!env) return;
+      void fetch(`/api/places/${encodeURIComponent(env.placeId)}/validate`, {
+        method: 'POST',
+      })
+        .then((r) => {
+          if (r.ok || r.status === 503) {
+            showToast('Place added to the map');
+          } else {
+            showToast('Could not validate the place', { tone: 'error' });
+          }
+        })
+        .catch(() => showToast('Could not validate the place', { tone: 'error' }));
     }
   }, [showToast]);
 
@@ -190,6 +210,9 @@ export default function MapPage() {
      *  this place. Combined with `rating` to gate the curated-default
      *  override — see #77. */
     has_user_reviews?: boolean;
+    /** True when reviewed OR user-validated via the add-place wizard
+     *  (#82). Either signal bypasses the cafés-only category gate. */
+    is_validated?: boolean;
     /** Bayesian-smoothed `study_spot_rating` from `mv_place_ratings`,
      *  on the 1–10 scale. 0 when the place has no reviews yet. */
     rating?: number;
@@ -253,15 +276,28 @@ export default function MapPage() {
       //    (brand not in our chain registry) also bypasses — Du Pain et
       //    des Idées surfaces; Paul / Maison Kayser do not.
       if (filters.categories.size > 0 && !filters.categories.has(p.category)) {
+        // Highly-rated restaurants bypass the gate (#77 — keep the rating
+        // floor even with #82's validation; "Bob marked Pizza Hut" shouldn't
+        // surface it on the cafés-only default unless it's actually good).
         const isHighlyRatedRestaurant =
           p.category === 'restaurant' &&
           Boolean(p.has_user_reviews) &&
           (p.rating ?? 0) > 7;
+        // User-validated non-restaurants bypass directly (#82). Restaurants
+        // still need the rating floor to avoid the chain-restaurant noise.
+        const isUserValidatedNonRestaurant =
+          p.category !== 'restaurant' && Boolean(p.is_validated);
         const isIndependentBakeryWithCafe =
           p.category === 'bakery' &&
           filters.categories.has('cafe') &&
           !isKnownChain(p.brand ?? null);
-        if (!isHighlyRatedRestaurant && !isIndependentBakeryWithCafe) return false;
+        if (
+          !isHighlyRatedRestaurant &&
+          !isUserValidatedNonRestaurant &&
+          !isIndependentBakeryWithCafe
+        ) {
+          return false;
+        }
       }
       if (filters.outlets && p.outlets === 'none') return false;
       if (filters.noise !== 'any' && p.noise !== filters.noise) return false;
@@ -287,6 +323,7 @@ export default function MapPage() {
             lng: p.lng,
             brand: p.brand,
             has_user_reviews: p.has_user_reviews,
+            is_validated: p.is_validated,
             // Slim payload's `rating` overrides DEMO_PLACE_DEFAULTS.rating
             // (which is 0) so the highly-rated-restaurant override below
             // can read it.
@@ -294,15 +331,16 @@ export default function MapPage() {
           }))
         : visiblePlaces;
     if (filters.categories.size === 0) return source;
-    // Same narrow override as `visiblePlaces`: only highly-rated
-    // restaurants bypass the category gate. See #77.
+    // Mirrors the `visiblePlaces` override above. See #77 + #82.
     return source.filter((p) => {
       if (filters.categories.has(p.category)) return true;
-      return (
+      const isHighlyRatedRestaurant =
         p.category === 'restaurant' &&
         Boolean(p.has_user_reviews) &&
-        (p.rating ?? 0) > 7
-      );
+        (p.rating ?? 0) > 7;
+      const isUserValidatedNonRestaurant =
+        p.category !== 'restaurant' && Boolean(p.is_validated);
+      return isHighlyRatedRestaurant || isUserValidatedNonRestaurant;
     });
   }, [mapPlaces, visiblePlaces, filters.categories]);
 

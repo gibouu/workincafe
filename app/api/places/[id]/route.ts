@@ -14,6 +14,7 @@ interface PlaceRow {
   lng: number;
   brand: string | null;
   hours_json: { raw?: string } | null;
+  user_validated_at: string | null;
 }
 
 export async function GET(
@@ -25,12 +26,17 @@ export async function GET(
 
   const { data: row, error } = await supabase
     .from('places')
-    .select('id, name, address, neighborhood, city, country, category, lat, lng, brand, hours_json')
+    .select(
+      'id, name, address, neighborhood, city, country, category, lat, lng, brand, hours_json, user_validated_at',
+    )
     .eq('id', id)
     .maybeSingle();
 
   if (error) {
-    if (/relation .* does not exist/i.test(error.message)) {
+    if (
+      /relation .* does not exist/i.test(error.message) ||
+      /column .* does not exist/i.test(error.message)
+    ) {
       return NextResponse.json({ error: 'not migrated' }, { status: 503 });
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -50,11 +56,14 @@ export async function GET(
     | {
         study_spot_rating?: number;
         rating_count?: number;
+        user_rating_count?: number;
         coffee_mean?: number | null;
         coffee_review_count?: number;
       }
     | null;
   const liveStatusObj = liveStatus as { noise?: string; seating?: string } | null;
+  const hasUserReviews = (ratingObj?.user_rating_count ?? 0) > 0;
+  const userValidated = Boolean(r.user_validated_at);
   const place = {
     id: r.id,
     name: r.name,
@@ -66,6 +75,8 @@ export async function GET(
     brand: r.brand,
     rating: ratingObj?.study_spot_rating ?? 0,
     review_count: ratingObj?.rating_count ?? 0,
+    has_user_reviews: hasUserReviews,
+    is_validated: hasUserReviews || userValidated,
     coffee_rating: ratingObj?.coffee_mean ?? null,
     coffee_review_count: ratingObj?.coffee_review_count ?? 0,
     avg_spend_eur: 0,

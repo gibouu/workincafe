@@ -14,6 +14,7 @@ interface FullPlaceRow {
   lng: number;
   brand: string | null;
   hours_json: { raw?: string } | null;
+  user_validated_at: string | null;
 }
 
 interface SlimPlaceRow {
@@ -23,6 +24,7 @@ interface SlimPlaceRow {
   lat: number;
   lng: number;
   brand: string | null;
+  user_validated_at: string | null;
 }
 
 interface RatingRow {
@@ -68,7 +70,7 @@ export async function GET(request: NextRequest) {
     const [w, s, e, n] = bbox;
     const { data, error } = await supabase
       .from('places')
-      .select('id, name, category, lat, lng, brand')
+      .select('id, name, category, lat, lng, brand, user_validated_at')
       .eq('city', cityName)
       .gte('lng', w)
       .lte('lng', e)
@@ -77,7 +79,10 @@ export async function GET(request: NextRequest) {
       .limit(MAX_SLIM);
     if (error) {
       const code = (error as { code?: string }).code ?? '';
-      if (code === '42P01') return NextResponse.json({ places: [] });
+      // Demo-mode contract: missing table or columns → empty payload so
+      // the client falls back to the demo arrays without crashing. The
+      // column case fires between deploy and migration apply.
+      if (code === '42P01' || code === '42703') return NextResponse.json({ places: [] });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     // Fetch rating + user-review counts so the client can apply the
@@ -104,6 +109,8 @@ export async function GET(request: NextRequest) {
 
     const out = slimPlaces.map((p) => {
       const r = ratingByPlace.get(p.id);
+      const hasUserReviews = (r?.user_rating_count ?? 0) > 0;
+      const userValidated = Boolean(p.user_validated_at);
       return {
         id: p.id,
         name: p.name,
@@ -112,7 +119,8 @@ export async function GET(request: NextRequest) {
         lng: p.lng,
         brand: p.brand,
         rating: r?.study_spot_rating ?? 0,
-        has_user_reviews: (r?.user_rating_count ?? 0) > 0,
+        has_user_reviews: hasUserReviews,
+        is_validated: hasUserReviews || userValidated,
       };
     });
     // CDN caches the bbox response for 60 s and serves it stale up to 5 min
@@ -127,14 +135,17 @@ export async function GET(request: NextRequest) {
   // ── Full city dump (legacy / sidebar path) ─────────────────────────────
   const { data: rawPlaces, error: pErr } = await supabase
     .from('places')
-    .select('id, name, address, neighborhood, city, country, category, lat, lng, brand, hours_json')
+    .select(
+      'id, name, address, neighborhood, city, country, category, lat, lng, brand, hours_json, user_validated_at',
+    )
     .eq('city', cityName)
     .order('name', { ascending: true })
     .limit(MAX_FULL);
 
   if (pErr) {
     const code = (pErr as { code?: string }).code ?? '';
-    if (code === '42P01') return NextResponse.json({ places: [] });
+    // Same demo-mode contract as the bbox path above. See comment there.
+    if (code === '42P01' || code === '42703') return NextResponse.json({ places: [] });
     return NextResponse.json({ error: pErr.message }, { status: 500 });
   }
   const places = (rawPlaces ?? []) as FullPlaceRow[];
@@ -152,6 +163,8 @@ export async function GET(request: NextRequest) {
 
   const out = places.map((p) => {
     const r = ratingByPlace.get(p.id);
+    const hasUserReviews = (r?.user_rating_count ?? 0) > 0;
+    const userValidated = Boolean(p.user_validated_at);
     return {
       id: p.id,
       name: p.name,
@@ -165,7 +178,8 @@ export async function GET(request: NextRequest) {
       review_count: r?.rating_count ?? 0,
       user_review_count: r?.user_rating_count ?? 0,
       user_avg_rating: r?.user_avg_rating ?? null,
-      has_user_reviews: (r?.user_rating_count ?? 0) > 0,
+      has_user_reviews: hasUserReviews,
+      is_validated: hasUserReviews || userValidated,
       coffee_rating: r?.coffee_mean ?? null,
       coffee_review_count: r?.coffee_review_count ?? 0,
       avg_spend_eur: 0,
