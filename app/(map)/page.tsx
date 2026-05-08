@@ -185,6 +185,13 @@ export default function MapPage() {
     lat: number;
     lng: number;
     brand: string | null;
+    /** True when the API found at least one `source='user'` review for
+     *  this place. Combined with `rating` to gate the curated-default
+     *  override — see #77. */
+    has_user_reviews?: boolean;
+    /** Bayesian-smoothed `study_spot_rating` from `mv_place_ratings`,
+     *  on the 1–10 scale. 0 when the place has no reviews yet. */
+    rating?: number;
   }
   const [mapPlaces, setMapPlaces] = useState<SlimPlace[]>([]);
   const lastBboxRef = useRef<[number, number, number, number] | null>(null);
@@ -238,7 +245,19 @@ export default function MapPage() {
 
   const visiblePlaces = useMemo(() => {
     return sourcePlaces.filter((p) => {
-      if (filters.categories.size > 0 && !filters.categories.has(p.category)) return false;
+      // Category gate (#77): cafés always pass when in the active
+      // filter set. The override for non-active categories is narrow:
+      // only restaurants bypass, and only when they have at least one
+      // user review AND a study_spot_rating > 7 (= "high enough to
+      // be a working spot"). McDonald's-with-a-review still does NOT
+      // surface; a beloved 7.8-rated trattoria does.
+      if (filters.categories.size > 0 && !filters.categories.has(p.category)) {
+        const isHighlyRatedRestaurant =
+          p.category === 'restaurant' &&
+          Boolean(p.has_user_reviews) &&
+          (p.rating ?? 0) > 7;
+        if (!isHighlyRatedRestaurant) return false;
+      }
       if (filters.outlets && p.outlets === 'none') return false;
       if (filters.noise !== 'any' && p.noise !== filters.noise) return false;
       if (filters.wifi !== 'any' && p.wifi !== filters.wifi) return false;
@@ -262,10 +281,24 @@ export default function MapPage() {
             lat: p.lat,
             lng: p.lng,
             brand: p.brand,
+            has_user_reviews: p.has_user_reviews,
+            // Slim payload's `rating` overrides DEMO_PLACE_DEFAULTS.rating
+            // (which is 0) so the highly-rated-restaurant override below
+            // can read it.
+            rating: p.rating ?? 0,
           }))
         : visiblePlaces;
     if (filters.categories.size === 0) return source;
-    return source.filter((p) => filters.categories.has(p.category));
+    // Same narrow override as `visiblePlaces`: only highly-rated
+    // restaurants bypass the category gate. See #77.
+    return source.filter((p) => {
+      if (filters.categories.has(p.category)) return true;
+      return (
+        p.category === 'restaurant' &&
+        Boolean(p.has_user_reviews) &&
+        (p.rating ?? 0) > 7
+      );
+    });
   }, [mapPlaces, visiblePlaces, filters.categories]);
 
   // Pan to the active city's center whenever it changes.

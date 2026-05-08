@@ -27,6 +27,17 @@ export interface DemoPlace {
   right_now_seating: string;
   /** OSM `opening_hours` raw string when available (e.g. `Mo-Fr 09:00-18:00`). */
   hours_raw?: string | null;
+  /** Set when the API found at least one `source='user'` review for this
+   *  place. Used by the map page's filter logic to bypass the active
+   *  category filter — reviewed places are "validated" and always show
+   *  regardless of the curated default. See #77. */
+  has_user_reviews?: boolean;
+  /** Same fact as `has_user_reviews`, just exposed as a count for any UI
+   *  that wants to render it ("3 reviews"). Optional. */
+  user_review_count?: number;
+  /** Optional brand string surfaced from the slim payload — used by the
+   *  bbox map fetch path. Not present on the demo arrays. */
+  brand?: string | null;
 }
 
 export const PARIS_DEMO_PLACES: DemoPlace[] = [
