@@ -1,5 +1,27 @@
 # Progress Log
 Newest first. One line per entry.
+[2026-05-07 23:52] Write: .claude/state/TASKS.md
+[2026-05-07 23:52] Edit: .claude/state/PROGRESS.md
+[2026-05-09] tracker #76 + 6 children (#77–#83) filed. PR #84 opened: cafe default + reviewed-place override. Migration 018 written, application pending. Why: curated welcome state.
+[2026-05-09] PRs landed today: #56 magic-link, #58 cron, #59 menus, #64–#69 polish, #70 prune, #72 geolocate, #73 welcome CTA, #75 review-submit prompt. Plus branch protection on main. Why: rapid UX fixes after live testing.
+[2026-05-09] PR #84 awaiting refinement: restaurant override gated by rating ≥ 7.5 (not just any user review). Why: McDonald's reviews shouldn't surface it; only highly-rated restaurants should.
+[2026-05-07 23:51] Edit: .claude/state/DECISIONS.md
+[2026-05-07 23:48] Edit: app/(map)/page.tsx
+[2026-05-07 23:48] Edit: app/(map)/page.tsx
+[2026-05-07 23:47] Edit: lib/store/filters.ts
+[2026-05-07 23:47] Edit: lib/store/filters.ts
+[2026-05-07 23:47] Edit: lib/demo/paris-places.ts
+[2026-05-07 23:46] Edit: app/api/places/route.ts
+[2026-05-07 23:46] Edit: app/api/places/route.ts
+[2026-05-07 23:46] Edit: app/api/places/route.ts
+[2026-05-07 23:46] Edit: app/api/places/route.ts
+[2026-05-07 23:46] Write: supabase/migrations/018_user_rating_count.sql
+[2026-05-07 23:42] Write: /Users/gibou/.claude/plans/i-would-like-you-cryptic-quokka.md
+[2026-05-07 23:36] Write: /Users/gibou/.claude/plans/i-would-like-you-cryptic-quokka.md
+[2026-05-07 23:30] Write: /Users/gibou/.claude/plans/i-would-like-you-cryptic-quokka.md
+[2026-05-07 20:30] Edit: components/review/ReviewForm.tsx
+[2026-05-07 20:30] Edit: components/review/ReviewForm.tsx
+[2026-05-07 20:30] Edit: components/review/ReviewForm.tsx
 [2026-05-07 11:04] Edit: .claude/state/PROGRESS.md
 [2026-05-07 11:02] #17/PR#46 + #16/PR#44 + #15/PR#42 — five PRs landed today; pin-spread next to merge. Why: rolling through form/review/map polish backlog.
 [2026-05-07 11:04] Edit: .claude/state/DECISIONS.md

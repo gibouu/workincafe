@@ -29,6 +29,8 @@ interface RatingRow {
   place_id: string;
   study_spot_rating: number | null;
   rating_count: number;
+  user_rating_count: number;
+  user_avg_rating: number | null;
 }
 
 const MAX_FULL = 2500;
@@ -76,14 +78,41 @@ export async function GET(request: NextRequest) {
       if (code === '42P01') return NextResponse.json({ places: [] });
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    const out = ((data ?? []) as SlimPlaceRow[]).map((p) => ({
-      id: p.id,
-      name: p.name,
-      category: p.category,
-      lat: p.lat,
-      lng: p.lng,
-      brand: p.brand,
-    }));
+    // Fetch rating + user-review counts so the client can apply the
+    // curated default override: cafés always show; restaurants bypass
+    // the category gate iff they have a user review AND
+    // `study_spot_rating >= 7.5`. Other categories never bypass. See #77.
+    const slimPlaces = (data ?? []) as SlimPlaceRow[];
+    interface SlimRatingRow {
+      place_id: string;
+      study_spot_rating: number | null;
+      user_rating_count: number;
+    }
+    const ratingByPlace = new Map<string, SlimRatingRow>();
+    if (slimPlaces.length > 0) {
+      const { data: ratingRows } = await supabase
+        .from('mv_place_ratings')
+        .select('place_id, study_spot_rating, user_rating_count')
+        .in('place_id', slimPlaces.map((p) => p.id))
+        .limit(MAX_SLIM);
+      for (const r of (ratingRows ?? []) as SlimRatingRow[]) {
+        ratingByPlace.set(r.place_id, r);
+      }
+    }
+
+    const out = slimPlaces.map((p) => {
+      const r = ratingByPlace.get(p.id);
+      return {
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        lat: p.lat,
+        lng: p.lng,
+        brand: p.brand,
+        rating: r?.study_spot_rating ?? 0,
+        has_user_reviews: (r?.user_rating_count ?? 0) > 0,
+      };
+    });
     // CDN caches the bbox response for 60 s and serves it stale up to 5 min
     // while revalidating. Place data only changes on seed/prune so this is
     // safe — first request hits the DB, the next 100 hit Vercel's edge.
@@ -110,7 +139,7 @@ export async function GET(request: NextRequest) {
 
   const { data: ratings } = await supabase
     .from('mv_place_ratings')
-    .select('place_id, study_spot_rating, rating_count')
+    .select('place_id, study_spot_rating, rating_count, user_rating_count, user_avg_rating')
     .in('place_id', places.map((p) => p.id))
     .limit(MAX_FULL);
 
@@ -130,6 +159,9 @@ export async function GET(request: NextRequest) {
       brand: p.brand,
       rating: r?.study_spot_rating ?? 0,
       review_count: r?.rating_count ?? 0,
+      user_review_count: r?.user_rating_count ?? 0,
+      user_avg_rating: r?.user_avg_rating ?? null,
+      has_user_reviews: (r?.user_rating_count ?? 0) > 0,
       avg_spend_eur: 0,
       // Vitals come from reviews. Until anyone reviews this place, we
       // surface 'unknown' explicitly rather than guessing 'moderate'.
