@@ -7,6 +7,7 @@ import { Icon } from '@/components/icons/Icon';
 import { CATEGORIES, type PlaceCategory } from '@/lib/categories';
 import { useToasts } from '@/lib/store/toasts';
 import { CITIES, useCity } from '@/lib/store/city';
+import { savePending, buildAuthRedirect } from '@/lib/auth/pending-submit';
 
 const CATEGORY_KEYS: PlaceCategory[] = [
   'cafe',
@@ -174,6 +175,23 @@ export function AddPlaceWizard({
   const [addressSearching, setAddressSearching] = useState(false);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const sessionTokenRef = useRef<string>(newSessionToken());
+
+  // "Did you mean…?" duplicate-detection state. After the user picks an
+  // address or a place from search, we hit /api/places/nearby-with-name
+  // and surface up to ~5 existing rows so they can confirm an existing
+  // place rather than file a duplicate place_request. See #82.
+  interface NearbyMatch {
+    id: string;
+    name: string;
+    category: PlaceCategory | string;
+    brand: string | null;
+    lat: number;
+    lng: number;
+    similarity: number;
+  }
+  const [nearbyMatches, setNearbyMatches] = useState<NearbyMatch[]>([]);
+  const [validatingId, setValidatingId] = useState<string | null>(null);
+  const [reviewPromptForId, setReviewPromptForId] = useState<string | null>(null);
 
   // Restore prior draft on first mount so navigating away (X) doesn't lose
   // work. Setting state after `useState` means inputs flash empty for one
@@ -376,6 +394,62 @@ export function AddPlaceWizard({
     submitLat !== null &&
     submitLng !== null &&
     (category !== 'other' || customTrim.length > 1);
+
+  // Fetch "Did you mean…?" candidates when the user has both a name and
+  // coordinates. Debounced so quick edits don't spam the endpoint. The API
+  // soft-fails to empty array on missing tables, so the wizard keeps
+  // working in demo mode. See #82.
+  const matchQuery = (picked?.name ?? name).trim();
+  const matchLat = picked?.lat ?? null;
+  const matchLng = picked?.lng ?? null;
+  useEffect(() => {
+    if (!matchQuery || matchQuery.length < 3 || matchLat === null || matchLng === null) {
+      setNearbyMatches([]);
+      return;
+    }
+    const ctrl = new AbortController();
+    const t = setTimeout(() => {
+      const url = `/api/places/nearby-with-name?lat=${matchLat}&lng=${matchLng}&q=${encodeURIComponent(matchQuery)}&radius_m=150`;
+      fetch(url, { signal: ctrl.signal })
+        .then((r) => (r.ok ? r.json() : { matches: [] }))
+        .then((data: { matches?: NearbyMatch[] }) => {
+          setNearbyMatches(Array.isArray(data.matches) ? data.matches.slice(0, 5) : []);
+        })
+        .catch(() => null);
+    }, 300);
+    return () => {
+      ctrl.abort();
+      clearTimeout(t);
+    };
+  }, [matchQuery, matchLat, matchLng]);
+
+  const handleValidateMatch = async (match: NearbyMatch) => {
+    if (validatingId) return;
+    setValidatingId(match.id);
+    try {
+      const resp = await fetch(`/api/places/${encodeURIComponent(match.id)}/validate`, {
+        method: 'POST',
+      });
+      if (resp.status === 401) {
+        // Save the target id and bounce through OAuth. The map page picks
+        // it up from `consumePending('validate')` after the redirect.
+        savePending('validate', match.id, { placeId: match.id });
+        clearDraft();
+        window.location.assign(buildAuthRedirect('/', 'validate'));
+        return;
+      }
+      if (resp.ok || resp.status === 503) {
+        showToast('Got it — added to the map', { tone: 'info' });
+        setReviewPromptForId(match.id);
+        return;
+      }
+      showToast('Could not confirm the place', { tone: 'error' });
+    } catch {
+      showToast('Could not confirm the place', { tone: 'error' });
+    } finally {
+      setValidatingId(null);
+    }
+  };
 
   const stepIndex = STEPS.indexOf(step);
   const isFirst = stepIndex === 0;
@@ -618,6 +692,108 @@ export function AddPlaceWizard({
                 </div>
               )}
             </div>
+
+            {/* Did-you-mean cards (#82). Surfaces existing rows within 150m
+                with a similar name so users don't double-add a place that's
+                already on the map but hidden by the cafés-only default. */}
+            {nearbyMatches.length > 0 && reviewPromptForId === null && (
+              <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-4">
+                <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+                  Did you mean…?
+                </div>
+                <div className="mt-1 text-[12px] text-[var(--text-secondary)]">
+                  We already have these nearby. Tap one to confirm it&rsquo;s the place — we&rsquo;ll show it on the map.
+                </div>
+                <ul className="mt-3 flex flex-col gap-2">
+                  {nearbyMatches.map((m) => (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        disabled={validatingId !== null}
+                        onClick={() => handleValidateMatch(m)}
+                        className="flex w-full items-start gap-3 rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2.5 text-left transition hover:bg-sys-gray-6 disabled:opacity-60"
+                      >
+                        <Icon
+                          name={CATEGORIES[m.category as PlaceCategory]?.icon ?? 'MapPin'}
+                          size={16}
+                          className="mt-0.5 text-accent"
+                        />
+                        <div className="flex-1">
+                          <div className="text-[14px] font-medium text-[var(--text-primary)]">
+                            {m.name}
+                          </div>
+                          {(m.brand || m.category) && (
+                            <div className="text-[11px] text-[var(--text-secondary)]">
+                              {m.brand ? `${m.brand} · ` : ''}
+                              {CATEGORIES[m.category as PlaceCategory]?.label ?? m.category}
+                            </div>
+                          )}
+                        </div>
+                        {validatingId === m.id ? (
+                          <Icon
+                            name="CircleNotch"
+                            size={14}
+                            className="mt-1 animate-spin text-[var(--text-tertiary)]"
+                          />
+                        ) : (
+                          <Icon
+                            name="CaretRight"
+                            size={14}
+                            className="mt-1 text-[var(--text-tertiary)]"
+                          />
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Post-validate review nudge (#82). Confirms the validation and
+                offers the natural follow-up: "want to leave a review?". */}
+            {reviewPromptForId !== null && (
+              <div className="rounded-2xl border border-accent bg-accent-tint p-4">
+                <div className="flex items-start gap-2">
+                  <Icon
+                    name="CheckCircle"
+                    size={20}
+                    weight="fill"
+                    className="mt-0.5 text-accent"
+                  />
+                  <div className="flex-1">
+                    <div className="text-[14px] font-semibold text-[var(--text-primary)]">
+                      Added to the map
+                    </div>
+                    <div className="mt-1 text-[12px] text-[var(--text-secondary)]">
+                      Want to leave a review while you&rsquo;re here? Helps
+                      others find it too.
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearDraft();
+                      router.push(`/review/new/${encodeURIComponent(reviewPromptForId)}`);
+                    }}
+                    className="flex-1 rounded-xl bg-accent py-2.5 text-[13px] font-semibold text-white hover:opacity-90"
+                  >
+                    Yes, review now
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearDraft();
+                      router.push('/');
+                    }}
+                    className="flex-1 rounded-xl border border-[var(--surface-border)] bg-white py-2.5 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6"
+                  >
+                    No thanks
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

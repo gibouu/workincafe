@@ -1,4 +1,4 @@
-export type PendingKind = 'review' | 'live-update' | 'checkin';
+export type PendingKind = 'review' | 'live-update' | 'checkin' | 'validate';
 
 const KEY_PREFIX = 'wic:pending:';
 
