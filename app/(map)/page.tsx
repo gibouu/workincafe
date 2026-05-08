@@ -35,6 +35,7 @@ import { useFilters } from '@/lib/store/filters';
 import { useLayout } from '@/lib/store/layout';
 import { useCity, CITIES, type City } from '@/lib/store/city';
 import { matchKnownCity } from '@/lib/demo/cities';
+import { isKnownChain } from '@/lib/brand-logos';
 import type { DemoPlace } from '@/lib/demo/paris-places';
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -245,18 +246,22 @@ export default function MapPage() {
 
   const visiblePlaces = useMemo(() => {
     return sourcePlaces.filter((p) => {
-      // Category gate (#77): cafés always pass when in the active
-      // filter set. The override for non-active categories is narrow:
-      // only restaurants bypass, and only when they have at least one
-      // user review AND a study_spot_rating > 7 (= "high enough to
-      // be a working spot"). McDonald's-with-a-review still does NOT
-      // surface; a beloved 7.8-rated trattoria does.
+      // Category gate. Two narrow overrides for non-active categories:
+      //  • #77: a restaurant with a user review and study_spot_rating > 7
+      //    (high enough to be a working spot) bypasses the filter.
+      //  • #78: when 'cafe' is in the active set, an independent bakery
+      //    (brand not in our chain registry) also bypasses — Du Pain et
+      //    des Idées surfaces; Paul / Maison Kayser do not.
       if (filters.categories.size > 0 && !filters.categories.has(p.category)) {
         const isHighlyRatedRestaurant =
           p.category === 'restaurant' &&
           Boolean(p.has_user_reviews) &&
           (p.rating ?? 0) > 7;
-        if (!isHighlyRatedRestaurant) return false;
+        const isIndependentBakeryWithCafe =
+          p.category === 'bakery' &&
+          filters.categories.has('cafe') &&
+          !isKnownChain(p.brand ?? null);
+        if (!isHighlyRatedRestaurant && !isIndependentBakeryWithCafe) return false;
       }
       if (filters.outlets && p.outlets === 'none') return false;
       if (filters.noise !== 'any' && p.noise !== filters.noise) return false;
