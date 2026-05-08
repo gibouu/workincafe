@@ -330,6 +330,26 @@ export default function MapPage() {
     return () => unsub();
   }, []);
 
+  // PermissionStatus.onchange is unreliable on iOS Safari and may miss the
+  // event when the user flips the setting in another tab/window. Re-probe
+  // every time the tab returns to the foreground so the red-dot indicator
+  // and silent-pan recovery clear without requiring a button click. See #89.
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      void probeGeolocationPermission().then((state) => {
+        setGeolocatePermission((curr) => {
+          if (curr === state) return curr;
+          console.info('[geolocate] visibility re-probe %s → %s', curr, state);
+          return state;
+        });
+      });
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, []);
+
   // Last-known position pan: the cheapest way to get a returning user to
   // their actual location instead of the IP-derived Boulogne-Billancourt
   // for any French mobile carrier. See #71.
@@ -484,7 +504,7 @@ export default function MapPage() {
     router.push(`/places/new${qs}`);
   };
 
-  const handleGeolocate = () => {
+  const handleGeolocate = async () => {
     if (!navigator.geolocation) {
       showToast('Location not supported in this browser', { tone: 'error' });
       return;
@@ -493,10 +513,24 @@ export default function MapPage() {
     // for this origin, getCurrentPosition will fail synchronously without
     // ever showing the system prompt. Surface the recovery banner instead
     // of letting the failure look silent. See #71.
+    //
+    // Re-probe before trusting the cached state — `PermissionStatus.onchange`
+    // is unreliable on iOS Safari and may miss flips made in another tab or
+    // in browser settings while the page wasn't focused. Only show the
+    // recovery banner when the OS still confirms the deny. See #89.
     if (geolocatePermission === 'denied') {
-      console.warn('[geolocate] permission=denied — opening recovery banner');
-      setBlockedBannerOpen(true);
-      return;
+      const fresh = await probeGeolocationPermission();
+      if (fresh !== geolocatePermission) {
+        console.info('[geolocate] re-probe %s → %s', geolocatePermission, fresh);
+        setGeolocatePermission(fresh);
+      }
+      if (fresh === 'denied') {
+        console.warn('[geolocate] permission=denied (confirmed) — opening recovery banner');
+        setBlockedBannerOpen(true);
+        return;
+      }
+      // fresh is 'granted' or 'prompt' — fall through to getCurrentPosition,
+      // which will either succeed silently or surface the system prompt.
     }
     setGeolocating(true);
 
