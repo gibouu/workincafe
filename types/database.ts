@@ -143,7 +143,7 @@ type ReviewRow = {
 type ReviewPhotoRow = {
   id: string;
   review_id: string;
-  slot: 'menu' | 'inside' | 'outside' | 'special';
+  slot: 'menu' | 'inside' | 'outside' | 'special' | 'coffee';
   path: string;
   width: number | null;
   height: number | null;

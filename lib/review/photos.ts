@@ -1,6 +1,6 @@
-export type PhotoSlot = 'menu' | 'inside' | 'outside' | 'special';
+export type PhotoSlot = 'menu' | 'inside' | 'outside' | 'special' | 'coffee';
 
-export const PHOTO_SLOTS: PhotoSlot[] = ['menu', 'inside', 'outside', 'special'];
+export const PHOTO_SLOTS: PhotoSlot[] = ['menu', 'inside', 'outside', 'special', 'coffee'];
 
 export interface PhotoSlotMeta {
   slot: PhotoSlot;
@@ -27,7 +27,12 @@ export const PHOTO_SLOT_META: Record<PhotoSlot, PhotoSlotMeta> = {
   special: {
     slot: 'special',
     label: 'Something special',
-    example: 'Your coffee, the chair you’re sitting on, the cat, the view — anything.',
+    example: 'The chair you’re sitting on, the cat, the view — anything.',
+  },
+  coffee: {
+    slot: 'coffee',
+    label: 'Your coffee',
+    example: 'The latte art, the cup, the cortado — your drink.',
   },
 };
 

@@ -22,6 +22,9 @@ import {
 } from '@/lib/review/scoring';
 import {
   BUSY_ANCHORS,
+  COFFEE_ART_ANCHORS,
+  COFFEE_MUG_ANCHORS,
+  COFFEE_QUALITY_ANCHORS,
   FOOD_VALUE_ANCHORS,
   NOISE_FALLBACK_ANCHORS,
   OUTLETS_ANCHORS,
@@ -132,19 +135,30 @@ type WizardStep =
   | 'measurements'
   | 'comfort'
   | 'price'
+  | 'coffee'
   | 'vibe'
   | 'photos'
   | 'final';
 
-const STEPS: { id: WizardStep; title: string }[] = [
-  { id: 'location', title: 'Location' },
-  { id: 'measurements', title: 'Measurements' },
-  { id: 'comfort', title: 'Comfort' },
-  { id: 'price', title: 'Price' },
-  { id: 'vibe', title: 'Vibe' },
-  { id: 'photos', title: 'Photos' },
-  { id: 'final', title: 'Overall' },
-];
+// Cafés get a dedicated coffee step between price and vibe so users can
+// rate the actual coffee, not just the space. Non-cafés never see it. See #85.
+function buildSteps(category: string): { id: WizardStep; title: string }[] {
+  const baseBeforeVibe: { id: WizardStep; title: string }[] = [
+    { id: 'location', title: 'Location' },
+    { id: 'measurements', title: 'Measurements' },
+    { id: 'comfort', title: 'Comfort' },
+    { id: 'price', title: 'Price' },
+  ];
+  const tail: { id: WizardStep; title: string }[] = [
+    { id: 'vibe', title: 'Vibe' },
+    { id: 'photos', title: 'Photos' },
+    { id: 'final', title: 'Overall' },
+  ];
+  if (category === 'cafe') {
+    return [...baseBeforeVibe, { id: 'coffee', title: 'Coffee' }, ...tail];
+  }
+  return [...baseBeforeVibe, ...tail];
+}
 
 interface ReviewFormProps {
   place: DemoPlace;
@@ -176,6 +190,11 @@ interface ReviewDraft {
   workFacts: WorkFact[];
   placeType: PlaceType | null;
   comment: string;
+  coffeeQuality: number;
+  coffeeArt: number;
+  coffeeMug: number;
+  coffeeNoArt: boolean;
+  coffeeNoMug: boolean;
 }
 function reviewDraftKey(placeId: string): string {
   return `${REVIEW_DRAFT_PREFIX}${placeId}`;
@@ -204,6 +223,9 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
   const meta = categoryMeta(place.category);
   const needsFood = FOOD_FORWARD.has(place.category);
   const symbol = currencySymbol(cityForPlace(place.id));
+  // STEPS depend on category: cafés get a dedicated coffee step. See #85.
+  const STEPS = useMemo(() => buildSteps(place.category), [place.category]);
+  const isCafe = place.category === 'cafe';
 
   const [geo, setGeo] = useState<GeoState>({ kind: 'idle' });
 
@@ -226,6 +248,14 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
   const [drinkPrice, setDrinkPrice] = useState<DrinkPriceBucket | null>(null);
   const [foodPrice, setFoodPrice] = useState<FoodPriceBucket | null>(null);
   const [didOrder, setDidOrder] = useState<'yes' | 'no' | null>(null);
+
+  // Coffee step (cafés only). 0 = unset, 1–10 = rated. Opt-out booleans
+  // null out the corresponding rating in the payload. See #85.
+  const [coffeeQuality, setCoffeeQuality] = useState(0);
+  const [coffeeArt, setCoffeeArt] = useState(0);
+  const [coffeeMug, setCoffeeMug] = useState(0);
+  const [coffeeNoArt, setCoffeeNoArt] = useState(false);
+  const [coffeeNoMug, setCoffeeNoMug] = useState(false);
 
   // Multi-select work facts
   const [workFacts, setWorkFacts] = useState<WorkFact[]>([]);
@@ -276,9 +306,14 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       if (Array.isArray(draft.workFacts)) setWorkFacts(draft.workFacts);
       if (draft.placeType !== undefined) setPlaceType(draft.placeType);
       if (typeof draft.comment === 'string') setComment(draft.comment);
+      if (typeof draft.coffeeQuality === 'number') setCoffeeQuality(draft.coffeeQuality);
+      if (typeof draft.coffeeArt === 'number') setCoffeeArt(draft.coffeeArt);
+      if (typeof draft.coffeeMug === 'number') setCoffeeMug(draft.coffeeMug);
+      if (typeof draft.coffeeNoArt === 'boolean') setCoffeeNoArt(draft.coffeeNoArt);
+      if (typeof draft.coffeeNoMug === 'boolean') setCoffeeNoMug(draft.coffeeNoMug);
     }
     draftHydratedRef.current = true;
-  }, [place.id]);
+  }, [place.id, STEPS.length]);
 
   // Persist on field change (after hydration).
   useEffect(() => {
@@ -321,6 +356,11 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
         workFacts,
         placeType,
         comment,
+        coffeeQuality,
+        coffeeArt,
+        coffeeMug,
+        coffeeNoArt,
+        coffeeNoMug,
       };
       window.localStorage.setItem(reviewDraftKey(place.id), JSON.stringify(draft));
     } catch {
@@ -344,6 +384,11 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
     workFacts,
     placeType,
     comment,
+    coffeeQuality,
+    coffeeArt,
+    coffeeMug,
+    coffeeNoArt,
+    coffeeNoMug,
   ]);
 
   const ateFood =
@@ -576,6 +621,13 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
     comment: comment.trim() || null,
     verified_lat: geo.kind === 'ok' ? geo.lat : null,
     verified_lng: geo.kind === 'ok' ? geo.lng : null,
+    coffee_quality_rating: isCafe && didOrder === 'yes' && coffeeQuality > 0 ? coffeeQuality : null,
+    coffee_art_rating:
+      isCafe && didOrder === 'yes' && !coffeeNoArt && coffeeArt > 0 ? coffeeArt : null,
+    coffee_mug_rating:
+      isCafe && didOrder === 'yes' && !coffeeNoMug && coffeeMug > 0 ? coffeeMug : null,
+    coffee_no_art: isCafe && didOrder === 'yes' && coffeeNoArt,
+    coffee_no_mug: isCafe && didOrder === 'yes' && coffeeNoMug,
   });
 
   const canSubmit = overall > 0 && comment.length <= 280 && geo.kind === 'ok' && !submitting;
@@ -1056,6 +1108,92 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
               <Section title="Got it">
                 <p className="text-[12px] text-[var(--text-secondary)]">
                   We’ll skip the price questions.
+                </p>
+              </Section>
+            )}
+          </>
+        )}
+
+        {step.id === 'coffee' && (
+          <>
+            {didOrder === 'yes' ? (
+              <>
+                <Section
+                  title="The coffee itself"
+                  subtitle="Rate the actual drink — quality matters most. Art and mug are bonuses."
+                >
+                  <SliderRow
+                    icon="Coffee"
+                    label="Coffee quality"
+                    value={coffeeQuality}
+                    onChange={setCoffeeQuality}
+                    anchors={COFFEE_QUALITY_ANCHORS}
+                    endLabels={{ low: 'Bad', high: 'Exceptional' }}
+                  />
+                </Section>
+                <Section title="Latte art">
+                  {coffeeNoArt ? (
+                    <div className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-3 text-[12px] text-[var(--text-secondary)]">
+                      Marked as no art served — we’ll skip the rating.
+                    </div>
+                  ) : (
+                    <SliderRow
+                      icon="Heart"
+                      label="How nice was the art"
+                      value={coffeeArt}
+                      onChange={setCoffeeArt}
+                      anchors={COFFEE_ART_ANCHORS}
+                      endLabels={{ low: 'Blob', high: 'Showpiece' }}
+                    />
+                  )}
+                  <div className="mt-2">
+                    <Chip
+                      label="No art served"
+                      active={coffeeNoArt}
+                      onClick={() => {
+                        setCoffeeNoArt((v) => {
+                          const next = !v;
+                          if (next) setCoffeeArt(0);
+                          return next;
+                        });
+                      }}
+                    />
+                  </div>
+                </Section>
+                <Section title="The mug">
+                  {coffeeNoMug ? (
+                    <div className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-3 text-[12px] text-[var(--text-secondary)]">
+                      Marked as a to-go cup — we’ll skip the rating.
+                    </div>
+                  ) : (
+                    <SliderRow
+                      icon="Drop"
+                      label="How was the mug"
+                      value={coffeeMug}
+                      onChange={setCoffeeMug}
+                      anchors={COFFEE_MUG_ANCHORS}
+                      endLabels={{ low: 'Sad', high: 'Distinctive' }}
+                    />
+                  )}
+                  <div className="mt-2">
+                    <Chip
+                      label="To-go cup / no mug"
+                      active={coffeeNoMug}
+                      onClick={() => {
+                        setCoffeeNoMug((v) => {
+                          const next = !v;
+                          if (next) setCoffeeMug(0);
+                          return next;
+                        });
+                      }}
+                    />
+                  </div>
+                </Section>
+              </>
+            ) : (
+              <Section title="Skipping coffee">
+                <p className="text-[12px] text-[var(--text-secondary)]">
+                  You said you didn’t order — we’ll skip the coffee rating.
                 </p>
               </Section>
             )}

@@ -38,6 +38,12 @@ export interface DemoPlace {
   /** Optional brand string surfaced from the slim payload — used by the
    *  bbox map fetch path. Not present on the demo arrays. */
   brand?: string | null;
+  /** Per-place coffee rating (1–10) aggregated from user coffee reviews.
+   *  Null until at least one user submits a coffee-rated review. See #85. */
+  coffee_rating?: number | null;
+  /** Number of user reviews that included a coffee_quality_rating. The
+   *  "Known for their coffee · X.X" stat renders when this is ≥ 1. */
+  coffee_review_count?: number;
 }
 
 export const PARIS_DEMO_PLACES: DemoPlace[] = [

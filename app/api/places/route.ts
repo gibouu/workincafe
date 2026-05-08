@@ -31,6 +31,8 @@ interface RatingRow {
   rating_count: number;
   user_rating_count: number;
   user_avg_rating: number | null;
+  coffee_mean: number | null;
+  coffee_review_count: number;
 }
 
 const MAX_FULL = 2500;
@@ -139,7 +141,9 @@ export async function GET(request: NextRequest) {
 
   const { data: ratings } = await supabase
     .from('mv_place_ratings')
-    .select('place_id, study_spot_rating, rating_count, user_rating_count, user_avg_rating')
+    .select(
+      'place_id, study_spot_rating, rating_count, user_rating_count, user_avg_rating, coffee_mean, coffee_review_count',
+    )
     .in('place_id', places.map((p) => p.id))
     .limit(MAX_FULL);
 
@@ -162,6 +166,8 @@ export async function GET(request: NextRequest) {
       user_review_count: r?.user_rating_count ?? 0,
       user_avg_rating: r?.user_avg_rating ?? null,
       has_user_reviews: (r?.user_rating_count ?? 0) > 0,
+      coffee_rating: r?.coffee_mean ?? null,
+      coffee_review_count: r?.coffee_review_count ?? 0,
       avg_spend_eur: 0,
       // Vitals come from reviews. Until anyone reviews this place, we
       // surface 'unknown' explicitly rather than guessing 'moderate'.

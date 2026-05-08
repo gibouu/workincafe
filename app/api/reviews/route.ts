@@ -32,6 +32,11 @@ interface Body {
   comment?: string | null;
   verified_lat?: number;
   verified_lng?: number;
+  coffee_quality_rating?: number | null;
+  coffee_art_rating?: number | null;
+  coffee_mug_rating?: number | null;
+  coffee_no_art?: boolean;
+  coffee_no_mug?: boolean;
 }
 
 function isValidRating10(value: unknown): value is number | null {
@@ -72,6 +77,9 @@ export async function POST(request: NextRequest) {
     ['food_value_rating', body.food_value_rating ?? null],
     ['current_busyness', body.current_busyness ?? null],
     ['temperature_feel', body.temperature_feel ?? null],
+    ['coffee_quality_rating', body.coffee_quality_rating ?? null],
+    ['coffee_art_rating', body.coffee_art_rating ?? null],
+    ['coffee_mug_rating', body.coffee_mug_rating ?? null],
   ];
   for (const [name, value] of ratingFields) {
     if (!isValidRating10(value)) {
@@ -145,6 +153,11 @@ export async function POST(request: NextRequest) {
       geo_verified: true,
       verified_lat: body.verified_lat,
       verified_lng: body.verified_lng,
+      coffee_quality_rating: body.coffee_quality_rating ?? null,
+      coffee_art_rating: body.coffee_art_rating ?? null,
+      coffee_mug_rating: body.coffee_mug_rating ?? null,
+      coffee_no_art: body.coffee_no_art ?? false,
+      coffee_no_mug: body.coffee_no_mug ?? false,
     },
     isDemo,
   );

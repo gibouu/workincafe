@@ -46,7 +46,14 @@ export async function GET(
   // Adapt to the DemoPlace shape so the card / sidebar render without a
   // second mapping layer. Ratings come from the materialized view; live
   // status drives the "Right now" line.
-  const ratingObj = rating as { study_spot_rating?: number; rating_count?: number } | null;
+  const ratingObj = rating as
+    | {
+        study_spot_rating?: number;
+        rating_count?: number;
+        coffee_mean?: number | null;
+        coffee_review_count?: number;
+      }
+    | null;
   const liveStatusObj = liveStatus as { noise?: string; seating?: string } | null;
   const place = {
     id: r.id,
@@ -59,6 +66,8 @@ export async function GET(
     brand: r.brand,
     rating: ratingObj?.study_spot_rating ?? 0,
     review_count: ratingObj?.rating_count ?? 0,
+    coffee_rating: ratingObj?.coffee_mean ?? null,
+    coffee_review_count: ratingObj?.coffee_review_count ?? 0,
     avg_spend_eur: 0,
     wifi: 'unknown' as const,
     noise: 'unknown' as const,
