@@ -8,11 +8,17 @@ import { Icon } from '@/components/icons/Icon';
 // denied. Replaces the missable toast that today's `handleGeolocate`
 // fires on PERMISSION_DENIED. See #71.
 
-function detectPlatform(): 'ios-safari' | 'android-chrome' | 'desktop' | 'unknown' {
+// iPadOS 13+ reports as Macintosh by default; we check touch + Safari to
+// catch the masquerade. macOS Safari hits the same gesture-chain limit as
+// iOS Safari, so we treat it the same way for the purposes of this banner.
+function detectPlatform(): 'ios-safari' | 'macos-safari' | 'android-chrome' | 'desktop' | 'unknown' {
   if (typeof navigator === 'undefined') return 'unknown';
   const ua = navigator.userAgent;
+  const isSafari = /^((?!chrome|crios|android).)*safari/i.test(ua);
   if (/iP(hone|ad|od)/.test(ua)) return 'ios-safari';
+  if (/Macintosh/.test(ua) && 'ontouchend' in document) return 'ios-safari'; // iPad masquerade
   if (/Android/i.test(ua)) return 'android-chrome';
+  if (/Macintosh/.test(ua) && isSafari) return 'macos-safari';
   if (/Windows|Macintosh|Linux/i.test(ua)) return 'desktop';
   return 'unknown';
 }
@@ -24,14 +30,6 @@ interface Step {
 
 function stepsFor(platform: ReturnType<typeof detectPlatform>): Step[] {
   switch (platform) {
-    case 'ios-safari':
-      return [
-        { text: 'Tap', emphasis: 'AA' },
-        { text: 'in the URL bar' },
-        { text: 'Open', emphasis: 'Website Settings' },
-        { text: 'Set', emphasis: 'Location → Allow' },
-        { text: 'Refresh this page' },
-      ];
     case 'android-chrome':
       return [
         { text: 'Tap the lock icon left of the URL' },
@@ -67,7 +65,11 @@ export function GeolocateBlockedBanner({
     setPlatform(detectPlatform());
   }, []);
   if (!open) return null;
-  const steps = stepsFor(platform);
+  const isAppleSafari = platform === 'ios-safari' || platform === 'macos-safari';
+  const settingsPath =
+    platform === 'ios-safari'
+      ? 'Settings → Safari → Location'
+      : 'Safari → Settings → Websites → Location';
 
   return (
     <div
@@ -101,34 +103,58 @@ export function GeolocateBlockedBanner({
         >
           Location is blocked for this site
         </h2>
-        <p className="mt-1 text-[14px] leading-snug text-[var(--text-secondary)]">
-          Your browser is rejecting the location request before it can reach us.
-          Re-enable it in {platform === 'ios-safari' ? 'iOS Safari' : 'your browser'} to use the find-me button.
-        </p>
 
-        <ol className="mt-4 flex flex-col gap-2">
-          {steps.map((s, i) => (
-            <li
-              key={i}
-              className="flex items-start gap-3 rounded-2xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2.5 text-[14px] text-[var(--text-primary)]"
-            >
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white">
-                {i + 1}
-              </span>
-              <span className="flex-1">
-                {s.text}
-                {s.emphasis ? (
-                  <>
-                    {' '}
-                    <span className="rounded-md bg-sys-gray-6 px-1.5 py-0.5 font-mono text-[12px] font-semibold">
-                      {s.emphasis}
-                    </span>
-                  </>
-                ) : null}
-              </span>
-            </li>
-          ))}
-        </ol>
+        {/* Apple platforms: short, action-oriented copy. We can't deep-link
+            to Settings from a non-installed PWA in Safari, but stating the
+            exact path beats a 4-step list. See #104. */}
+        {isAppleSafari ? (
+          <>
+            <p className="mt-1 text-[14px] leading-snug text-[var(--text-secondary)]">
+              Safari has cached your earlier choice. We can&rsquo;t ask
+              again until you re-enable location for this site.
+            </p>
+            <div className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-3">
+              <p className="text-[13px] text-[var(--text-secondary)]">Open</p>
+              <p className="mt-1 font-mono text-[13px] font-semibold text-[var(--text-primary)]">
+                {settingsPath}
+              </p>
+              <p className="mt-2 text-[13px] text-[var(--text-secondary)]">
+                set this site to <span className="font-mono font-semibold">Allow</span>, then come
+                back and tap the find-me button again.
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="mt-1 text-[14px] leading-snug text-[var(--text-secondary)]">
+              Your browser is rejecting the location request before it can reach us.
+              Re-enable it in your browser to use the find-me button.
+            </p>
+            <ol className="mt-4 flex flex-col gap-2">
+              {stepsFor(platform).map((s, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-3 rounded-2xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2.5 text-[14px] text-[var(--text-primary)]"
+                >
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white">
+                    {i + 1}
+                  </span>
+                  <span className="flex-1">
+                    {s.text}
+                    {s.emphasis ? (
+                      <>
+                        {' '}
+                        <span className="rounded-md bg-sys-gray-6 px-1.5 py-0.5 font-mono text-[12px] font-semibold">
+                          {s.emphasis}
+                        </span>
+                      </>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </>
+        )}
 
         <p className="mt-4 text-[12px] text-[var(--text-tertiary)]">
           Until then the map will use the rough city-level guess from your
@@ -140,7 +166,7 @@ export function GeolocateBlockedBanner({
           onClick={onClose}
           className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-3 text-[14px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6"
         >
-          Got it
+          {isAppleSafari ? 'I’ll do it now' : 'Got it'}
         </button>
       </div>
     </div>
