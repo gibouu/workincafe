@@ -37,17 +37,8 @@ import { useCity, CITIES, type City } from '@/lib/store/city';
 import { matchKnownCity } from '@/lib/demo/cities';
 import { isKnownChain } from '@/lib/brand-logos';
 import type { DemoPlace } from '@/lib/demo/paris-places';
-
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
+import { haversineKm } from '@/lib/geo/distance';
+import type { SidebarAnchor } from '@/components/layout/PlaceSidebar';
 
 // Placeholder defaults for fields the slim /api/places payload doesn't
 // ship. The real values land on click via /api/places/[id]. These are
@@ -83,6 +74,14 @@ export default function MapPage() {
   const [geolocatePermission, setGeolocatePermission] =
     useState<GeolocatePermissionState>('unknown');
   const [blockedBannerOpen, setBlockedBannerOpen] = useState(false);
+  // Sidebar anchor for the location-search flow (#103). When set, the
+  // sidebar list re-sorts by distance and the map pans to this point.
+  const [sidebarAnchor, setSidebarAnchor] = useState<SidebarAnchor | null>(null);
+  const handleSetAnchor = (anchor: SidebarAnchor) => {
+    setSidebarAnchor(anchor);
+    mapRef.current?.panTo(anchor.lat, anchor.lng);
+  };
+  const handleClearAnchor = () => setSidebarAnchor(null);
 
   // selectedPlace and panel are mutated atomically inside event handlers
   // (handleSelectPlace, the various onClose callbacks). No sync effects —
@@ -344,10 +343,12 @@ export default function MapPage() {
     });
   }, [mapPlaces, visiblePlaces, filters.categories]);
 
-  // Pan to the active city's center whenever it changes.
+  // Pan to the active city's center whenever it changes. Also clear any
+  // sidebar anchor — anchors are city-specific (#103).
   useEffect(() => {
     mapRef.current?.panTo(cityMeta.center.lat, cityMeta.center.lng);
     setSelectedPlace(null);
+    setSidebarAnchor(null);
   }, [cityMeta.center.lat, cityMeta.center.lng]);
 
   // Probe the Permissions API once on mount. Used by `handleGeolocate` to
@@ -625,6 +626,9 @@ export default function MapPage() {
         onSelect={handleSelectPlace}
         onOpenFilter={() => setFilterOpen(true)}
         filterCount={activeFilterCount}
+        anchor={sidebarAnchor}
+        onSetAnchor={handleSetAnchor}
+        onClearAnchor={handleClearAnchor}
       />
 
       <main className="relative flex-1 overflow-hidden">
