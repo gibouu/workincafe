@@ -91,3 +91,12 @@ export function brandLogoFor(name: string): BrandLogo | null {
   }
   return null;
 }
+
+// True when `brand` matches a curated entry in `LOGOS` (chains we render
+// monograms for). Used by default-view filters to keep chain bakeries
+// hidden under the cafés-only welcome state while letting independents
+// surface — single source of truth shared with the bubble renderer.
+export function isKnownChain(brand: string | null | undefined): boolean {
+  if (!brand) return false;
+  return brandLogoFor(brand) !== null;
+}

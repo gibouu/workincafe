@@ -1,16 +1,23 @@
 # Tasks
 One H2 section per task.
 
-## #77 — Cafe-only default + reviewed-place override (PR #84 OPEN)
+## #77 — Cafe-only default + reviewed-place override (PR #84 MERGED)
 - [x] Migration `018_user_rating_count.sql` written.
 - [x] API exposes `has_user_reviews` + `user_review_count`.
 - [x] DemoPlace type extended.
 - [x] Filter store defaults to `{cafe}`; `activeCount` ignores the baseline.
-- [x] Map page filter override on `has_user_reviews`.
+- [x] Map page filter override on `has_user_reviews` + `rating > 7` (restaurant gate already in PR #84).
 - [x] Quality gate clean.
-- [ ] **Refine override** per user feedback: restaurant + `study_spot_rating ≥ 7.5` only (not any reviewed place); libraries / coworking / hotels / fast-food never surface unless filter selected. Slim payload also needs to expose `rating`.
-- [ ] Apply migration 018 (Supabase MCP reconnected — can apply directly now).
-- [ ] Merge.
+- [x] Merged (commit `5b43abd`).
+- [ ] Apply migration 018 to remote (Supabase MCP).
+
+## #78 — Independent bakeries in default visible set (IN_PROGRESS)
+- [x] `isKnownChain(brand)` predicate added to `lib/brand-logos.ts` (reuses `brandLogoFor`).
+- [x] `visiblePlaces` filter extended with `isIndependentBakeryWithCafe` clause anchored to `filters.categories.has('cafe')`.
+- [x] Lint + typecheck clean.
+- [ ] Manual verification: Du Pain et des Idées visible default; Paul / Maison Kayser hidden; Bakery toggle still shows all.
+- [ ] PR with `Closes #78. Refs #76.`
+- [ ] Squash-merge.
 
 ## Open follow-ups (filed)
 - #76 tracker (umbrella).

@@ -1,5 +1,10 @@
 # Progress Log
 Newest first. One line per entry.
+[2026-05-08 11:10] Edit: .claude/state/TASKS.md
+[2026-05-08 11:09] Edit: app/(map)/page.tsx
+[2026-05-08 11:08] Edit: app/(map)/page.tsx
+[2026-05-08 11:08] Edit: lib/brand-logos.ts
+[2026-05-08 11:04] Write: /Users/gibou/.claude/plans/start-fixing-the-next-functional-pebble.md
 [2026-05-07 23:52] Write: .claude/state/TASKS.md
 [2026-05-07 23:52] Edit: .claude/state/PROGRESS.md
 [2026-05-09] tracker #76 + 6 children (#77–#83) filed. PR #84 opened: cafe default + reviewed-place override. Migration 018 written, application pending. Why: curated welcome state.
