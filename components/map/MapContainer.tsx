@@ -17,6 +17,39 @@ type PlaceProps = { placeId: string };
 const TILE_STYLE_URL =
   process.env.NEXT_PUBLIC_MAP_STYLE_URL ?? 'https://tiles.openfreemap.org/styles/positron';
 
+// Soft sage. Visible enough to act as a landmark, calm enough not to fight
+// with the orange place markers. Outline is a touch darker so polygons
+// still read at zoom-out distances. See #102.
+const PARK_GREEN = '#C7E5BB';
+const PARK_GREEN_OUTLINE = '#9FCB8E';
+
+function isParkLayer(id: string): boolean {
+  // Substring match excluding the false positives ('parking_lot', 'parkway').
+  // Catches every variant we've seen across OpenMapTiles-derived styles —
+  // 'park', 'park_outline', 'park-fill', 'landuse-park', 'national_park'.
+  return /park/i.test(id) && !/parking|parkway/i.test(id);
+}
+
+/** Walk the loaded style and re-paint anything that looks park-like in our
+ *  brand green. Idempotent; safe to call again on style reloads. See #102. */
+function tintParksGreen(map: maplibregl.Map): void {
+  const layers = map.getStyle().layers ?? [];
+  for (const layer of layers) {
+    if (!isParkLayer(layer.id)) continue;
+    try {
+      if (layer.type === 'fill') {
+        map.setPaintProperty(layer.id, 'fill-color', PARK_GREEN);
+        map.setPaintProperty(layer.id, 'fill-opacity', 0.9);
+      } else if (layer.type === 'line') {
+        map.setPaintProperty(layer.id, 'line-color', PARK_GREEN_OUTLINE);
+      }
+    } catch {
+      // Style schemas drift between providers — skip layers that don't
+      // expose the paint property we expect rather than throwing.
+    }
+  }
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>
     c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;',
@@ -207,9 +240,16 @@ export const MapContainer = forwardRef<
       };
       map.on('load', () => {
         if (!cancelled) {
+          tintParksGreen(map);
           setReady(true);
           emitViewport();
         }
+      });
+      // If the style is swapped at runtime (e.g. via the env override),
+      // re-apply the park tint on the new style. style.load fires after
+      // setStyle() — the initial style.load is covered by the 'load' above.
+      map.on('style.load', () => {
+        if (!cancelled) tintParksGreen(map);
       });
       map.on('moveend', emitViewport);
       map.on('error', (e) => {
