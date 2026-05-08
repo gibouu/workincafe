@@ -2,6 +2,7 @@
 -- payload for in-platform payment), per-scan deal uses, and the loyalty point
 -- ledger.
 --
+set search_path = public, extensions;
 -- Anti-platform invariants this schema enforces:
 --   * point_events insert has NO public RLS policy — only the service role
 --     (server actions) issues points. Users cannot self-issue.

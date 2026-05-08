@@ -2,6 +2,7 @@
 --
 -- This migration is idempotent and safe to re-run.
 --
+set search_path = public, extensions;
 -- Note on the rating scale change: existing rows stored under the 1–5 scale
 -- continue to compute correctly in the materialized views — they simply live
 -- in the lower half of the new range. Means computed across the cutover are

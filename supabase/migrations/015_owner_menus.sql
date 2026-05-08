@@ -1,5 +1,6 @@
 -- Owner-uploaded menu attachments. See #25.
 --
+set search_path = public, extensions;
 -- Image-only for MVP; same Cloudinary pipeline as review photos. PDF
 -- support is a follow-up so we can stay on the existing image transform
 -- path and avoid pdf-renderer plumbing.
