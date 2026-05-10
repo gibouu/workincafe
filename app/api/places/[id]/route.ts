@@ -15,6 +15,13 @@ interface PlaceRow {
   brand: string | null;
   hours_json: { raw?: string } | null;
   user_validated_at: string | null;
+  parent_place_id: string | null;
+}
+
+interface ParentSummary {
+  id: string;
+  name: string;
+  category: PlaceCategory;
 }
 
 export async function GET(
@@ -27,7 +34,7 @@ export async function GET(
   const { data: row, error } = await supabase
     .from('places')
     .select(
-      'id, name, address, neighborhood, city, country, category, lat, lng, brand, hours_json, user_validated_at',
+      'id, name, address, neighborhood, city, country, category, lat, lng, brand, hours_json, user_validated_at, parent_place_id',
     )
     .eq('id', id)
     .maybeSingle();
@@ -44,9 +51,20 @@ export async function GET(
   if (!row) return NextResponse.json({ error: 'not found' }, { status: 404 });
   const r = row as PlaceRow;
 
-  const [{ data: rating }, { data: liveStatus }] = await Promise.all([
+  const parentPromise: Promise<ParentSummary | null> = r.parent_place_id
+    ? Promise.resolve(
+        supabase
+          .from('places')
+          .select('id, name, category')
+          .eq('id', r.parent_place_id)
+          .maybeSingle(),
+      ).then((res) => (res.data as ParentSummary | null) ?? null)
+    : Promise.resolve(null);
+
+  const [{ data: rating }, { data: liveStatus }, parent] = await Promise.all([
     supabase.from('mv_place_ratings').select('*').eq('place_id', id).maybeSingle(),
     supabase.from('mv_current_live_status').select('*').eq('place_id', id).maybeSingle(),
+    parentPromise,
   ]);
 
   // Adapt to the DemoPlace shape so the card / sidebar render without a
@@ -90,6 +108,9 @@ export async function GET(
     right_now_noise: liveStatusObj?.noise ?? 'No recent live updates',
     right_now_seating: liveStatusObj?.seating ?? 'No recent live updates',
     hours_raw: r.hours_json?.raw ?? null,
+    parent: parent
+      ? { id: parent.id, name: parent.name, category: parent.category }
+      : null,
   };
 
   return NextResponse.json(

@@ -188,6 +188,12 @@ export function PlaceCardBody({
             <div className="text-[22px] font-semibold leading-tight text-[var(--text-primary)]">
               {place.name}
             </div>
+            {place.parent && (
+              <div className="mt-1 inline-flex items-center gap-1 text-[12px] font-medium text-[var(--text-secondary)]">
+                <Icon name="Bed" size={12} className="text-[var(--text-tertiary)]" />
+                <span>Inside {place.parent.name}</span>
+              </div>
+            )}
             <div className="mt-1 text-[13px] text-[var(--text-secondary)] truncate">
               {place.address} · {place.neighborhood}
             </div>

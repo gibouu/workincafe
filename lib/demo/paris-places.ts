@@ -53,6 +53,10 @@ export interface DemoPlace {
    *  per-place currency display in the review form. Optional because demo
    *  arrays predate this field; consumers must default safely. See #118. */
   country?: string | null;
+  /** Optional parent place. Hotel-lobby cafés link to their hotel; mall
+   *  food-court vendors link to the mall. The card surfaces "Inside
+   *  [parent name]" when set. See #115. */
+  parent?: { id: string; name: string; category: PlaceCategory } | null;
 }
 
 export const PARIS_DEMO_PLACES: DemoPlace[] = [

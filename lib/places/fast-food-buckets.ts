@@ -17,6 +17,20 @@
  * Brand strings are lowercased + trimmed before comparison.
  */
 
+/** Coffee-shop chains that OSM tags as `amenity=fast_food` because they
+ *  also serve donuts / sandwiches. Bucketed as `cafe` so the cafés-only
+ *  default view surfaces them. See #115. Krispy Kreme is intentionally
+ *  excluded — donut-first, coffee-secondary. */
+export const CAFE_CHAIN_BRANDS = new Set<string>([
+  'tim hortons',
+  'tims',
+  "dunkin'",
+  'dunkin',
+  'dunkin donuts',
+  'pret a manger',
+  'pret',
+]);
+
 /** Burger / fried-chicken / pizza / sub / dessert / food-court chains.
  *  Hidden by default — nobody opens the app to find a McDonald's. */
 export const FAST_FOOD_BURGER_BRANDS = new Set<string>([
@@ -120,12 +134,14 @@ export const FAST_CASUAL_BRANDS = new Set<string>([
 ]);
 
 /** Returns the post-split category for an OSM `amenity=fast_food` row.
- *  Brand string is normalised (lowercase, trim) before lookup. */
+ *  Brand string is normalised (lowercase, trim) before lookup.
+ *  Resolution order: cafe-chain → fast-casual → burger default. */
 export function bucketForFastFoodBrand(
   brand: string | null | undefined,
-): 'fast_food_burger' | 'restaurant' {
+): 'cafe' | 'fast_food_burger' | 'restaurant' {
   if (!brand) return 'fast_food_burger';
   const norm = brand.toLowerCase().trim();
+  if (CAFE_CHAIN_BRANDS.has(norm)) return 'cafe';
   if (FAST_CASUAL_BRANDS.has(norm)) return 'restaurant';
   // BURGER set membership and the unmatched default both resolve to the
   // same bucket — no need to test both.
