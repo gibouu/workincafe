@@ -2,24 +2,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import type { PlaceCategory } from '@/lib/categories';
 
-interface FullPlaceRow {
+interface SlimPlaceRow {
   id: string;
   name: string;
   address: string | null;
   neighborhood: string | null;
-  city: string | null;
-  country: string | null;
-  category: PlaceCategory;
-  lat: number;
-  lng: number;
-  brand: string | null;
-  hours_json: { raw?: string } | null;
-  user_validated_at: string | null;
-}
-
-interface SlimPlaceRow {
-  id: string;
-  name: string;
   category: PlaceCategory;
   lat: number;
   lng: number;
@@ -27,17 +14,6 @@ interface SlimPlaceRow {
   user_validated_at: string | null;
 }
 
-interface RatingRow {
-  place_id: string;
-  study_spot_rating: number | null;
-  rating_count: number;
-  user_rating_count: number;
-  user_avg_rating: number | null;
-  coffee_mean: number | null;
-  coffee_review_count: number;
-}
-
-const MAX_FULL = 2500;
 const MAX_SLIM = 5000;
 
 function parseBbox(raw: string | null): [number, number, number, number] | null {
@@ -51,117 +27,48 @@ function parseBbox(raw: string | null): [number, number, number, number] | null 
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
-  const cityParam = (url.searchParams.get('city') ?? '').toLowerCase();
-  const cityName = cityParam === 'paris' ? 'Paris' : cityParam === 'toronto' ? 'Toronto' : null;
-  if (!cityName) {
-    return NextResponse.json({ error: 'city must be paris or toronto' }, { status: 400 });
-  }
-
   const bbox = parseBbox(url.searchParams.get('bbox'));
+  if (!bbox) {
+    return NextResponse.json({ error: 'bbox required (w,s,e,n)' }, { status: 400 });
+  }
+
   const supabase = await createClient();
-
-  // ── Slim, bbox-bounded path ────────────────────────────────────────────
-  // Used by the map. Returns just enough to render a marker; full place
-  // details are fetched on click via /api/places/[id]. Bbox ranges over
-  // longitude (lng between W..E) and latitude (lat between S..N) — the
-  // existing places_geom_idx covers this since lat/lng are also stored
-  // alongside the generated geom.
-  if (bbox) {
-    const [w, s, e, n] = bbox;
-    const { data, error } = await supabase
-      .from('places')
-      .select('id, name, category, lat, lng, brand, user_validated_at')
-      .eq('city', cityName)
-      .gte('lng', w)
-      .lte('lng', e)
-      .gte('lat', s)
-      .lte('lat', n)
-      .limit(MAX_SLIM);
-    if (error) {
-      const code = (error as { code?: string }).code ?? '';
-      // Demo-mode contract: missing table or columns → empty payload so
-      // the client falls back to the demo arrays without crashing. The
-      // column case fires between deploy and migration apply.
-      if (code === '42P01' || code === '42703') return NextResponse.json({ places: [] });
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    // Fetch rating + user-review counts so the client can apply the
-    // curated default override: cafés always show; restaurants bypass
-    // the category gate iff they have a user review AND
-    // `study_spot_rating >= 7.5`. Other categories never bypass. See #77.
-    const slimPlaces = (data ?? []) as SlimPlaceRow[];
-    interface SlimRatingRow {
-      place_id: string;
-      study_spot_rating: number | null;
-      user_rating_count: number;
-    }
-    const ratingByPlace = new Map<string, SlimRatingRow>();
-    if (slimPlaces.length > 0) {
-      const { data: ratingRows } = await supabase
-        .from('mv_place_ratings')
-        .select('place_id, study_spot_rating, user_rating_count')
-        .in('place_id', slimPlaces.map((p) => p.id))
-        .limit(MAX_SLIM);
-      for (const r of (ratingRows ?? []) as SlimRatingRow[]) {
-        ratingByPlace.set(r.place_id, r);
-      }
-    }
-
-    const out = slimPlaces.map((p) => {
-      const r = ratingByPlace.get(p.id);
-      const hasUserReviews = (r?.user_rating_count ?? 0) > 0;
-      const userValidated = Boolean(p.user_validated_at);
-      return {
-        id: p.id,
-        name: p.name,
-        category: p.category,
-        lat: p.lat,
-        lng: p.lng,
-        brand: p.brand,
-        rating: r?.study_spot_rating ?? 0,
-        has_user_reviews: hasUserReviews,
-        is_validated: hasUserReviews || userValidated,
-      };
-    });
-    // CDN caches the bbox response for 60 s and serves it stale up to 5 min
-    // while revalidating. Place data only changes on seed/prune so this is
-    // safe — first request hits the DB, the next 100 hit Vercel's edge.
-    return NextResponse.json(
-      { places: out, total: out.length, slim: true },
-      { headers: { 'cache-control': 'public, s-maxage=60, stale-while-revalidate=300' } },
-    );
-  }
-
-  // ── Full city dump (legacy / sidebar path) ─────────────────────────────
-  const { data: rawPlaces, error: pErr } = await supabase
+  const [w, s, e, n] = bbox;
+  const { data, error } = await supabase
     .from('places')
-    .select(
-      'id, name, address, neighborhood, city, country, category, lat, lng, brand, hours_json, user_validated_at',
-    )
-    .eq('city', cityName)
-    .order('name', { ascending: true })
-    .limit(MAX_FULL);
-
-  if (pErr) {
-    const code = (pErr as { code?: string }).code ?? '';
-    // Same demo-mode contract as the bbox path above. See comment there.
+    .select('id, name, address, neighborhood, category, lat, lng, brand, user_validated_at')
+    .gte('lng', w)
+    .lte('lng', e)
+    .gte('lat', s)
+    .lte('lat', n)
+    .limit(MAX_SLIM);
+  if (error) {
+    const code = (error as { code?: string }).code ?? '';
+    // Demo-mode contract: missing table or columns → empty payload so the
+    // client falls back to demo arrays without crashing.
     if (code === '42P01' || code === '42703') return NextResponse.json({ places: [] });
-    return NextResponse.json({ error: pErr.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  const places = (rawPlaces ?? []) as FullPlaceRow[];
 
-  const { data: ratings } = await supabase
-    .from('mv_place_ratings')
-    .select(
-      'place_id, study_spot_rating, rating_count, user_rating_count, user_avg_rating, coffee_mean, coffee_review_count',
-    )
-    .in('place_id', places.map((p) => p.id))
-    .limit(MAX_FULL);
+  const slimPlaces = (data ?? []) as SlimPlaceRow[];
+  interface SlimRatingRow {
+    place_id: string;
+    study_spot_rating: number | null;
+    user_rating_count: number;
+  }
+  const ratingByPlace = new Map<string, SlimRatingRow>();
+  if (slimPlaces.length > 0) {
+    const { data: ratingRows } = await supabase
+      .from('mv_place_ratings')
+      .select('place_id, study_spot_rating, user_rating_count')
+      .in('place_id', slimPlaces.map((p) => p.id))
+      .limit(MAX_SLIM);
+    for (const r of (ratingRows ?? []) as SlimRatingRow[]) {
+      ratingByPlace.set(r.place_id, r);
+    }
+  }
 
-  const ratingByPlace = new Map<string, RatingRow>();
-  for (const r of (ratings ?? []) as RatingRow[]) ratingByPlace.set(r.place_id, r);
-
-  const out = places.map((p) => {
+  const out = slimPlaces.map((p) => {
     const r = ratingByPlace.get(p.id);
     const hasUserReviews = (r?.user_rating_count ?? 0) > 0;
     const userValidated = Boolean(p.user_validated_at);
@@ -175,30 +82,13 @@ export async function GET(request: NextRequest) {
       lng: p.lng,
       brand: p.brand,
       rating: r?.study_spot_rating ?? 0,
-      review_count: r?.rating_count ?? 0,
-      user_review_count: r?.user_rating_count ?? 0,
-      user_avg_rating: r?.user_avg_rating ?? null,
       has_user_reviews: hasUserReviews,
       is_validated: hasUserReviews || userValidated,
-      coffee_rating: r?.coffee_mean ?? null,
-      coffee_review_count: r?.coffee_review_count ?? 0,
-      avg_spend_eur: 0,
-      // Vitals come from reviews. Until anyone reviews this place, we
-      // surface 'unknown' explicitly rather than guessing 'moderate'.
-      wifi: 'unknown' as const,
-      noise: 'unknown' as const,
-      outlets: 'unknown' as const,
-      seats: 'unknown' as const,
-      lighting: 'unknown' as const,
-      tabletime_hours: 0,
-      right_now_noise: 'No recent live updates',
-      right_now_seating: 'No recent live updates',
-      hours_raw: p.hours_json?.raw ?? null,
     };
   });
 
   return NextResponse.json(
-    { places: out, total: out.length },
+    { places: out, total: out.length, slim: true },
     { headers: { 'cache-control': 'public, s-maxage=60, stale-while-revalidate=300' } },
   );
 }

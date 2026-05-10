@@ -6,8 +6,6 @@ import type { PhosphorIconName } from '@/components/icons/Icon';
 import { type DemoPlace } from '@/lib/demo/paris-places';
 import { categoryMeta } from '@/lib/categories';
 import { brandLogoFor } from '@/lib/brand-logos';
-import { CitySwitcher } from '@/components/layout/CitySwitcher';
-import { useCity, CITIES } from '@/lib/store/city';
 import { haversineKm } from '@/lib/geo/distance';
 
 export interface SidebarAnchor {
@@ -32,7 +30,7 @@ const KIND_ICON: Record<LocationHit['kind'], PhosphorIconName> = {
 };
 
 function normalize(s: string) {
-  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
 interface SearchHit {
@@ -55,6 +53,7 @@ export function PlaceSidebar({
   anchor,
   onSetAnchor,
   onClearAnchor,
+  viewport,
 }: {
   places: DemoPlace[];
   selectedId: string | null;
@@ -67,14 +66,21 @@ export function PlaceSidebar({
   anchor?: SidebarAnchor | null;
   onSetAnchor?: (anchor: SidebarAnchor) => void;
   onClearAnchor?: () => void;
+  /** Current map viewport — biases place + location search to whatever
+   *  the user is looking at instead of a hardcoded city. */
+  viewport?: {
+    bbox: [number, number, number, number];
+    center: { lat: number; lng: number };
+  } | null;
 }) {
   const [query, setQuery] = useState('');
-  const city = useCity((s) => s.city);
-  const cityLabel = CITIES[city].label;
+  const bboxParam = viewport ? viewport.bbox.join(',') : '';
+  const centerLat = viewport?.center.lat ?? null;
+  const centerLng = viewport?.center.lng ?? null;
 
-  // Server-side search hits the full DB (not just the in-memory 2,500
-  // alphabetical slice). Falls back to in-memory filter when the query
-  // is empty or the API errors.
+  // Server-side place search — bbox-bounded to the current viewport so
+  // the same query "Anticafé" returns a Paris hit when looking at Paris
+  // and a Toronto hit when looking at Toronto.
   const [searchHits, setSearchHits] = useState<DemoPlace[] | null>(null);
   useEffect(() => {
     const q = query.trim();
@@ -84,7 +90,9 @@ export function PlaceSidebar({
     }
     const ctrl = new AbortController();
     const t = setTimeout(() => {
-      const url = `/api/places/search?city=${encodeURIComponent(cityLabel)}&q=${encodeURIComponent(q)}&limit=25`;
+      const params = new URLSearchParams({ q, limit: '25' });
+      if (bboxParam) params.set('bbox', bboxParam);
+      const url = `/api/places/search?${params.toString()}`;
       fetch(url, { signal: ctrl.signal })
         .then((r) => (r.ok ? r.json() : { places: [] }))
         .then((data: { places?: SearchHit[] }) => {
@@ -117,11 +125,10 @@ export function PlaceSidebar({
       ctrl.abort();
       clearTimeout(t);
     };
-  }, [query, cityLabel]);
+  }, [query, bboxParam]);
 
   // Locations search — runs in parallel with the place search above.
-  // Hits /api/geocode (Photon proxy) for neighborhoods/parks/streets/
-  // landmarks bbox-bounded to the active city. Soft-fails to []. See #103.
+  // Hits /api/geocode (Photon proxy) bbox-bounded to the current viewport.
   const [locationHits, setLocationHits] = useState<LocationHit[]>([]);
   useEffect(() => {
     const q = query.trim();
@@ -131,7 +138,13 @@ export function PlaceSidebar({
     }
     const ctrl = new AbortController();
     const t = setTimeout(() => {
-      const url = `/api/geocode?city=${encodeURIComponent(city)}&q=${encodeURIComponent(q)}`;
+      const params = new URLSearchParams({ q });
+      if (bboxParam) params.set('bbox', bboxParam);
+      if (centerLat !== null && centerLng !== null) {
+        params.set('lat', String(centerLat));
+        params.set('lng', String(centerLng));
+      }
+      const url = `/api/geocode?${params.toString()}`;
       fetch(url, { signal: ctrl.signal })
         .then((r) => (r.ok ? r.json() : { results: [] }))
         .then((data: { results?: LocationHit[] }) => {
@@ -143,7 +156,7 @@ export function PlaceSidebar({
       ctrl.abort();
       clearTimeout(t);
     };
-  }, [query, city]);
+  }, [query, bboxParam, centerLat, centerLng]);
 
   const shownPlaces = useMemo(() => {
     const base = (() => {
@@ -154,8 +167,6 @@ export function PlaceSidebar({
         (p) => normalize(p.name).includes(q) || normalize(p.address).includes(q),
       );
     })();
-    // When an anchor is set, re-sort by distance from it. Search-hit order
-    // wins over anchor-distance only when the user is actively typing.
     if (anchor && !query.trim()) {
       return [...base]
         .map((p) => ({ p, d: haversineKm(anchor.lat, anchor.lng, p.lat, p.lng) }))
@@ -175,12 +186,9 @@ export function PlaceSidebar({
 
   return (
     <aside className="hidden md:flex h-full w-[320px] shrink-0 flex-col border-r border-[var(--surface-border)] bg-white/70 backdrop-blur-ios">
-      <div className="flex items-center justify-between px-5 pt-5">
-        <div className="flex items-center gap-2">
-          <Icon name="Coffee" weight="fill" size={22} className="text-[var(--text-primary)]" />
-          <div className="text-[17px] font-semibold text-[var(--text-primary)]">Work in Cafe</div>
-        </div>
-        <CitySwitcher />
+      <div className="flex items-center gap-2 px-5 pt-5">
+        <Icon name="Coffee" weight="fill" size={22} className="text-[var(--text-primary)]" />
+        <div className="text-[17px] font-semibold text-[var(--text-primary)]">Work in Cafe</div>
       </div>
 
       <div className="mt-4 flex items-center gap-2 px-5">
@@ -279,7 +287,7 @@ export function PlaceSidebar({
           <div className="flex flex-col items-center justify-center pt-16 text-center">
             <Icon name="MagnifyingGlass" size={32} className="text-sys-gray-3 mb-2" />
             <div className="text-[13px] text-[var(--text-secondary)]">
-              No places match your filters
+              {query.trim() ? 'No places match' : 'Pan or zoom the map to see places'}
             </div>
           </div>
         ) : (
@@ -351,12 +359,12 @@ function PlaceRow({
           {place.name}
         </div>
         <div className="mt-0.5 truncate text-[12px] text-[var(--text-secondary)]">
-          {place.address} · {place.neighborhood}
+          {[place.address, place.neighborhood].filter(Boolean).join(' · ') || '—'}
         </div>
       </div>
       <div className="shrink-0 text-right">
         <div className="text-[13px] font-semibold text-[var(--text-primary)]">
-          {place.review_count > 0 ? place.rating.toFixed(1) : '—'}
+          {place.review_count > 0 || place.has_user_reviews ? place.rating.toFixed(1) : '—'}
         </div>
         {anchor ? (
           <div className="text-[10px] text-accent">

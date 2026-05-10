@@ -58,9 +58,11 @@ All write routes return 503 / 404 cleanly when the underlying table is missing �
 
 | Store | File | Persists | Owns |
 | --- | --- | --- | --- |
-| `useCity` | `city.ts` | `wic:city` (localStorage) | Active city; `CITIES` map; `findPlace(id)` |
 | `useFilters` | `filters.ts` | — | Category/noise/wifi/seats/rating filters; `activeCount()` |
 | `useToasts` | `toasts.ts` | — | Imperative toast queue; `<Toaster />` in root layout |
+| `useLayout` | `layout.ts` | — | Active panel + place-card-open flag |
+
+The map is **viewport-driven**: `/api/places?bbox=…` is the single data source for both sidebar and map markers. There is no active-city store — `lib/demo/cities.ts` keeps `CITIES` / `findPlace` / `currencySymbol` only as offline-demo helpers + currency lookup; runtime cares about the current viewport, not a city. See #116.
 
 Other localStorage keys: `wic:onboarded`, `wic:favorites`, `wic:pending:{review,live-update,checkin}` (see `lib/auth/pending-submit.ts`).
 
@@ -120,7 +122,7 @@ Replay handlers:
 
 ## Demo vs Live data
 
-- Demo data lives in `lib/demo/{paris,toronto}-places.ts`. `lib/store/city.ts` exposes `CITIES` and `findPlace(id)` — these are the binding for the UI today.
+- Demo data lives in `lib/demo/{paris,toronto}-places.ts`. `lib/demo/cities.ts` exposes `CITIES`, `findPlace(id)`, `currencySymbol(city)` — kept for review-form currency display + offline lookups; the runtime UI no longer binds to an "active city" (#116).
 - Live mode reads via Supabase clients in `lib/supabase/{client,server,middleware,admin}.ts`. API routes return 503/404 when the `places` table is missing — clients must tolerate this so the demo surface keeps working before migrations are applied.
 - Category visuals: `lib/categories.ts` (color + Phosphor icon per category) and `lib/brand-logos.ts` (initials + brand color per chain). **Single source of truth** — every map bubble, sidebar avatar, card hero, and profile hero reads from these.
 
