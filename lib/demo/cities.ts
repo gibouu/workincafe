@@ -35,20 +35,6 @@ export function findPlace(id: string): DemoPlace | undefined {
   );
 }
 
-export function currencySymbol(city: City): string {
-  switch (city) {
-    case 'paris':
-      return '€';
-    case 'toronto':
-      return 'C$';
-  }
-}
-
-export function cityForPlace(placeId: string): City {
-  if (TORONTO_DEMO_PLACES.some((p) => p.id === placeId)) return 'toronto';
-  return 'paris';
-}
-
 // Maximum great-circle distance from a city centre at which an IP that
 // resolved to that point still maps to that city. Most metros sprawl ~30 km
 // from the centroid; 80 km generously covers commuter belts (Mississauga →

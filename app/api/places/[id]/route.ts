@@ -69,6 +69,7 @@ export async function GET(
     name: r.name,
     address: r.address ?? '',
     neighborhood: r.neighborhood ?? '',
+    country: r.country,
     category: r.category,
     lat: r.lat,
     lng: r.lng,
