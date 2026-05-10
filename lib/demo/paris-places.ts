@@ -49,6 +49,10 @@ export interface DemoPlace {
   /** Number of user reviews that included a coffee_quality_rating. The
    *  "Known for their coffee · X.X" stat renders when this is ≥ 1. */
   coffee_review_count?: number;
+  /** ISO 3166-1 alpha-2 country code (e.g. 'FR', 'CA', 'JP'). Drives the
+   *  per-place currency display in the review form. Optional because demo
+   *  arrays predate this field; consumers must default safely. See #118. */
+  country?: string | null;
 }
 
 export const PARIS_DEMO_PLACES: DemoPlace[] = [

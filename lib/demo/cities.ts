@@ -35,20 +35,6 @@ export function findPlace(id: string): DemoPlace | undefined {
   );
 }
 
-export function currencySymbol(city: City): string {
-  switch (city) {
-    case 'paris':
-      return '€';
-    case 'toronto':
-      return 'C$';
-  }
-}
-
-export function cityForPlace(placeId: string): City {
-  if (TORONTO_DEMO_PLACES.some((p) => p.id === placeId)) return 'toronto';
-  return 'paris';
-}
-
 // World-centroid fallback for the initial map view when no geolocation
 // permission and no cached position exist. ~30°N is a good compromise
 // — keeps the densely-seeded northern-hemisphere cities visible in
