@@ -1,5 +1,17 @@
 # Progress Log
 Newest first. One line per entry.
+[2026-05-10 10:29] Edit: .claude/state/MEMORY.md
+[2026-05-10 10:28] Edit: .claude/state/TASKS.md
+[2026-05-10 10:28] Edit: .claude/state/DECISIONS.md
+[2026-05-10 10:28] Edit: .claude/state/PROGRESS.md
+[2026-05-10 10:30] seed: shipped #113 → PR #114; cafe-only seed for 19 cities + Istanbul + GTA (incl. Oakville). Why: first concrete slice of #50 global expansion.
+[2026-05-10 10:30] backlog: filed #115 (post-seed reclassification: hotel-lobby cafés + Tim Hortons/Dunkin'/Krispy Kreme) and #116 (city-switcher removal → viewport-driven world map). Why: out-of-scope of #113, tracked separately.
+[2026-05-10 10:27] seed: Istanbul live — 8741 places after work-conducive + apartment filters. Why: validated bbox query path end-to-end.
+[2026-05-10 10:27] Edit: scripts/seed-cities.ts
+[2026-05-10 10:11] Edit: package.json
+[2026-05-10 10:10] Write: scripts/seed-osm.ts
+[2026-05-10 10:10] Write: scripts/seed-cities.ts
+[2026-05-10 10:01] Write: /Users/gibou/.claude/plans/please-look-at-issue-giggly-kahan.md
 [2026-05-08 11:10] Edit: .claude/state/TASKS.md
 [2026-05-08 11:09] Edit: app/(map)/page.tsx
 [2026-05-08 11:08] Edit: app/(map)/page.tsx
