@@ -11,6 +11,21 @@ One H2 section per task.
 - [x] Merged (commit `5b43abd`).
 - [ ] Apply migration 018 to remote (Supabase MCP).
 
+## #113 — Cafe-only global seed expansion (PR #114 OPEN)
+- [x] `scripts/seed-cities.ts` config (22 cities, bbox + mode).
+- [x] `scripts/seed-osm.ts` refactored to templated Overpass query, supports `--all` / `--all-new`.
+- [x] `.ql` files deleted; `package.json` adds `seed:istanbul` / `seed:all-new` / `seed:all`.
+- [x] Toronto bbox includes Oakville (south bound 43.40).
+- [x] Istanbul seeded live (8741 places).
+- [x] Typecheck + lint green.
+- [ ] PR #114 reviewed + merged.
+- [ ] Run `npm run seed:toronto` (re-seed with GTA bbox).
+- [ ] Run `npm run seed:all-new` (19 cafe-only cities, ~15–25 min).
+
+## Open follow-ups (filed today)
+- #115 post-seed reclassification: hotel-lobby cafés + Tim Hortons / Dunkin' / Krispy Kreme.
+- #116 city-switcher removal → viewport-driven world map.
+
 ## #78 — Independent bakeries in default visible set (IN_PROGRESS)
 - [x] `isKnownChain(brand)` predicate added to `lib/brand-logos.ts` (reuses `brandLogoFor`).
 - [x] `visiblePlaces` filter extended with `isIndependentBakeryWithCafe` clause anchored to `filters.categories.has('cafe')`.
