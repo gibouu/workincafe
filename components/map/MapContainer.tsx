@@ -136,12 +136,17 @@ export const MapContainer = forwardRef<
   {
     places: DemoPlace[];
     center: { lat: number; lng: number };
+    /** First-mount zoom. Defaults to a city-level 13. Pass a smaller
+     *  value (e.g. 2) for a world fallback when no geolocation is
+     *  available. After mount, use `panTo` for movement. */
+    initialZoom?: number;
     onSelectPlace: (place: DemoPlace) => void;
     /** Fires (debounced upstream) on every moveend with the new viewport. */
     onViewportChange?: (bbox: [number, number, number, number]) => void;
   }
->(function MapContainer({ places, center, onSelectPlace, onViewportChange }, ref) {
+>(function MapContainer({ places, center, initialZoom = 13, onSelectPlace, onViewportChange }, ref) {
   const initialCenterRef = useRef(center);
+  const initialZoomRef = useRef(initialZoom);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -227,7 +232,7 @@ export const MapContainer = forwardRef<
         container: containerRef.current,
         style: TILE_STYLE_URL,
         center: [initialCenterRef.current.lng, initialCenterRef.current.lat],
-        zoom: 13,
+        zoom: initialZoomRef.current,
         attributionControl: false,
       });
       mapRef.current = map;

@@ -1,12 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 /**
- * GET /api/geocode?city=paris|toronto&q=<text>
+ * GET /api/geocode?q=<text>&lat=&lng=&bbox=w,s,e,n
  *
  * Proxies Photon (OSM-based, free, no key) to surface neighborhoods,
  * parks, streets, and landmarks for the search bar's "Locations"
- * section. Bbox-bounded to the active city so a search for "République"
- * doesn't return Dominican Republic results. See #103.
+ * section. Bias params (lat/lng/bbox) are taken from the current map
+ * viewport so a search for "République" doesn't return Dominican
+ * Republic results when looking at Paris.
  *
  * Soft-fails to an empty array on transport errors so the search bar
  * never breaks — places search keeps working.
@@ -14,27 +15,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const PHOTON_ENDPOINT =
   process.env.PHOTON_ENDPOINT ?? 'https://photon.komoot.io/api';
-
-interface CityBox {
-  // Bias point at city centre; bbox is the rectangular hint Photon uses
-  // to rank results. Loose enough to include the whole metro area.
-  lat: number;
-  lng: number;
-  bbox: [number, number, number, number]; // minLng, minLat, maxLng, maxLat
-}
-
-const CITIES: Record<string, CityBox> = {
-  paris: {
-    lat: 48.8566,
-    lng: 2.3522,
-    bbox: [2.224, 48.815, 2.470, 48.902],
-  },
-  toronto: {
-    lat: 43.6532,
-    lng: -79.3832,
-    bbox: [-79.640, 43.581, -79.116, 43.855],
-  },
-};
 
 interface PhotonFeature {
   type: 'Feature';
@@ -86,25 +66,42 @@ function labelFor(feature: PhotonFeature): string {
   return [p.type, p.city, p.country].filter(Boolean).join(', ');
 }
 
+function parseFloatOrNull(raw: string | null): number | null {
+  if (!raw) return null;
+  const n = Number.parseFloat(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+function parseBbox(raw: string | null): [number, number, number, number] | null {
+  if (!raw) return null;
+  const parts = raw.split(',').map((s) => Number.parseFloat(s.trim()));
+  if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [w, s, e, n] = parts;
+  if (w < -180 || e > 180 || s < -90 || n > 90 || w > e || s > n) return null;
+  return [w, s, e, n];
+}
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
-  const cityKey = (url.searchParams.get('city') ?? '').toLowerCase();
   const q = (url.searchParams.get('q') ?? '').trim();
-  const cityCfg = CITIES[cityKey];
-
-  if (!cityCfg) {
-    return NextResponse.json({ error: 'city must be paris or toronto' }, { status: 400 });
-  }
   if (q.length < 2) {
     return NextResponse.json({ results: [] });
   }
 
+  const lat = parseFloatOrNull(url.searchParams.get('lat'));
+  const lng = parseFloatOrNull(url.searchParams.get('lng'));
+  const bbox = parseBbox(url.searchParams.get('bbox'));
+
   const photonUrl = new URL(PHOTON_ENDPOINT);
   photonUrl.searchParams.set('q', q);
-  photonUrl.searchParams.set('lat', String(cityCfg.lat));
-  photonUrl.searchParams.set('lon', String(cityCfg.lng));
   photonUrl.searchParams.set('limit', '15');
-  photonUrl.searchParams.set('bbox', cityCfg.bbox.join(','));
+  if (lat !== null && lng !== null) {
+    photonUrl.searchParams.set('lat', String(lat));
+    photonUrl.searchParams.set('lon', String(lng));
+  }
+  if (bbox) {
+    photonUrl.searchParams.set('bbox', bbox.join(','));
+  }
 
   let resp: Response;
   try {
@@ -114,7 +111,6 @@ export async function GET(request: NextRequest) {
         'user-agent': 'workincafe/0.1 (https://workin.cafe; ops@workin.cafe)',
         accept: 'application/json',
       },
-      // Cache the upstream response — same query within 60s reuses.
       next: { revalidate: 60 },
     });
   } catch {
@@ -138,14 +134,12 @@ export async function GET(request: NextRequest) {
     const dedupKey = `${kind}:${label.toLowerCase()}`;
     if (seen.has(dedupKey)) continue;
     seen.add(dedupKey);
-    const [lng, lat] = f.geometry.coordinates;
+    const [lngOut, latOut] = f.geometry.coordinates;
     results.push({
       kind,
       label,
-      lat,
-      lng,
-      // Sub-label gives the user enough context to disambiguate two
-      // streets with the same name in different arrondissements.
+      lat: latOut,
+      lng: lngOut,
       subLabel:
         f.properties.city && f.properties.city !== label
           ? f.properties.city
