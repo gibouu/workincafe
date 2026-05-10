@@ -50,6 +50,74 @@ function tintParksGreen(map: maplibregl.Map): void {
   }
 }
 
+// Major-landmark layers (#120). The OpenFreeMap positron style ships
+// without a POI layer — perfect for the minimal aesthetic, but it
+// leaves the user without the orientation-grade landmarks (Eiffel
+// Tower, CN Tower, etc.). We add two layers on top of the OMT vector
+// source: a small circle for the location and a small label.
+const LANDMARK_FILL = '#8E44AD';
+const LANDMARK_FILTER: maplibregl.FilterSpecification = [
+  'all',
+  // Top-tier rank only — keeps the map quiet. OMT ranks 1 = most
+  // significant; 3 still surfaces top-of-mind landmarks per metro.
+  ['<=', ['coalesce', ['get', 'rank'], 99], 3],
+  ['match', ['coalesce', ['get', 'class'], ''],
+    ['attraction', 'monument', 'memorial', 'castle', 'art_gallery'],
+    true,
+    false,
+  ],
+];
+
+function addLandmarkLayers(map: maplibregl.Map): void {
+  if (map.getLayer('wic-landmark-dot')) return;
+  // The OpenFreeMap positron style names its OpenMapTiles source
+  // 'openmaptiles' — guard so we don't throw on a different style.
+  if (!map.getSource('openmaptiles')) return;
+
+  try {
+    map.addLayer({
+      id: 'wic-landmark-dot',
+      type: 'circle',
+      source: 'openmaptiles',
+      'source-layer': 'poi',
+      minzoom: 11,
+      filter: LANDMARK_FILTER,
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 11, 3, 14, 5],
+        'circle-color': LANDMARK_FILL,
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 1.5,
+        'circle-opacity': 0.95,
+      },
+    });
+    map.addLayer({
+      id: 'wic-landmark-label',
+      type: 'symbol',
+      source: 'openmaptiles',
+      'source-layer': 'poi',
+      minzoom: 12,
+      filter: LANDMARK_FILTER,
+      layout: {
+        'text-field': ['coalesce', ['get', 'name:latin'], ['get', 'name']],
+        'text-font': ['Noto Sans Regular'],
+        'text-size': 11,
+        'text-offset': [0, 0.9],
+        'text-anchor': 'top',
+        'text-allow-overlap': false,
+        'text-optional': true,
+      },
+      paint: {
+        'text-color': '#3A3A40',
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1.5,
+      },
+    });
+  } catch {
+    // Style schemas drift; if the OMT poi source-layer isn't present
+    // (e.g. user-overridden NEXT_PUBLIC_MAP_STYLE_URL), skip gracefully.
+  }
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>
     c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;',
@@ -112,7 +180,10 @@ function renderClusterBubble(count: number): string {
 }
 
 export interface MapHandle {
-  panTo: (lat: number, lng: number) => void;
+  /** Pan to lat/lng. Optional `zoom` flies to that zoom level too —
+   *  used by the geocoder's address picks to drop the user close
+   *  enough to see café markers. Without it, zoom stays the same. */
+  panTo: (lat: number, lng: number, zoom?: number) => void;
   getCenter: () => { lat: number; lng: number } | null;
   /** Returns [west, south, east, north] in lng/lat for the current viewport. */
   getBoundsBbox: () => [number, number, number, number] | null;
@@ -188,10 +259,15 @@ export const MapContainer = forwardRef<
   useImperativeHandle(
     ref,
     () => ({
-      panTo: (lat: number, lng: number) => {
+      panTo: (lat: number, lng: number, zoom?: number) => {
         const map = mapRef.current;
         if (!map) return;
-        map.flyTo({ center: [lng, lat], duration: 600, essential: true });
+        map.flyTo({
+          center: [lng, lat],
+          ...(zoom !== undefined ? { zoom } : {}),
+          duration: 600,
+          essential: true,
+        });
       },
       getCenter: () => {
         const map = mapRef.current;
@@ -246,15 +322,20 @@ export const MapContainer = forwardRef<
       map.on('load', () => {
         if (!cancelled) {
           tintParksGreen(map);
+          addLandmarkLayers(map);
           setReady(true);
           emitViewport();
         }
       });
       // If the style is swapped at runtime (e.g. via the env override),
-      // re-apply the park tint on the new style. style.load fires after
-      // setStyle() — the initial style.load is covered by the 'load' above.
+      // re-apply the park tint + landmark layers on the new style.
+      // style.load fires after setStyle() — the initial style.load is
+      // covered by the 'load' above.
       map.on('style.load', () => {
-        if (!cancelled) tintParksGreen(map);
+        if (!cancelled) {
+          tintParksGreen(map);
+          addLandmarkLayers(map);
+        }
       });
       map.on('moveend', emitViewport);
       map.on('error', (e) => {

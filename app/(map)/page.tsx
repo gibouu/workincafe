@@ -110,7 +110,7 @@ export default function MapPage() {
   } | null>(null);
   const handleSetAnchor = (anchor: SidebarAnchor) => {
     setSidebarAnchor(anchor);
-    mapRef.current?.panTo(anchor.lat, anchor.lng);
+    mapRef.current?.panTo(anchor.lat, anchor.lng, anchor.zoom);
   };
   const handleClearAnchor = () => setSidebarAnchor(null);
 
