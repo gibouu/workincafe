@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons/Icon';
 import { CATEGORIES, type PlaceCategory } from '@/lib/categories';
 import { useToasts } from '@/lib/store/toasts';
-import { CITIES, useCity } from '@/lib/store/city';
+import { readCachedPosition } from '@/lib/geolocate';
 import { savePending, buildAuthRedirect } from '@/lib/auth/pending-submit';
 
 const CATEGORY_KEYS: PlaceCategory[] = [
@@ -151,14 +151,16 @@ export function AddPlaceWizard({
 }) {
   const router = useRouter();
   const showToast = useToasts((s) => s.show);
-  const city = useCity((s) => s.city);
   // When the wizard wasn't opened from the map (no `?lat&lng` query params),
-  // fall back to the active city's center. Without a bias, Foursquare's
-  // ambiguous-name search returns 0 hits — see #11.
-  const center = useMemo(
-    () => centerProp ?? CITIES[city]?.center ?? null,
-    [centerProp, city],
-  );
+  // fall back to the user's last known browser geolocation. Without a bias,
+  // Foursquare's ambiguous-name search returns 0 hits — see #11. If neither
+  // is available we still let the user submit (search just gets fewer hits).
+  const center = useMemo(() => {
+    if (centerProp) return centerProp;
+    if (typeof window === 'undefined') return null;
+    const cached = readCachedPosition();
+    return cached ? { lat: cached.lat, lng: cached.lng } : null;
+  }, [centerProp]);
 
   const [step, setStep] = useState<Step>('find');
   const [name, setName] = useState('');

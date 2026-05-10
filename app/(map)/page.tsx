@@ -22,8 +22,6 @@ import {
   type GeolocatePermissionState,
 } from '@/lib/geolocate';
 import { PlaceSidebar } from '@/components/layout/PlaceSidebar';
-import { CitySwitcher } from '@/components/layout/CitySwitcher';
-import { CitySuggestBanner } from '@/components/layout/CitySuggestBanner';
 import { FilterSheet } from '@/components/filters/FilterSheet';
 import { AttributionPill } from '@/components/map/AttributionPill';
 import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
@@ -33,19 +31,14 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useLiveUpdatePrompt } from '@/hooks/useLiveUpdatePrompt';
 import { useFilters } from '@/lib/store/filters';
 import { useLayout } from '@/lib/store/layout';
-import { useCity, CITIES, type City } from '@/lib/store/city';
-import { matchKnownCity } from '@/lib/demo/cities';
+import { WORLD_CENTER } from '@/lib/demo/cities';
 import { isKnownChain } from '@/lib/brand-logos';
 import type { DemoPlace } from '@/lib/demo/paris-places';
-import { haversineKm } from '@/lib/geo/distance';
 import type { SidebarAnchor } from '@/components/layout/PlaceSidebar';
 
 // Placeholder defaults for fields the slim /api/places payload doesn't
-// ship. The real values land on click via /api/places/[id]. These are
-// only used to satisfy the DemoPlace shape in MapContainer rendering.
+// ship. The real values land on click via /api/places/[id].
 const DEMO_PLACE_DEFAULTS = {
-  address: '',
-  neighborhood: '',
   rating: 0,
   review_count: 0,
   avg_spend_eur: 0,
@@ -58,6 +51,37 @@ const DEMO_PLACE_DEFAULTS = {
   right_now_noise: 'No recent live updates',
   right_now_seating: 'No recent live updates',
 } as const;
+
+interface SlimPlace {
+  id: string;
+  name: string;
+  address: string;
+  neighborhood: string;
+  category: DemoPlace['category'];
+  lat: number;
+  lng: number;
+  brand: string | null;
+  has_user_reviews?: boolean;
+  is_validated?: boolean;
+  rating?: number;
+}
+
+function slimToDemo(p: SlimPlace): DemoPlace {
+  return {
+    ...DEMO_PLACE_DEFAULTS,
+    id: p.id,
+    name: p.name,
+    address: p.address,
+    neighborhood: p.neighborhood,
+    category: p.category,
+    lat: p.lat,
+    lng: p.lng,
+    brand: p.brand,
+    has_user_reviews: p.has_user_reviews,
+    is_validated: p.is_validated,
+    rating: p.rating ?? 0,
+  };
+}
 
 export default function MapPage() {
   const [selectedPlace, setSelectedPlace] = useState<DemoPlace | null>(null);
@@ -77,16 +101,31 @@ export default function MapPage() {
   // Sidebar anchor for the location-search flow (#103). When set, the
   // sidebar list re-sorts by distance and the map pans to this point.
   const [sidebarAnchor, setSidebarAnchor] = useState<SidebarAnchor | null>(null);
+  // Current map viewport — broadcast to the sidebar so search/geocode can
+  // bias to whatever the user is looking at, and stored as the source of
+  // truth for the add-place wizard.
+  const [viewport, setViewport] = useState<{
+    bbox: [number, number, number, number];
+    center: { lat: number; lng: number };
+  } | null>(null);
   const handleSetAnchor = (anchor: SidebarAnchor) => {
     setSidebarAnchor(anchor);
     mapRef.current?.panTo(anchor.lat, anchor.lng);
   };
   const handleClearAnchor = () => setSidebarAnchor(null);
 
-  // selectedPlace and panel are mutated atomically inside event handlers
-  // (handleSelectPlace, the various onClose callbacks). No sync effects —
-  // they introduced a race that could clear selectedPlace before
-  // setPanel('place') committed, leaving the place card empty.
+  // Pick the first-render center: cached browser geolocation if we have it
+  // (returning visitor), otherwise the world centroid at zoom 2. The user
+  // sees their last neighborhood instantly without a flash of "everywhere".
+  const initialCenterRef = useRef<{ lat: number; lng: number; zoom: number }>(
+    (() => {
+      if (typeof window === 'undefined') return { ...WORLD_CENTER };
+      const cached = readCachedPosition();
+      if (cached) return { lat: cached.lat, lng: cached.lng, zoom: 13 };
+      return { ...WORLD_CENTER };
+    })(),
+  );
+
   useEffect(() => () => setCardOpen(false), [setCardOpen]);
 
   useEffect(() => {
@@ -152,8 +191,6 @@ export default function MapPage() {
     }
 
     if (submit === 'validate') {
-      // The add-place "Did you mean…?" flow saves the target place id and
-      // replays the validate POST after the user signs in. See #82.
       const env = consumePending<{ placeId: string }>('validate');
       stripParam();
       if (!env) return;
@@ -171,57 +208,14 @@ export default function MapPage() {
     }
   }, [showToast]);
 
-  const city = useCity((s) => s.city);
-  const setCity = useCity((s) => s.setCity);
-  const cityMeta = CITIES[city];
   const filters = useFilters();
   const activeFilterCount = useFilters((s) => s.activeCount());
 
-  // Load real places from Supabase. The full payload (capped at 2500/city,
-  // sorted by name) feeds the sidebar and the card. The slim payload below
-  // — id/name/category/lat/lng/brand only, bbox-bounded — drives the map
-  // markers so we never ship the entire city to the browser at once.
-  const [livePlaces, setLivePlaces] = useState<DemoPlace[] | null>(null);
-  useEffect(() => {
-    let aborted = false;
-    setLivePlaces(null);
-    fetch(`/api/places?city=${encodeURIComponent(city)}`)
-      .then((r) => (r.ok ? r.json() : { places: [] }))
-      .then((data: { places?: DemoPlace[] }) => {
-        if (aborted) return;
-        if (Array.isArray(data.places) && data.places.length > 0) setLivePlaces(data.places);
-      })
-      .catch(() => null);
-    return () => {
-      aborted = true;
-    };
-  }, [city]);
-
-  // Slim viewport-bounded fetch for the map markers.
-  interface SlimPlace {
-    id: string;
-    name: string;
-    category: DemoPlace['category'];
-    lat: number;
-    lng: number;
-    brand: string | null;
-    /** True when the API found at least one `source='user'` review for
-     *  this place. Combined with `rating` to gate the curated-default
-     *  override — see #77. */
-    has_user_reviews?: boolean;
-    /** True when reviewed OR user-validated via the add-place wizard
-     *  (#82). Either signal bypasses the cafés-only category gate. */
-    is_validated?: boolean;
-    /** Bayesian-smoothed `study_spot_rating` from `mv_place_ratings`,
-     *  on the 1–10 scale. 0 when the place has no reviews yet. */
-    rating?: number;
-  }
+  // Slim viewport-bounded fetch — drives both the sidebar and the map
+  // markers. There's no "city" filter anymore: as the user pans/zooms,
+  // the bbox changes and we re-query.
   const [mapPlaces, setMapPlaces] = useState<SlimPlace[]>([]);
   const lastBboxRef = useRef<[number, number, number, number] | null>(null);
-  useEffect(() => {
-    setMapPlaces([]);
-    lastBboxRef.current = null;
-  }, [city]);
 
   const fetchMapBbox = useMemo(() => {
     let inflight: AbortController | null = null;
@@ -230,7 +224,7 @@ export default function MapPage() {
       const ctrl = new AbortController();
       inflight = ctrl;
       const [w, s, e, n] = bbox;
-      const url = `/api/places?city=${encodeURIComponent(city)}&bbox=${w},${s},${e},${n}`;
+      const url = `/api/places?bbox=${w},${s},${e},${n}`;
       fetch(url, { signal: ctrl.signal })
         .then((r) => (r.ok ? r.json() : { places: [] }))
         .then((data: { places?: SlimPlace[] }) => {
@@ -238,9 +232,7 @@ export default function MapPage() {
         })
         .catch(() => null);
     };
-    // SlimPlace shape is local; only city changes invalidate.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [city]);
+  }, []);
 
   const onViewportChange = useMemo(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -254,6 +246,12 @@ export default function MapPage() {
         const dy = Math.abs(bbox[1] - last[1]) + Math.abs(bbox[3] - last[3]);
         if (dx < lastWidth * 0.1 && dy < lastHeight * 0.1) return;
       }
+      // Always update viewport state so search/geocode get a fresh bias
+      // even when we skip the network request for tiny pans.
+      setViewport({
+        bbox,
+        center: { lat: (bbox[1] + bbox[3]) / 2, lng: (bbox[0] + bbox[2]) / 2 },
+      });
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         lastBboxRef.current = bbox;
@@ -262,28 +260,20 @@ export default function MapPage() {
     };
   }, [fetchMapBbox]);
 
-  const sourcePlaces: DemoPlace[] = livePlaces ?? cityMeta.places;
+  const sourcePlaces: DemoPlace[] = useMemo(
+    () => mapPlaces.map(slimToDemo),
+    [mapPlaces],
+  );
 
   const liveUpdate = useLiveUpdatePrompt(sourcePlaces);
 
   const visiblePlaces = useMemo(() => {
     return sourcePlaces.filter((p) => {
-      // Category gate. Two narrow overrides for non-active categories:
-      //  • #77: a restaurant with a user review and study_spot_rating > 7
-      //    (high enough to be a working spot) bypasses the filter.
-      //  • #78: when 'cafe' is in the active set, an independent bakery
-      //    (brand not in our chain registry) also bypasses — Du Pain et
-      //    des Idées surfaces; Paul / Maison Kayser do not.
       if (filters.categories.size > 0 && !filters.categories.has(p.category)) {
-        // Highly-rated restaurants bypass the gate (#77 — keep the rating
-        // floor even with #82's validation; "Bob marked Pizza Hut" shouldn't
-        // surface it on the cafés-only default unless it's actually good).
         const isHighlyRatedRestaurant =
           p.category === 'restaurant' &&
           Boolean(p.has_user_reviews) &&
           (p.rating ?? 0) > 7;
-        // User-validated non-restaurants bypass directly (#82). Restaurants
-        // still need the rating floor to avoid the chain-restaurant noise.
         const isUserValidatedNonRestaurant =
           p.category !== 'restaurant' && Boolean(p.is_validated);
         const isIndependentBakeryWithCafe =
@@ -307,50 +297,6 @@ export default function MapPage() {
     });
   }, [sourcePlaces, filters]);
 
-  // The map renders the slim bbox-bounded set when we have one; otherwise
-  // it falls back to the full city slice. We adapt slim rows to DemoPlace
-  // with safe defaults so MapContainer's existing types still hold.
-  const visibleMapPlaces: DemoPlace[] = useMemo(() => {
-    const source: DemoPlace[] =
-      mapPlaces.length > 0
-        ? mapPlaces.map((p) => ({
-            ...DEMO_PLACE_DEFAULTS,
-            id: p.id,
-            name: p.name,
-            category: p.category,
-            lat: p.lat,
-            lng: p.lng,
-            brand: p.brand,
-            has_user_reviews: p.has_user_reviews,
-            is_validated: p.is_validated,
-            // Slim payload's `rating` overrides DEMO_PLACE_DEFAULTS.rating
-            // (which is 0) so the highly-rated-restaurant override below
-            // can read it.
-            rating: p.rating ?? 0,
-          }))
-        : visiblePlaces;
-    if (filters.categories.size === 0) return source;
-    // Mirrors the `visiblePlaces` override above. See #77 + #82.
-    return source.filter((p) => {
-      if (filters.categories.has(p.category)) return true;
-      const isHighlyRatedRestaurant =
-        p.category === 'restaurant' &&
-        Boolean(p.has_user_reviews) &&
-        (p.rating ?? 0) > 7;
-      const isUserValidatedNonRestaurant =
-        p.category !== 'restaurant' && Boolean(p.is_validated);
-      return isHighlyRatedRestaurant || isUserValidatedNonRestaurant;
-    });
-  }, [mapPlaces, visiblePlaces, filters.categories]);
-
-  // Pan to the active city's center whenever it changes. Also clear any
-  // sidebar anchor — anchors are city-specific (#103).
-  useEffect(() => {
-    mapRef.current?.panTo(cityMeta.center.lat, cityMeta.center.lng);
-    setSelectedPlace(null);
-    setSidebarAnchor(null);
-  }, [cityMeta.center.lat, cityMeta.center.lng]);
-
   // Probe the Permissions API once on mount. Used by `handleGeolocate` to
   // short-circuit known-denied state into the recovery banner, and by the
   // geolocate button to render its red-dot indicator. See #71.
@@ -369,10 +315,8 @@ export default function MapPage() {
     return () => unsub();
   }, []);
 
-  // PermissionStatus.onchange is unreliable on iOS Safari and may miss the
-  // event when the user flips the setting in another tab/window. Re-probe
-  // every time the tab returns to the foreground so the red-dot indicator
-  // and silent-pan recovery clear without requiring a button click. See #89.
+  // PermissionStatus.onchange is unreliable on iOS Safari. Re-probe on
+  // visibilitychange so the red-dot indicator clears without a click. #89.
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const onVisible = () => {
@@ -389,20 +333,17 @@ export default function MapPage() {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
-  // Last-known position pan: the cheapest way to get a returning user to
-  // their actual location instead of the IP-derived Boulogne-Billancourt
-  // for any French mobile carrier. See #71.
+  // Last-known position pan: returning visitor lands on their actual
+  // location. We already used the cached position for `initialCenterRef`,
+  // but also drop the user-location dot once the map is mounted.
   const cachedPanRef = useRef(false);
   useEffect(() => {
     if (cachedPanRef.current) return;
     const cached = readCachedPosition();
     if (cached) {
       cachedPanRef.current = true;
-      console.info('[geolocate] hydrating from cache lat=%s lng=%s', cached.lat, cached.lng);
-      // Wait a tick so the map has finished init.
       const t = setTimeout(() => {
         mapRef.current?.setUserLocation(cached.lat, cached.lng);
-        mapRef.current?.panTo(cached.lat, cached.lng);
       }, 200);
       return () => clearTimeout(t);
     }
@@ -411,8 +352,7 @@ export default function MapPage() {
 
   // If permission is already 'granted' on mount, fire `getCurrentPosition`
   // silently — no prompt, no UI change, just an accurate pan as soon as
-  // the GPS fix lands. Re-runs once permission flips to granted (e.g. user
-  // toggled it in iOS Settings while the tab was open).
+  // the GPS fix lands. Re-runs once permission flips to granted.
   const silentPanFiredRef = useRef(false);
   useEffect(() => {
     if (silentPanFiredRef.current) return;
@@ -434,8 +374,6 @@ export default function MapPage() {
         mapRef.current?.panTo(latitude, longitude);
       },
       (err) => {
-        // Silent path — log only; the user didn't ask for this so don't
-        // toast.
         console.warn(
           '[geolocate] silent err=%s code=%d',
           geolocationErrorLabel(err.code),
@@ -446,87 +384,36 @@ export default function MapPage() {
     );
   }, [geolocatePermission]);
 
-  // Ask the IP-geo endpoint on mount for the city auto-switch decision
-  // (#18 / #48 / #49). The IP coords are intentionally NOT used as a
-  // primary "where am I?" pan anymore — they pin every French mobile
-  // user to Boulogne-Billancourt. The pan branch only runs when no
-  // cached position has hydrated.
+  // First-load IP-geo pan: only fires when no cached browser position
+  // hydrated us already and the user hasn't granted geolocation. Lets a
+  // brand-new visitor still land on roughly their region instead of the
+  // world-zoom fallback. The IP coords aren't precise (carrier-NAT'd
+  // mobile users land on Boulogne-Billancourt for the whole French
+  // coast), so we only pan, not zoom in past city level.
   const ipPannedRef = useRef(false);
-  const [suggestedCity, setSuggestedCity] = useState<City | null>(null);
   useEffect(() => {
     if (ipPannedRef.current) return;
+    if (cachedPanRef.current) return;
     ipPannedRef.current = true;
-
     void fetch('/api/geo')
       .then(async (r) =>
         r.status === 204
           ? null
-          : ((await r.json()) as {
-              lat: number;
-              lng: number;
-              city: string | null;
-              country: string | null;
-            }),
+          : ((await r.json()) as { lat: number; lng: number }),
       )
       .then((g) => {
         if (!g) return;
-        // Suggestion only when:
-        //   - user has no stored preference (wic:city absent), AND
-        //   - hasn't dismissed a prompt for this specific city before.
-        // Zustand persist writes to `wic:city` only after the first
-        // `setCity()` call — null here means default-only.
-        let stored: string | null = null;
-        let dismissed: string | null = null;
-        const matched = matchKnownCity(g.city, g.country, { lat: g.lat, lng: g.lng });
-        try {
-          stored = window.localStorage.getItem('wic:city');
-          if (matched) {
-            dismissed = window.localStorage.getItem(`wic:city-prompt-dismissed:${matched}`);
-          }
-        } catch {
-          stored = null;
-          dismissed = null;
-        }
-        if (stored === null && dismissed === null && matched && matched !== city) {
-          setSuggestedCity(matched);
-          // Skip the pan — if the user accepts, the city change recenters
-          // via cityMeta; if they dismiss, the next mount will pan instead.
-          return;
-        }
-        // Skip the IP-derived pan if a cached browser position already
-        // moved us; that was an accurate fix, IP would only walk it back.
         if (cachedPanRef.current) return;
-        const dKm = haversineKm(g.lat, g.lng, cityMeta.center.lat, cityMeta.center.lng);
-        if (dKm < 80) mapRef.current?.panTo(g.lat, g.lng);
+        mapRef.current?.panTo(g.lat, g.lng);
       })
       .catch(() => null);
-    // Intentionally fire once on mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const acceptCitySuggest = () => {
-    if (!suggestedCity) return;
-    setCity(suggestedCity);
-    showToast(`Switched to ${CITIES[suggestedCity].label}`, { tone: 'info' });
-    setSuggestedCity(null);
-  };
-  const dismissCitySuggest = () => {
-    if (!suggestedCity) return;
-    try {
-      window.localStorage.setItem(`wic:city-prompt-dismissed:${suggestedCity}`, '1');
-    } catch {
-      /* quota exceeded etc — non-fatal */
-    }
-    setSuggestedCity(null);
-  };
 
   const handleSelectPlace = (place: DemoPlace) => {
     setSelectedPlace(place);
     setPanel('place');
     mapRef.current?.panTo(place.lat, place.lng);
-    // Hydrate from /api/places/[id] when the slim payload was the source
-    // (most fields will be defaults). Cheap no-op if the row was already
-    // a fully-populated sidebar row.
+    // Hydrate from /api/places/[id] when the slim payload was the source.
     if (place.address === '' && place.review_count === 0) {
       void fetch(`/api/places/${encodeURIComponent(place.id)}`)
         .then((r) => (r.ok ? r.json() : null))
@@ -548,16 +435,6 @@ export default function MapPage() {
       showToast('Location not supported in this browser', { tone: 'error' });
       return;
     }
-    // Don't pre-block on cached permission state. Safari (especially iOS)
-    // requires the `getCurrentPosition` call to sit inside the synchronous
-    // user-gesture stack — any `await` between the click and the call
-    // breaks the gesture chain and the native prompt won't appear, even
-    // when the cached deny is stale and the user has actually re-enabled
-    // location in Settings. So we always call `getCurrentPosition` and
-    // react to the real `PERMISSION_DENIED` in the error callback below.
-    // The Permissions API probe still runs in the background (mount,
-    // visibilitychange, watchGeolocationPermission) to keep the red-dot
-    // indicator accurate — it just no longer gates the click. See #104.
     setGeolocating(true);
 
     const applyFix = (pos: GeolocationPosition) => {
@@ -574,9 +451,6 @@ export default function MapPage() {
       setGeolocating(false);
     };
 
-    // Mobile gets a real GPS fix in 1–3s. Desktop Safari often hangs on
-    // high-accuracy and silently times out — when it does, fall back to
-    // WiFi/cell triangulation, which returns immediately.
     navigator.geolocation.getCurrentPosition(
       applyFix,
       (highErr) => {
@@ -588,7 +462,6 @@ export default function MapPage() {
         );
         if (highErr.code === highErr.PERMISSION_DENIED) {
           setGeolocating(false);
-          // Refresh cached state so the button's red dot turns on.
           setGeolocatePermission('denied');
           setBlockedBannerOpen(true);
           return;
@@ -629,13 +502,15 @@ export default function MapPage() {
         anchor={sidebarAnchor}
         onSetAnchor={handleSetAnchor}
         onClearAnchor={handleClearAnchor}
+        viewport={viewport}
       />
 
       <main className="relative flex-1 overflow-hidden">
         <MapContainer
           ref={mapRef}
-          center={cityMeta.center}
-          places={visibleMapPlaces}
+          center={initialCenterRef.current}
+          initialZoom={initialCenterRef.current.zoom}
+          places={visiblePlaces}
           onSelectPlace={handleSelectPlace}
           onViewportChange={onViewportChange}
         />
@@ -647,22 +522,6 @@ export default function MapPage() {
           filterCount={activeFilterCount}
           showFilter={!isDesktop}
         />
-
-        {suggestedCity && (
-          <CitySuggestBanner
-            city={suggestedCity}
-            onAccept={acceptCitySuggest}
-            onDismiss={dismissCitySuggest}
-          />
-        )}
-
-        {!isDesktop && (
-          <div className="pointer-events-none absolute top-4 left-4 z-30">
-            <div className="pointer-events-auto">
-              <CitySwitcher compact />
-            </div>
-          </div>
-        )}
 
         {isDesktop && panel === 'place' && selectedPlace && (
           <FloatingPlaceCard
@@ -743,10 +602,6 @@ export default function MapPage() {
       {showWelcome && (
         <WelcomeOverlay
           onDismiss={() => setShowWelcome(false)}
-          // Plan B (#71): the system permission prompt is user-initiated
-          // from the location slide's "Enable precise location" CTA, never
-          // coupled to the dismiss action. The geolocate button on the
-          // map is the only other entry point.
           onEnableLocation={handleGeolocate}
         />
       )}
