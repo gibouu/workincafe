@@ -11,7 +11,7 @@ import { GEO_VERIFY_METERS } from '@/app/api/_shared/geo-check';
 import { runSpeedtest, SpeedtestError, type SpeedtestPhase } from '@/lib/measurement/speedtest';
 import { runDecibelTest } from '@/lib/measurement/decibel';
 import type { DemoPlace } from '@/lib/demo/paris-places';
-import { cityForPlace, currencySymbol } from '@/lib/demo/cities';
+import { currencyForCountry } from '@/lib/currency';
 import { savePending, consumePending, buildAuthRedirect } from '@/lib/auth/pending-submit';
 import {
   priceBucketToValue,
@@ -222,7 +222,7 @@ function clearReviewDraft(placeId: string): void {
 export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps) {
   const meta = categoryMeta(place.category);
   const needsFood = FOOD_FORWARD.has(place.category);
-  const symbol = currencySymbol(cityForPlace(place.id));
+  const symbol = currencyForCountry(place.country);
   // STEPS depend on category: cafés get a dedicated coffee step. See #85.
   const STEPS = useMemo(() => buildSteps(place.category), [place.category]);
   const isCafe = place.category === 'cafe';
