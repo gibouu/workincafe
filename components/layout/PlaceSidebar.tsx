@@ -12,10 +12,14 @@ export interface SidebarAnchor {
   label: string;
   lat: number;
   lng: number;
+  /** Optional target zoom level. Address picks zoom in close enough to
+   *  see cafés in the immediate area; neighborhoods / landmarks leave
+   *  zoom unchanged so the user keeps their context. */
+  zoom?: number;
 }
 
 interface LocationHit {
-  kind: 'neighborhood' | 'park' | 'street' | 'landmark';
+  kind: 'address' | 'neighborhood' | 'park' | 'street' | 'landmark';
   label: string;
   subLabel: string | null;
   lat: number;
@@ -23,10 +27,20 @@ interface LocationHit {
 }
 
 const KIND_ICON: Record<LocationHit['kind'], PhosphorIconName> = {
+  address: 'House',
   neighborhood: 'MapPin',
   park: 'Tree',
   street: 'NavigationArrow',
   landmark: 'Star',
+};
+
+// Zoom level the map flies to when the user picks each kind. Addresses
+// zoom close enough to see café markers in the immediate block;
+// neighborhoods and bigger landmarks leave zoom unchanged (undefined).
+const KIND_ZOOM: Partial<Record<LocationHit['kind'], number>> = {
+  address: 16,
+  street: 15,
+  landmark: 15,
 };
 
 function normalize(s: string) {
@@ -178,7 +192,7 @@ export function PlaceSidebar({
 
   const handleLocationPick = (h: LocationHit) => {
     if (!onSetAnchor) return;
-    onSetAnchor({ label: h.label, lat: h.lat, lng: h.lng });
+    onSetAnchor({ label: h.label, lat: h.lat, lng: h.lng, zoom: KIND_ZOOM[h.kind] });
     setQuery('');
     setLocationHits([]);
     setSearchHits(null);

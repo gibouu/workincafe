@@ -27,6 +27,9 @@ interface PhotonFeature {
     state?: string;
     country?: string;
     street?: string;
+    housenumber?: string;
+    district?: string;
+    locality?: string;
     type?: string;
   };
 }
@@ -35,12 +38,21 @@ interface PhotonResponse {
   features?: PhotonFeature[];
 }
 
-/** Filter to result kinds the user is plausibly searching for as an
- *  *area*, not as an individual venue (which the place search covers).
- *  Returns null for anything we want to drop. */
-function classify(feature: PhotonFeature): 'neighborhood' | 'park' | 'street' | 'landmark' | null {
+type GeocodeKind = 'address' | 'neighborhood' | 'park' | 'street' | 'landmark';
+
+/** Filter to result kinds the user is plausibly searching for as a
+ *  destination — addresses, neighborhoods, parks, streets, and major
+ *  landmarks. Individual venues (cafés, restaurants) come from the
+ *  place search instead. Returns null for anything else. */
+function classify(feature: PhotonFeature): GeocodeKind | null {
   const k = feature.properties.osm_key;
   const v = feature.properties.osm_value;
+  // Photon tags numbered street addresses as place=house with a housenumber
+  // property. Surface them as "address" so users can paste a full address
+  // ("10 Rue de Rivoli") and click straight to that spot.
+  if (k === 'place' && v === 'house' && feature.properties.housenumber) {
+    return 'address';
+  }
   if (k === 'place' && /^(suburb|neighbourhood|quarter|district|borough|town|village|hamlet)$/.test(v ?? '')) {
     return 'neighborhood';
   }
@@ -59,11 +71,23 @@ function classify(feature: PhotonFeature): 'neighborhood' | 'park' | 'street' | 
   return null;
 }
 
-function labelFor(feature: PhotonFeature): string {
+function labelFor(feature: PhotonFeature, kind: GeocodeKind): string {
   const p = feature.properties;
+  if (kind === 'address' && p.housenumber && p.street) {
+    return `${p.housenumber} ${p.street}`;
+  }
   if (p.name) return p.name;
   if (p.street) return p.street;
   return [p.type, p.city, p.country].filter(Boolean).join(', ');
+}
+
+function subLabelFor(feature: PhotonFeature, kind: GeocodeKind, label: string): string | null {
+  const p = feature.properties;
+  if (kind === 'address') {
+    // Stack district / locality / city for context — "Le Marais, Paris".
+    return [p.district ?? p.locality, p.city].filter(Boolean).filter((s) => s !== label).join(', ') || null;
+  }
+  return p.city && p.city !== label ? p.city : null;
 }
 
 function parseFloatOrNull(raw: string | null): number | null {
@@ -124,12 +148,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results: [] });
   }
 
-  const results: { kind: string; label: string; lat: number; lng: number; subLabel: string | null }[] = [];
+  const results: { kind: GeocodeKind; label: string; lat: number; lng: number; subLabel: string | null }[] = [];
   const seen = new Set<string>();
   for (const f of json.features) {
     const kind = classify(f);
     if (!kind) continue;
-    const label = labelFor(f);
+    const label = labelFor(f, kind);
     if (!label) continue;
     const dedupKey = `${kind}:${label.toLowerCase()}`;
     if (seen.has(dedupKey)) continue;
@@ -140,10 +164,7 @@ export async function GET(request: NextRequest) {
       label,
       lat: latOut,
       lng: lngOut,
-      subLabel:
-        f.properties.city && f.properties.city !== label
-          ? f.properties.city
-          : null,
+      subLabel: subLabelFor(f, kind, label),
     });
     if (results.length >= 8) break;
   }
