@@ -26,9 +26,9 @@ export const SEED_CITIES: SeedCity[] = [
   // ── Launch cities (full categories) ──────────────────────────────────────
   { key: 'paris',      label: 'Paris',         country: 'FR', mode: 'full',      bbox: [48.815, 2.224, 48.902, 2.470] },
   // Toronto: bbox expanded from City-of-Toronto admin polygon to the GTA core
-  // (Toronto + Mississauga + Brampton + Markham + Vaughan + Richmond Hill).
-  // Excludes the wider commuter belt (Halton/Durham/Hamilton).
-  { key: 'toronto',    label: 'Toronto (GTA)', country: 'CA', mode: 'full',      bbox: [43.49, -79.84, 43.96, -78.96] },
+  // (Toronto + Mississauga + Brampton + Markham + Vaughan + Richmond Hill +
+  // Oakville). South bound dropped to 43.40 to reach Oakville's lakeshore.
+  { key: 'toronto',    label: 'Toronto (GTA)', country: 'CA', mode: 'full',      bbox: [43.40, -79.84, 43.96, -78.96] },
   { key: 'istanbul',   label: 'Istanbul',      country: 'TR', mode: 'full',      bbox: [40.80, 28.65, 41.20, 29.35] },
 
   // ── Cafe-only expansion (Refs #50, #113) ─────────────────────────────────
