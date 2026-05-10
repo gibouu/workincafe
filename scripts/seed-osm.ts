@@ -2,26 +2,28 @@
  * Work in Cafe — OSM Overpass bulk seed (spec §11.2)
  *
  * Usage:
- *   pnpm seed:paris          # via package.json script
- *   tsx scripts/seed-osm.ts paris
- *   tsx scripts/seed-osm.ts toronto
+ *   npx tsx scripts/seed-osm.ts paris            # one city by key
+ *   npx tsx scripts/seed-osm.ts --all-new        # all cafe-only cities
+ *   npx tsx scripts/seed-osm.ts --all            # every configured city
  *
  * Prereqs:
  *   - SUPABASE_SERVICE_ROLE_KEY + NEXT_PUBLIC_SUPABASE_URL in .env.local
  *   - places / place_source_refs tables exist (run supabase/migrations/001_init.sql first)
+ *
+ * Cities + bboxes live in scripts/seed-cities.ts.
  */
 
 import { createClient } from '@supabase/supabase-js';
-import { readFile } from 'node:fs/promises';
 import crypto from 'node:crypto';
-import path from 'node:path';
 import { isWorkConducive } from '../lib/places/work-conducive';
 import { looksLikeApartmentBuilding } from '../lib/places/looks-like-apartment';
 import { bucketForFastFoodBrand } from '../lib/places/fast-food-buckets';
-
-type OsmCity = 'paris' | 'toronto';
-
-const SUPPORTED: OsmCity[] = ['paris', 'toronto'];
+import {
+  SEED_CITIES,
+  buildOverpassQuery,
+  getSeedCity,
+  type SeedCity,
+} from './seed-cities';
 
 // Map (amenity | shop | tourism) tag values → our place_category enum.
 // OSM tagging is split: cafés are amenity=cafe but bakeries are shop=bakery,
@@ -56,7 +58,7 @@ interface OverpassResponse {
 }
 
 const normalize = (s: string) =>
-  s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+  s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
 
 const hashKey = (name: string, lat: number, lng: number) =>
   crypto
@@ -65,7 +67,9 @@ const hashKey = (name: string, lat: number, lng: number) =>
     .digest('hex')
     .slice(0, 16);
 
-async function seedCity(city: OsmCity) {
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+async function seedCity(city: SeedCity) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceRoleKey) {
@@ -76,10 +80,9 @@ async function seedCity(city: OsmCity) {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const endpoint = process.env.OVERPASS_ENDPOINT ?? 'https://overpass-api.de/api/interpreter';
-  const queryPath = path.join(process.cwd(), 'scripts', `seed-overpass-${city}.ql`);
-  const query = await readFile(queryPath, 'utf8');
+  const query = buildOverpassQuery(city);
 
-  console.log(`[osm] Querying Overpass for ${city} (~60-120s)…`);
+  console.log(`[osm] Querying Overpass for ${city.key} (${city.mode}) — bbox ${city.bbox.join(',')} (~60-180s)…`);
   const resp = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -92,9 +95,6 @@ async function seedCity(city: OsmCity) {
   });
   if (!resp.ok) throw new Error(`Overpass ${resp.status}: ${await resp.text().catch(() => '')}`);
   const json = (await resp.json()) as OverpassResponse;
-
-  const countryCode = city === 'paris' ? 'FR' : 'CA';
-  const cityDisplay = city === 'paris' ? 'Paris' : 'Toronto';
 
   type PlaceInsert = {
     name: string;
@@ -131,7 +131,6 @@ async function seedCity(city: OsmCity) {
       // Split `amenity=fast_food` by brand: fast-casual chains (Chipotle,
       // Pret, Cojean, Exki…) become `restaurant`; everything else becomes
       // `fast_food_burger`. See #80 + lib/places/fast-food-buckets.ts.
-      // Backfill of existing rows is in supabase/scripts/split-fast-food.sql.
       if (category === 'fast_food') {
         category = bucketForFastFoodBrand(tags.brand);
       }
@@ -139,8 +138,8 @@ async function seedCity(city: OsmCity) {
       return {
         name: tags.name,
         address: address || null,
-        city: cityDisplay,
-        country: countryCode,
+        city: city.label,
+        country: city.country,
         lat,
         lng,
         category,
@@ -161,13 +160,11 @@ async function seedCity(city: OsmCity) {
     })
     .filter((p): p is PlaceInsert => p !== null);
 
-  // Dedup + quality filter (spec §11.2: require website OR phone OR brand).
-  // Quality gate: keep anything that has at least one piece of meaningful
-  // tagging beyond just a name + lat/lng. The original gate required
-  // website/phone/brand which dropped most cafés (OSM data is sparse on
-  // contact info). This widens to also accept hours, an address, cuisine,
-  // or internet_access — proxies for "someone bothered to tag this place
-  // with substance."
+  // Dedup + quality filter (spec §11.2): keep anything with at least one
+  // piece of meaningful tagging beyond name + lat/lng. Original gate required
+  // website/phone/brand which dropped most cafés (OSM contact data is sparse);
+  // widened to also accept hours, address, cuisine, or internet_access — all
+  // proxies for "someone bothered to tag this place with substance."
   const deduped = [...new Map(places.map((p) => [p.normalized_name_hash, p])).values()].filter(
     (p) =>
       p.website ||
@@ -186,7 +183,6 @@ async function seedCity(city: OsmCity) {
   let droppedByApartment = 0;
   const droppedByCategory: Record<string, number> = {};
   const unique = deduped.filter((p) => {
-    // Apartment-building filter — only applies to category=hotel.
     if (p.category === 'hotel' && looksLikeApartmentBuilding(p.name)) {
       droppedByApartment++;
       return false;
@@ -201,14 +197,14 @@ async function seedCity(city: OsmCity) {
   });
 
   console.log(
-    `[osm] ${city}: ${json.elements.length} raw → ${deduped.length} after dedup/quality → ${unique.length} after hours+apartment filter`,
+    `[osm] ${city.key}: ${json.elements.length} raw → ${deduped.length} after dedup/quality → ${unique.length} after hours+apartment filter`,
   );
   if (droppedByApartment > 0) {
-    console.log(`[osm] ${city}: apartment filter dropped ${droppedByApartment} hotel-tagged résidences/student housing`);
+    console.log(`[osm] ${city.key}: apartment filter dropped ${droppedByApartment} hotel-tagged résidences/student housing`);
   }
   if (droppedByHours > 0) {
     console.log(
-      `[osm] ${city}: hours filter dropped ${droppedByHours} (${Object.entries(droppedByCategory)
+      `[osm] ${city.key}: hours filter dropped ${droppedByHours} (${Object.entries(droppedByCategory)
         .map(([k, v]) => `${k}=${v}`)
         .join(', ')})`,
     );
@@ -231,19 +227,49 @@ async function seedCity(city: OsmCity) {
       .upsert(refs, { onConflict: 'source,external_id' });
     if (refsError) throw refsError;
 
-    console.log(`[osm] ${city}: upserted ${Math.min(i + 500, unique.length)}/${unique.length}`);
+    console.log(`[osm] ${city.key}: upserted ${Math.min(i + 500, unique.length)}/${unique.length}`);
   }
 
-  console.log(`[osm] ${city}: done (${unique.length} places)`);
+  console.log(`[osm] ${city.key}: done (${unique.length} places)`);
+  return unique.length;
+}
+
+function resolveCities(arg: string | undefined): SeedCity[] {
+  if (!arg) return [];
+  if (arg === '--all') return SEED_CITIES;
+  if (arg === '--all-new') return SEED_CITIES.filter((c) => c.mode === 'cafe-only');
+  const city = getSeedCity(arg.toLowerCase());
+  return city ? [city] : [];
 }
 
 async function main() {
-  const arg = process.argv[2]?.toLowerCase() as OsmCity | undefined;
-  if (!arg || !SUPPORTED.includes(arg)) {
-    console.error(`Usage: tsx scripts/seed-osm.ts <${SUPPORTED.join('|')}>`);
+  const arg = process.argv[2];
+  const cities = resolveCities(arg);
+  if (cities.length === 0) {
+    console.error(
+      `Usage: tsx scripts/seed-osm.ts <key|--all|--all-new>\n  keys: ${SEED_CITIES.map((c) => c.key).join(', ')}`,
+    );
     process.exit(1);
   }
-  await seedCity(arg);
+
+  let totalInserted = 0;
+  for (let i = 0; i < cities.length; i++) {
+    const city = cities[i];
+    try {
+      const n = await seedCity(city);
+      totalInserted += n;
+    } catch (err) {
+      // Don't abort the whole batch on a single Overpass timeout — the public
+      // mirror occasionally rejects big queries. Log + continue. Re-running
+      // the same key later is idempotent.
+      console.error(`[osm] ${city.key} failed:`, err);
+    }
+    // Be polite to the public Overpass mirror between cities.
+    if (i < cities.length - 1) await sleep(5000);
+  }
+  if (cities.length > 1) {
+    console.log(`[osm] batch done: ${totalInserted} total places across ${cities.length} cities`);
+  }
 }
 
 main().catch((err) => {
