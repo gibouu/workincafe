@@ -217,13 +217,27 @@ export default function MapPage() {
   const [mapPlaces, setMapPlaces] = useState<SlimPlace[]>([]);
   const lastBboxRef = useRef<[number, number, number, number] | null>(null);
 
+  // Skip the /api/places fetch when the viewport spans more than ~city-
+  // metro size. At world / continent zoom there's no point shipping every
+  // café in the database; the user can't see the markers anyway and the
+  // payload + render is wasteful. ~2° latitude is roughly the diagonal of
+  // a metro area at most latitudes (Paris fits in <0.1°, GTA in ~0.5°).
+  const MAX_FETCH_SPAN_DEG = 2;
+
   const fetchMapBbox = useMemo(() => {
     let inflight: AbortController | null = null;
     return (bbox: [number, number, number, number]) => {
+      const [w, s, e, n] = bbox;
+      const span = Math.max(e - w, n - s);
+      if (span > MAX_FETCH_SPAN_DEG) {
+        // Zoom out beyond a metro — clear stale markers and skip the call.
+        if (inflight) inflight.abort();
+        setMapPlaces([]);
+        return;
+      }
       if (inflight) inflight.abort();
       const ctrl = new AbortController();
       inflight = ctrl;
-      const [w, s, e, n] = bbox;
       const url = `/api/places?bbox=${w},${s},${e},${n}`;
       fetch(url, { signal: ctrl.signal })
         .then((r) => (r.ok ? r.json() : { places: [] }))
@@ -371,7 +385,9 @@ export default function MapPage() {
         );
         writeCachedPosition(latitude, longitude);
         mapRef.current?.setUserLocation(latitude, longitude);
-        mapRef.current?.panTo(latitude, longitude);
+        // Browser geolocation is precise — zoom in to ~500m radius so
+        // the user sees their immediate surroundings, not the whole metro.
+        mapRef.current?.panTo(latitude, longitude, 15);
       },
       (err) => {
         console.warn(
@@ -389,7 +405,8 @@ export default function MapPage() {
   // brand-new visitor still land on roughly their region instead of the
   // world-zoom fallback. The IP coords aren't precise (carrier-NAT'd
   // mobile users land on Boulogne-Billancourt for the whole French
-  // coast), so we only pan, not zoom in past city level.
+  // coast), so we zoom to city level (13) — close enough to see cafés
+  // without committing to a precise spot.
   const ipPannedRef = useRef(false);
   useEffect(() => {
     if (ipPannedRef.current) return;
@@ -404,7 +421,7 @@ export default function MapPage() {
       .then((g) => {
         if (!g) return;
         if (cachedPanRef.current) return;
-        mapRef.current?.panTo(g.lat, g.lng);
+        mapRef.current?.panTo(g.lat, g.lng, 13);
       })
       .catch(() => null);
   }, []);
@@ -447,7 +464,8 @@ export default function MapPage() {
       );
       writeCachedPosition(latitude, longitude);
       mapRef.current?.setUserLocation(latitude, longitude);
-      mapRef.current?.panTo(latitude, longitude);
+      // Same ~500m-radius zoom as the silent-pan branch on mount.
+      mapRef.current?.panTo(latitude, longitude, 15);
       setGeolocating(false);
     };
 
