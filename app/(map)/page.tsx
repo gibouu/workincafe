@@ -22,6 +22,10 @@ import {
   type GeolocatePermissionState,
 } from '@/lib/geolocate';
 import { PlaceSidebar } from '@/components/layout/PlaceSidebar';
+import {
+  MobileSearchButton,
+  MobileSearchDrawer,
+} from '@/components/layout/MobileSearchDrawer';
 import { FilterSheet } from '@/components/filters/FilterSheet';
 import { AttributionPill } from '@/components/map/AttributionPill';
 import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
@@ -87,6 +91,7 @@ export default function MapPage() {
   const [selectedPlace, setSelectedPlace] = useState<DemoPlace | null>(null);
   const [geolocating, setGeolocating] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const router = useRouter();
   const mapRef = useRef<MapHandle>(null);
   const isDesktop = useMediaQuery('(min-width: 768px)');
@@ -544,6 +549,9 @@ export default function MapPage() {
           filterCount={activeFilterCount}
           showFilter={!isDesktop}
         />
+        {!isDesktop && (
+          <MobileSearchButton onClick={() => setMobileSearchOpen(true)} />
+        )}
 
         {isDesktop && panel === 'place' && selectedPlace && (
           <FloatingPlaceCard
@@ -612,6 +620,22 @@ export default function MapPage() {
       )}
 
       <FilterSheet open={filterOpen} onOpenChange={setFilterOpen} />
+
+      {!isDesktop && (
+        <MobileSearchDrawer
+          open={mobileSearchOpen}
+          onOpenChange={setMobileSearchOpen}
+          places={visiblePlaces}
+          selectedId={selectedPlace?.id ?? null}
+          onSelect={handleSelectPlace}
+          onOpenFilter={() => setFilterOpen(true)}
+          filterCount={activeFilterCount}
+          anchor={sidebarAnchor}
+          onSetAnchor={handleSetAnchor}
+          onClearAnchor={handleClearAnchor}
+          viewport={viewport}
+        />
+      )}
 
       <LiveUpdateSheet
         place={liveUpdate.place}
