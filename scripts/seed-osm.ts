@@ -238,6 +238,14 @@ function resolveCities(arg: string | undefined): SeedCity[] {
   if (!arg) return [];
   if (arg === '--all') return SEED_CITIES;
   if (arg === '--all-new') return SEED_CITIES.filter((c) => c.mode === 'cafe-only');
+  // --country=FR — filter to all cities in the given ISO 3166-1 alpha-2.
+  // Used by `npm run seed:fr` for the France-wide region expansion (#128).
+  if (arg.startsWith('--country=')) {
+    const cc = arg.slice('--country='.length).toUpperCase();
+    if (cc.length === 2) {
+      return SEED_CITIES.filter((c) => c.country === cc);
+    }
+  }
   const city = getSeedCity(arg.toLowerCase());
   return city ? [city] : [];
 }

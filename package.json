@@ -13,6 +13,7 @@
     "seed:istanbul": "tsx --env-file=.env.local scripts/seed-osm.ts istanbul",
     "seed:all-new": "tsx --env-file=.env.local scripts/seed-osm.ts --all-new",
     "seed:all": "tsx --env-file=.env.local scripts/seed-osm.ts --all",
+    "seed:fr": "tsx --env-file=.env.local scripts/seed-osm.ts --country=FR",
     "migrate:photos": "tsx --env-file=.env.local scripts/migrate-photos-to-cloudinary.ts",
     "prune:hours": "tsx --env-file=.env.local scripts/prune-non-work-conducive.ts",
     "prune:residences": "tsx --env-file=.env.local scripts/prune-apartment-residences.ts",
