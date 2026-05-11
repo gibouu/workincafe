@@ -85,10 +85,14 @@ export function buildOverpassQuery(city: SeedCity): string {
   const filters =
     city.mode === 'full'
       ? [
-          'node["amenity"~"^(cafe|library|fast_food|restaurant|coworking_space|ice_cream|internet_cafe)$"]',
+          // amenity=bar|biergarten|pub added in #126 — many Parisian
+          // brasseries / Toronto pubs are work-conducive in the afternoon.
+          // The hours filter (isWorkConducive) drops dinner-only / late-
+          // night dives; daytime venues survive.
+          'node["amenity"~"^(cafe|library|fast_food|restaurant|coworking_space|ice_cream|internet_cafe|bar|biergarten|pub)$"]',
           'node["shop"~"^(bakery|coffee|tea|pastry)$"]',
           'node["tourism"~"^(hotel|hostel|guest_house|motel)$"]',
-          'way["amenity"~"^(cafe|library|fast_food|restaurant|coworking_space|ice_cream|internet_cafe)$"]',
+          'way["amenity"~"^(cafe|library|fast_food|restaurant|coworking_space|ice_cream|internet_cafe|bar|biergarten|pub)$"]',
           'way["shop"~"^(bakery|coffee|tea|pastry)$"]',
           'way["tourism"~"^(hotel|hostel|guest_house|motel)$"]',
         ]

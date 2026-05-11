@@ -36,6 +36,16 @@ const AMENITY_MAP: Record<string, string> = {
   restaurant: 'restaurant',
   ice_cream: 'cafe',
   internet_cafe: 'cafe',
+  // amenity=bar|biergarten|pub bucket as 'restaurant' so they:
+  //   (a) flow through the work-conducive hours filter (drops dinner-
+  //       only / nightclub-style venues automatically);
+  //   (b) share the existing restaurant UX (tables, food, drinks);
+  //   (c) inherit the #77 default-view gate — they show only when
+  //       reviewed AND rated > 7. Daytime brasseries / good pubs
+  //       surface once a user has actually worked there. See #126.
+  bar: 'restaurant',
+  biergarten: 'restaurant',
+  pub: 'restaurant',
 };
 const SHOP_MAP: Record<string, string> = {
   bakery: 'bakery',
