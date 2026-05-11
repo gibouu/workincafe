@@ -30,6 +30,40 @@ import { rateLimit } from '@/lib/rate-limit';
 const PLACES_AUTOCOMPLETE_URL = 'https://places.googleapis.com/v1/places:autocomplete';
 const PLACES_DETAILS_BASE = 'https://places.googleapis.com/v1/places';
 
+// Countries we've seeded — used as a coarse allowlist on autocomplete
+// results so users in Paris don't see hits from Dominica / Haiti / etc.
+// ISO 3166-1 alpha-2. Mirrors the country set in scripts/seed-cities.ts.
+// When bbox/country filters miss (e.g. an FSQ result with no location.country
+// field), the allowlist is the safety net. See #134.
+const SEEDED_COUNTRIES: ReadonlySet<string> = new Set([
+  'FR', 'CA', 'TR', 'US', 'GB', 'DE', 'CH', 'NZ', 'PT', 'DK',
+  'AU', 'IS', 'ES', 'KR', 'JP', 'SG', 'AE',
+]);
+
+function parseBbox(raw: string | null): [number, number, number, number] | null {
+  if (!raw) return null;
+  const parts = raw.split(',').map((s) => Number.parseFloat(s.trim()));
+  if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [w, s, e, n] = parts;
+  if (w < -180 || e > 180 || s < -90 || n > 90 || w > e || s > n) return null;
+  return [w, s, e, n];
+}
+
+/** Coarse distance from a point to a bbox's center, used to derive a
+ *  reasonable Foursquare `radius` when bbox is supplied. FSQ doesn't
+ *  accept bbox directly — radius around the bias point is the closest
+ *  equivalent. */
+function bboxRadiusMeters(bbox: [number, number, number, number]): number {
+  const [w, s, e, n] = bbox;
+  const latSpan = n - s;
+  const lngSpan = e - w;
+  // Approx 111km per degree at mid-latitudes; half the diagonal in meters.
+  const meters = 111_320 * Math.sqrt((latSpan / 2) ** 2 + (lngSpan / 2) ** 2);
+  // Clamp: too tight misses neighborhood-scale searches; too loose pulls
+  // in noise from neighboring metros.
+  return Math.min(20_000, Math.max(2_000, Math.round(meters)));
+}
+
 interface AutocompletePrediction {
   placeId: string;
   text: string;
@@ -94,13 +128,14 @@ export async function GET(request: NextRequest) {
   const lng = parseFloat(searchParams.get('lng') ?? '');
   const bias =
     Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+  const bbox = parseBbox(searchParams.get('bbox'));
 
   // Address-only mode: skip the POI-biased backends and hit Photon without
   // venue tag filters. Used by /places/new as a GPS fallback when the user
   // would rather type the address. PlaceId stays `osm:…`, so detail
   // lookups go through the existing photonPlaceDetails branch.
   if (searchParams.get('kind') === 'address') {
-    return photonAddressAutocomplete(q, bias);
+    return photonAddressAutocomplete(q, bias, bbox);
   }
 
   if (googleKey) return googleAutocomplete(googleKey, token, q);
@@ -110,10 +145,10 @@ export async function GET(request: NextRequest) {
   // bias) it returns 0 results. Falling through to Photon (OSM) gives a
   // second chance instead of showing an empty dropdown.
   if (fsqKey) {
-    const fsq = await fetchFsqPredictions(fsqKey, q, bias);
+    const fsq = await fetchFsqPredictions(fsqKey, q, bias, bbox);
     if (fsq.length > 0) return NextResponse.json({ predictions: fsq });
   }
-  return photonAutocomplete(q);
+  return photonAutocomplete(q, bbox);
 }
 
 async function googleAutocomplete(apiKey: string, token: string, q: string): Promise<NextResponse> {
@@ -307,18 +342,28 @@ async function fetchFsqPredictions(
   apiKey: string,
   q: string,
   bias: { lat: number; lng: number } | null,
+  bbox: [number, number, number, number] | null,
 ): Promise<AutocompletePrediction[]> {
   const url = new URL(FSQ_SEARCH_URL);
   url.searchParams.set('query', q);
   url.searchParams.set('limit', '8');
   if (bias) {
     url.searchParams.set('ll', `${bias.lat},${bias.lng}`);
-    url.searchParams.set('radius', '20000');
+    // When bbox is supplied, tighten the radius proportionally so FSQ
+    // returns local hits instead of global brand matches. See #134.
+    url.searchParams.set('radius', String(bbox ? bboxRadiusMeters(bbox) : 20_000));
   }
   const resp = await fetch(url.toString(), { headers: fsqHeaders(apiKey) });
   if (!resp.ok) return [];
   const data = (await resp.json()) as { results?: FsqSearchResult[] };
-  const results = data.results ?? [];
+  // Country allowlist: drop results outside the seeded countries set. Hits
+  // without a country field pass through (defensive — we'd rather show a
+  // questionable result than nothing when the metadata is missing).
+  const results = (data.results ?? []).filter((r) => {
+    const cc = r.location?.country?.toUpperCase();
+    if (!cc) return true;
+    return SEEDED_COUNTRIES.has(cc);
+  });
 
   const base: AutocompletePrediction[] = results.map((r) => {
     const sec =
@@ -457,18 +502,28 @@ const PHOTON_TAGS = [
   'tourism:hotel',
 ];
 
-async function photonAutocomplete(q: string): Promise<NextResponse> {
+async function photonAutocomplete(
+  q: string,
+  bbox: [number, number, number, number] | null,
+): Promise<NextResponse> {
   const url = new URL('https://photon.komoot.io/api/');
   url.searchParams.set('q', q);
   url.searchParams.set('limit', '8');
   url.searchParams.set('lang', 'en');
+  if (bbox) url.searchParams.set('bbox', bbox.join(','));
   for (const tag of PHOTON_TAGS) url.searchParams.append('osm_tag', tag);
   const resp = await fetch(url.toString());
   if (!resp.ok) {
     return NextResponse.json({ error: 'photon failed', status: resp.status }, { status: 502 });
   }
   const data = (await resp.json()) as { features?: PhotonFeature[] };
-  const predictions: AutocompletePrediction[] = (data.features ?? []).map(featureToPrediction);
+  // Country allowlist mirrors the Foursquare path. See #134.
+  const filtered = (data.features ?? []).filter((f) => {
+    const cc = f.properties.countrycode?.toUpperCase();
+    if (!cc) return true;
+    return SEEDED_COUNTRIES.has(cc);
+  });
+  const predictions: AutocompletePrediction[] = filtered.map(featureToPrediction);
   return NextResponse.json({ predictions });
 }
 
@@ -480,6 +535,7 @@ async function photonAutocomplete(q: string): Promise<NextResponse> {
 async function photonAddressAutocomplete(
   q: string,
   bias: { lat: number; lng: number } | null,
+  bbox: [number, number, number, number] | null,
 ): Promise<NextResponse> {
   const url = new URL('https://photon.komoot.io/api/');
   url.searchParams.set('q', q);
@@ -489,12 +545,18 @@ async function photonAddressAutocomplete(
     url.searchParams.set('lat', String(bias.lat));
     url.searchParams.set('lon', String(bias.lng));
   }
+  if (bbox) url.searchParams.set('bbox', bbox.join(','));
   const resp = await fetch(url.toString());
   if (!resp.ok) {
     return NextResponse.json({ error: 'photon failed', status: resp.status }, { status: 502 });
   }
   const data = (await resp.json()) as { features?: PhotonFeature[] };
-  const predictions: AutocompletePrediction[] = (data.features ?? []).map(featureToPrediction);
+  const filtered = (data.features ?? []).filter((f) => {
+    const cc = f.properties.countrycode?.toUpperCase();
+    if (!cc) return true;
+    return SEEDED_COUNTRIES.has(cc);
+  });
+  const predictions: AutocompletePrediction[] = filtered.map(featureToPrediction);
   return NextResponse.json({ predictions });
 }
 

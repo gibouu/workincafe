@@ -443,7 +443,11 @@ export default function MapPage() {
 
   const handleOpenAddPlace = () => {
     const c = mapRef.current?.getCenter() ?? null;
-    const qs = c ? `?lat=${c.lat.toFixed(6)}&lng=${c.lng.toFixed(6)}` : '';
+    const b = mapRef.current?.getBoundsBbox() ?? null;
+    const parts: string[] = [];
+    if (c) parts.push(`lat=${c.lat.toFixed(6)}`, `lng=${c.lng.toFixed(6)}`);
+    if (b) parts.push(`bbox=${b.map((n) => n.toFixed(6)).join(',')}`);
+    const qs = parts.length > 0 ? `?${parts.join('&')}` : '';
     router.push(`/places/new${qs}`);
   };
 
