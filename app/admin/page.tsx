@@ -9,6 +9,7 @@ interface QueueCounts {
   flaggedReviews: number;
   ownershipClaims: number;
   admins: number;
+  places: number;
   reviews: number;
 }
 
@@ -18,6 +19,7 @@ async function loadCounts(): Promise<QueueCounts> {
     flaggedReviews: 0,
     ownershipClaims: 0,
     admins: 0,
+    places: 0,
     reviews: 0,
   };
   const supabase = await createClient();
@@ -45,15 +47,16 @@ async function loadCounts(): Promise<QueueCounts> {
     return count ?? 0;
   };
 
-  const [placeRequests, flaggedReviews, ownershipClaims, admins, reviews] = await Promise.all([
+  const [placeRequests, flaggedReviews, ownershipClaims, admins, places, reviews] = await Promise.all([
     safeCount('place_requests', { col: 'status', val: 'pending' }),
     safeCount('flagged_reviews', { col: 'status', val: 'pending' }),
     safeCount('place_claims', { col: 'status', val: 'pending' }),
     safeCount('users', { col: 'is_admin', val: 'true' }),
+    safeCount('places'),
     safeCount('reviews'),
   ]);
 
-  return { placeRequests, flaggedReviews, ownershipClaims, admins, reviews };
+  return { placeRequests, flaggedReviews, ownershipClaims, admins, places, reviews };
 }
 
 export default async function AdminIndex() {
@@ -90,6 +93,13 @@ export default async function AdminIndex() {
             title="Place requests"
             count={counts.placeRequests}
             hint="Approve, reject with reason"
+          />
+          <QueueCard
+            href="/admin/places"
+            icon="Compass"
+            title="All places"
+            count={counts.places}
+            hint="Search, edit, delete any row"
           />
           <QueueCard
             href="/admin/reviews"
@@ -133,7 +143,7 @@ function QueueCard({
   hint,
 }: {
   href: string;
-  icon: 'MapPinLine' | 'Flag' | 'Storefront' | 'UsersThree' | 'ChatText';
+  icon: 'MapPinLine' | 'Flag' | 'Storefront' | 'UsersThree' | 'Compass' | 'ChatText';
   title: string;
   count: number;
   hint: string;
