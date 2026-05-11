@@ -30,15 +30,11 @@ import { rateLimit } from '@/lib/rate-limit';
 const PLACES_AUTOCOMPLETE_URL = 'https://places.googleapis.com/v1/places:autocomplete';
 const PLACES_DETAILS_BASE = 'https://places.googleapis.com/v1/places';
 
-// Countries we've seeded — used as a coarse allowlist on autocomplete
-// results so users in Paris don't see hits from Dominica / Haiti / etc.
-// ISO 3166-1 alpha-2. Mirrors the country set in scripts/seed-cities.ts.
-// When bbox/country filters miss (e.g. an FSQ result with no location.country
-// field), the allowlist is the safety net. See #134.
-const SEEDED_COUNTRIES: ReadonlySet<string> = new Set([
-  'FR', 'CA', 'TR', 'US', 'GB', 'DE', 'CH', 'NZ', 'PT', 'DK',
-  'AU', 'IS', 'ES', 'KR', 'JP', 'SG', 'AE',
-]);
+// NB: a SEEDED_COUNTRIES allowlist was added in #134 to drop Dominica /
+// Haiti hits when searching from Paris, but it also blocked users in any
+// unseeded country (Brazil / India / etc.) from getting autocomplete
+// results for their own area. Removed in #150 — bbox + tightened radius
+// already handle the geographic relevance problem.
 
 function parseBbox(raw: string | null): [number, number, number, number] | null {
   if (!raw) return null;
@@ -356,14 +352,7 @@ async function fetchFsqPredictions(
   const resp = await fetch(url.toString(), { headers: fsqHeaders(apiKey) });
   if (!resp.ok) return [];
   const data = (await resp.json()) as { results?: FsqSearchResult[] };
-  // Country allowlist: drop results outside the seeded countries set. Hits
-  // without a country field pass through (defensive — we'd rather show a
-  // questionable result than nothing when the metadata is missing).
-  const results = (data.results ?? []).filter((r) => {
-    const cc = r.location?.country?.toUpperCase();
-    if (!cc) return true;
-    return SEEDED_COUNTRIES.has(cc);
-  });
+  const results = data.results ?? [];
 
   const base: AutocompletePrediction[] = results.map((r) => {
     const sec =
@@ -517,13 +506,7 @@ async function photonAutocomplete(
     return NextResponse.json({ error: 'photon failed', status: resp.status }, { status: 502 });
   }
   const data = (await resp.json()) as { features?: PhotonFeature[] };
-  // Country allowlist mirrors the Foursquare path. See #134.
-  const filtered = (data.features ?? []).filter((f) => {
-    const cc = f.properties.countrycode?.toUpperCase();
-    if (!cc) return true;
-    return SEEDED_COUNTRIES.has(cc);
-  });
-  const predictions: AutocompletePrediction[] = filtered.map(featureToPrediction);
+  const predictions: AutocompletePrediction[] = (data.features ?? []).map(featureToPrediction);
   return NextResponse.json({ predictions });
 }
 
@@ -551,12 +534,7 @@ async function photonAddressAutocomplete(
     return NextResponse.json({ error: 'photon failed', status: resp.status }, { status: 502 });
   }
   const data = (await resp.json()) as { features?: PhotonFeature[] };
-  const filtered = (data.features ?? []).filter((f) => {
-    const cc = f.properties.countrycode?.toUpperCase();
-    if (!cc) return true;
-    return SEEDED_COUNTRIES.has(cc);
-  });
-  const predictions: AutocompletePrediction[] = filtered.map(featureToPrediction);
+  const predictions: AutocompletePrediction[] = (data.features ?? []).map(featureToPrediction);
   return NextResponse.json({ predictions });
 }
 
