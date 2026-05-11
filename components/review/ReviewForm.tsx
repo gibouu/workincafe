@@ -828,7 +828,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       className={
         compact
           ? 'flex h-full min-h-0 w-full flex-1 flex-col bg-white'
-          : 'flex min-h-dvh flex-col bg-[var(--map-bg)] pb-28'
+          : 'flex min-h-dvh flex-col bg-[var(--map-bg)] pb-[calc(7rem+env(safe-area-inset-bottom))]'
       }
     >
       <header
@@ -1320,8 +1320,8 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       <div
         className={
           compact
-            ? 'shrink-0 border-t border-[var(--surface-border)] bg-white/95 px-4 py-3 backdrop-blur-ios'
-            : 'fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--surface-border)] bg-white/95 p-4 backdrop-blur-ios'
+            ? 'shrink-0 border-t border-[var(--surface-border)] bg-white/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-ios'
+            : 'fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--surface-border)] bg-white/95 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-ios'
         }
       >
         <div
