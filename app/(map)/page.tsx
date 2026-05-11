@@ -548,6 +548,7 @@ export default function MapPage() {
           geolocateBlocked={geolocatePermission === 'denied'}
           filterCount={activeFilterCount}
           showFilter={!isDesktop}
+          splitLayout={!isDesktop}
         />
         {!isDesktop && (
           <MobileSearchButton onClick={() => setMobileSearchOpen(true)} />

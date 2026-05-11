@@ -80,9 +80,14 @@ export function MobileSearchDrawer({
 }
 
 /**
- * Floating top-left button that opens the mobile search drawer.
- * Mirrors the geolocate / filter button styling on the right edge
- * of the map for visual symmetry.
+ * Floating bottom-left button that opens the mobile search drawer.
+ * Sits above the filter button in the bottom-left thumb-reach cluster
+ * so the user can search without stretching to the top of the screen.
+ * Location (geolocate) lives at the top-left now — see TopRightControls
+ * `splitLayout` for the mobile geometry. Stacked positions:
+ *   - bottom-[96px]: + add place
+ *   - bottom-[150px]: filter
+ *   - bottom-[210px]: search (this button)
  */
 export function MobileSearchButton({ onClick }: { onClick: () => void }) {
   return (
@@ -90,7 +95,7 @@ export function MobileSearchButton({ onClick }: { onClick: () => void }) {
       type="button"
       onClick={onClick}
       aria-label="Search"
-      className="pointer-events-auto absolute top-4 left-4 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface)] text-[var(--text-primary)] shadow-float backdrop-blur-ios hover:bg-white"
+      className="pointer-events-auto absolute bottom-[210px] left-4 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface)] text-[var(--text-primary)] shadow-float backdrop-blur-ios hover:bg-white"
     >
       <Icon name="MagnifyingGlass" size={16} weight="bold" />
     </button>
