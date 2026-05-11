@@ -146,8 +146,10 @@ function clearDraft(): void {
 
 export function AddPlaceWizard({
   center: centerProp,
+  bbox: bboxProp = null,
 }: {
   center: { lat: number; lng: number } | null;
+  bbox?: [number, number, number, number] | null;
 }) {
   const router = useRouter();
   const showToast = useToasts((s) => s.show);
@@ -161,6 +163,10 @@ export function AddPlaceWizard({
     const cached = readCachedPosition();
     return cached ? { lat: cached.lat, lng: cached.lng } : null;
   }, [centerProp]);
+  // Bbox flows through to autocomplete so Foursquare/Photon results are
+  // bounded to what the user can actually see on the map. #134.
+  const bboxParam = bboxProp ? bboxProp.join(',') : '';
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<Step>('find');
   const [name, setName] = useState('');
@@ -274,6 +280,7 @@ export function AddPlaceWizard({
           params.set('lat', String(center.lat));
           params.set('lng', String(center.lng));
         }
+        if (bboxParam) params.set('bbox', bboxParam);
         const resp = await fetch(`/api/places/lookup?${params.toString()}`);
         if (!resp.ok) {
           if (!aborted) setPredictions([]);
@@ -291,7 +298,7 @@ export function AddPlaceWizard({
       aborted = true;
       clearTimeout(t);
     };
-  }, [search, picked, center]);
+  }, [search, picked, center, bboxParam]);
 
   const onPick = async (p: Prediction) => {
     try {
@@ -331,6 +338,7 @@ export function AddPlaceWizard({
           params.set('lat', String(center.lat));
           params.set('lng', String(center.lng));
         }
+        if (bboxParam) params.set('bbox', bboxParam);
         const resp = await fetch(`/api/places/lookup?${params.toString()}`);
         if (!resp.ok) {
           if (!aborted) setAddressPredictions([]);
@@ -348,7 +356,7 @@ export function AddPlaceWizard({
       aborted = true;
       clearTimeout(t);
     };
-  }, [addressQuery, center]);
+  }, [addressQuery, center, bboxParam]);
 
   const onPickAddress = async (p: Prediction) => {
     try {
@@ -570,8 +578,40 @@ export function AddPlaceWizard({
                   <Icon name="CircleNotch" size={16} className="animate-spin text-[var(--text-tertiary)]" />
                 )}
               </div>
-              {predictions.length > 0 && !picked && (
-                <ul className="mt-2 overflow-hidden rounded-xl border border-[var(--surface-border)] bg-white shadow-card">
+              {search.trim().length >= 2 && !picked && (
+                <ul className="mt-2 max-h-[244px] overflow-y-auto rounded-xl border border-[var(--surface-border)] bg-white shadow-card">
+                  {/* Always-on "I don't see it" CTA at the top — gives the
+                      user an immediate fall-through to manual entry when
+                      the autocomplete returns the wrong place (or none).
+                      #134. */}
+                  <li className="border-b border-[var(--surface-border)] bg-[var(--map-bg)]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPredictions([]);
+                        setName(search);
+                        // Defer focus so the click handler unwinds first.
+                        setTimeout(() => nameInputRef.current?.focus(), 0);
+                        nameInputRef.current?.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'center',
+                        });
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left hover:bg-sys-gray-6"
+                    >
+                      <Icon name="Plus" size={14} className="text-accent" />
+                      <div>
+                        <div className="text-[14px] font-semibold text-accent">
+                          I don&apos;t see it — type the name
+                        </div>
+                        <div className="text-[12px] text-[var(--text-secondary)]">
+                          {predictions.length === 0
+                            ? 'No matches found in our index'
+                            : 'None of these are the right place'}
+                        </div>
+                      </div>
+                    </button>
+                  </li>
                   {predictions.map((p) => (
                     <li key={p.placeId}>
                       <button
@@ -620,6 +660,7 @@ export function AddPlaceWizard({
                 If search doesn&apos;t find it, name it yourself.
               </div>
               <input
+                ref={nameInputRef}
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
