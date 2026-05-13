@@ -150,6 +150,20 @@ export function FilterSheet({
                 className="w-full accent-accent"
               />
             </Section>
+
+            <Section title="Membership">
+              <SegmentedControl<string>
+                options={[
+                  { value: 'any', label: 'Any' },
+                  { value: 'free-only', label: 'No paywall' },
+                  { value: 'members-only', label: 'Members only' },
+                ]}
+                value={f.membership}
+                onChange={(v) =>
+                  f.setMembership(v as 'any' | 'free-only' | 'members-only')
+                }
+              />
+            </Section>
           </div>
 
           <div className="border-t border-[var(--surface-border)] p-4">

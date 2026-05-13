@@ -66,6 +66,10 @@ export interface DemoPlace {
     category: PlaceCategory;
     brand: string | null;
   }>;
+  /** Human-readable paywall note (e.g. "Members only" or "Café area
+   *  open to all; gym is members-only"). NULL/undefined = no paywall.
+   *  Surfaced as a badge on the place card. See #127. */
+  membership_required?: string | null;
 }
 
 export const PARIS_DEMO_PLACES: DemoPlace[] = [
