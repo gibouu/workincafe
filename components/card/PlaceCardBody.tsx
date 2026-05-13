@@ -321,6 +321,52 @@ export function PlaceCardBody({
           </div>
         </div>
 
+        {place.children && place.children.length > 0 && (
+          <div className="mt-6">
+            <div className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">
+              Inside this place ({place.children.length})
+            </div>
+            <ul className="flex flex-col gap-1 rounded-2xl border border-[var(--surface-border)] bg-white p-2 shadow-card">
+              {place.children.map((child) => {
+                const childMeta = categoryMeta(child.category);
+                return (
+                  <li key={child.id}>
+                    <Link
+                      href={`/place/${child.id}`}
+                      className="flex items-center gap-3 rounded-xl px-3 py-2 hover:bg-sys-gray-6 transition"
+                    >
+                      <div
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white"
+                        style={{ background: childMeta.color }}
+                      >
+                        <Icon name={childMeta.icon} size={14} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[13px] font-medium text-[var(--text-primary)]">
+                          {child.name}
+                          {child.brand && child.brand !== child.name && (
+                            <span className="ml-1.5 text-[11px] font-normal text-[var(--text-tertiary)]">
+                              · {child.brand}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-[var(--text-secondary)]">
+                          {childMeta.label}
+                        </div>
+                      </div>
+                      <Icon
+                        name="ArrowRight"
+                        size={12}
+                        className="text-[var(--text-tertiary)]"
+                      />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
         <div className="mt-6">
           <div className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">
             Noise by hour

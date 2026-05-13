@@ -24,6 +24,18 @@ interface ParentSummary {
   category: PlaceCategory;
 }
 
+interface ChildSummary {
+  id: string;
+  name: string;
+  category: PlaceCategory;
+  brand: string | null;
+}
+
+// Cap on the number of children rendered on the card. Hotels with co-
+// located cafés rarely have more than 1–2; malls can have 50+, but the
+// card UI surfaces a short list with "View all" later if needed. See #37.
+const MAX_CHILDREN_ON_CARD = 20;
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -61,10 +73,23 @@ export async function GET(
       ).then((res) => (res.data as ParentSummary | null) ?? null)
     : Promise.resolve(null);
 
-  const [{ data: rating }, { data: liveStatus }, parent] = await Promise.all([
+  // Reverse parent_place_id lookup: places that point to *this* place as
+  // their parent. Malls show their tenants here, hotels show their lobby
+  // cafés, etc. See #37.
+  const childrenPromise: Promise<ChildSummary[]> = Promise.resolve(
+    supabase
+      .from('places')
+      .select('id, name, category, brand')
+      .eq('parent_place_id', id)
+      .order('name', { ascending: true })
+      .limit(MAX_CHILDREN_ON_CARD),
+  ).then((res) => (res.data as ChildSummary[] | null) ?? []);
+
+  const [{ data: rating }, { data: liveStatus }, parent, children] = await Promise.all([
     supabase.from('mv_place_ratings').select('*').eq('place_id', id).maybeSingle(),
     supabase.from('mv_current_live_status').select('*').eq('place_id', id).maybeSingle(),
     parentPromise,
+    childrenPromise,
   ]);
 
   // Adapt to the DemoPlace shape so the card / sidebar render without a
@@ -111,6 +136,7 @@ export async function GET(
     parent: parent
       ? { id: parent.id, name: parent.name, category: parent.category }
       : null,
+    children,
   };
 
   return NextResponse.json(
