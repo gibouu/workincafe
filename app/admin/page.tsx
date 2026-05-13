@@ -13,8 +13,19 @@ interface QueueCounts {
   reviews: number;
 }
 
-async function loadCounts(): Promise<QueueCounts> {
-  const empty: QueueCounts = {
+interface AdminLite {
+  id: string;
+  email: string | null;
+}
+
+interface AdminPanelData {
+  counts: QueueCounts;
+  approvedAdmins: AdminLite[];
+  selfId: string | null;
+}
+
+async function loadPanel(): Promise<AdminPanelData> {
+  const emptyCounts: QueueCounts = {
     placeRequests: 0,
     flaggedReviews: 0,
     ownershipClaims: 0,
@@ -26,15 +37,17 @@ async function loadCounts(): Promise<QueueCounts> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return empty;
-  if (!isEmailAllowlisted(user.email)) return empty;
+  if (!user) return { counts: emptyCounts, approvedAdmins: [], selfId: null };
+  if (!isEmailAllowlisted(user.email)) {
+    return { counts: emptyCounts, approvedAdmins: [], selfId: user.id };
+  }
 
   const { data: me } = await supabase
     .from('users')
     .select('is_admin')
     .eq('id', user.id)
     .maybeSingle();
-  if (!me?.is_admin) return empty;
+  if (!me?.is_admin) return { counts: emptyCounts, approvedAdmins: [], selfId: user.id };
 
   const admin = createAdminClient();
   // Each count is best-effort — if the table is missing (pre-migration), we
@@ -47,16 +60,44 @@ async function loadCounts(): Promise<QueueCounts> {
     return count ?? 0;
   };
 
-  const [placeRequests, flaggedReviews, ownershipClaims, admins, places, reviews] = await Promise.all([
-    safeCount('place_requests', { col: 'status', val: 'pending' }),
-    safeCount('flagged_reviews', { col: 'status', val: 'pending' }),
-    safeCount('place_claims', { col: 'status', val: 'pending' }),
-    safeCount('users', { col: 'is_admin', val: 'true' }),
-    safeCount('places'),
-    safeCount('reviews'),
-  ]);
+  // Admin email list is pulled inline so the index shows who's approved
+  // at a glance (instead of forcing a click through to /admin/users).
+  // See #155 (the admin-emails feedback). Falls back to an empty list on
+  // schema drift.
+  const loadAdminEmails = async (): Promise<AdminLite[]> => {
+    const { data: rows } = await admin
+      .from('users')
+      .select('id')
+      .eq('is_admin', true);
+    if (!rows || rows.length === 0) return [];
+    const wantedIds = new Set(rows.map((r) => r.id as string));
+    const { data: authResp } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const out: AdminLite[] = [];
+    for (const u of (authResp?.users ?? []) as { id: string; email: string | null }[]) {
+      if (wantedIds.has(u.id)) {
+        out.push({ id: u.id, email: u.email ?? null });
+      }
+    }
+    out.sort((a, b) => (a.email ?? '').localeCompare(b.email ?? ''));
+    return out;
+  };
 
-  return { placeRequests, flaggedReviews, ownershipClaims, admins, places, reviews };
+  const [placeRequests, flaggedReviews, ownershipClaims, admins, places, reviews, approvedAdmins] =
+    await Promise.all([
+      safeCount('place_requests', { col: 'status', val: 'pending' }),
+      safeCount('flagged_reviews', { col: 'status', val: 'pending' }),
+      safeCount('place_claims', { col: 'status', val: 'pending' }),
+      safeCount('users', { col: 'is_admin', val: 'true' }),
+      safeCount('places'),
+      safeCount('reviews'),
+      loadAdminEmails(),
+    ]);
+
+  return {
+    counts: { placeRequests, flaggedReviews, ownershipClaims, admins, places, reviews },
+    approvedAdmins,
+    selfId: user.id,
+  };
 }
 
 export default async function AdminIndex() {
@@ -64,7 +105,7 @@ export default async function AdminIndex() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const counts = await loadCounts();
+  const { counts, approvedAdmins, selfId } = await loadPanel();
 
   return (
     <div className="min-h-dvh bg-[var(--map-bg)]">
@@ -85,6 +126,40 @@ export default async function AdminIndex() {
         <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
           Signed in as {user?.email ?? 'guest'}.
         </p>
+
+        {approvedAdmins.length > 0 && (
+          <section className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
+            <div className="flex items-baseline justify-between gap-3">
+              <div className="text-[12px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+                Approved admins ({approvedAdmins.length})
+              </div>
+              <Link
+                href="/admin/users"
+                className="text-[12px] font-semibold text-accent hover:underline"
+              >
+                Edit
+              </Link>
+            </div>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {approvedAdmins.map((a) => (
+                <li
+                  key={a.id}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] ${
+                    a.id === selfId
+                      ? 'bg-accent-tint text-accent font-semibold'
+                      : 'bg-sys-gray-6 text-[var(--text-primary)]'
+                  }`}
+                >
+                  <Icon name="UserCircle" size={12} />
+                  <span className="truncate">{a.email ?? a.id.slice(0, 8)}</span>
+                  {a.id === selfId && (
+                    <span className="text-[10px] uppercase tracking-wide">you</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <QueueCard
