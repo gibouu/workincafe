@@ -57,6 +57,15 @@ export interface DemoPlace {
    *  food-court vendors link to the mall. The card surfaces "Inside
    *  [parent name]" when set. See #115. */
   parent?: { id: string; name: string; category: PlaceCategory } | null;
+  /** Optional reverse — places that have this place as their parent.
+   *  Malls render their tenants here; hotels render their lobby cafés.
+   *  The card surfaces a "Stores / cafés inside" list. See #37. */
+  children?: Array<{
+    id: string;
+    name: string;
+    category: PlaceCategory;
+    brand: string | null;
+  }>;
 }
 
 export const PARIS_DEMO_PLACES: DemoPlace[] = [
