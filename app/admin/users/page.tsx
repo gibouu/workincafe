@@ -5,11 +5,6 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
 import { AdminUserSearch } from '@/components/admin/AdminUserSearch';
 
-interface AuthUserLite {
-  id: string;
-  email: string | null;
-}
-
 interface AdminRow {
   id: string;
   display_name: string | null;
@@ -34,25 +29,16 @@ async function loadAdmins(currentUserId: string | null): Promise<{
     .maybeSingle();
   if (!me?.is_admin) return { admins: [], selfId: user.id };
 
+  // Use the SECURITY DEFINER admin_users_with_emails() function (migration
+  // 026) instead of the auth admin SDK — the SDK silently dropped emails
+  // for OAuth-only accounts, leaving the panel showing only display names.
   const admin = createAdminClient();
-  const { data: rows } = await admin
-    .from('users')
-    .select('id, display_name')
-    .eq('is_admin', true)
-    .order('display_name', { ascending: true });
+  const { data: rows } = await admin.rpc('admin_users_with_emails');
 
-  if (!rows || rows.length === 0) return { admins: [], selfId: user.id };
-
-  const ids = rows.map((r) => r.id);
-  // Pull emails from auth.users (admin client only)
-  const { data: authResp } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  const emailById = new Map<string, string | null>();
-  for (const u of (authResp?.users ?? []) as AuthUserLite[]) emailById.set(u.id, u.email ?? null);
-
-  const admins: AdminRow[] = rows.map((r) => ({
+  const admins: AdminRow[] = ((rows ?? []) as AdminRow[]).map((r) => ({
     id: r.id,
-    display_name: (r as { display_name: string | null }).display_name ?? null,
-    email: emailById.get(r.id) ?? null,
+    display_name: r.display_name ?? null,
+    email: r.email ?? null,
   }));
   return { admins, selfId: currentUserId };
 }
