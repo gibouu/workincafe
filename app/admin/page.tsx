@@ -62,24 +62,16 @@ async function loadPanel(): Promise<AdminPanelData> {
 
   // Admin email list is pulled inline so the index shows who's approved
   // at a glance (instead of forcing a click through to /admin/users).
-  // See #155 (the admin-emails feedback). Falls back to an empty list on
-  // schema drift.
+  // Uses the admin_users_with_emails() SECURITY DEFINER fn (migration 026)
+  // because the auth admin SDK silently dropped emails for OAuth-only
+  // accounts. See #155 + #163.
   const loadAdminEmails = async (): Promise<AdminLite[]> => {
-    const { data: rows } = await admin
-      .from('users')
-      .select('id')
-      .eq('is_admin', true);
+    const { data: rows } = await admin.rpc('admin_users_with_emails');
     if (!rows || rows.length === 0) return [];
-    const wantedIds = new Set(rows.map((r) => r.id as string));
-    const { data: authResp } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    const out: AdminLite[] = [];
-    for (const u of (authResp?.users ?? []) as { id: string; email: string | null }[]) {
-      if (wantedIds.has(u.id)) {
-        out.push({ id: u.id, email: u.email ?? null });
-      }
-    }
-    out.sort((a, b) => (a.email ?? '').localeCompare(b.email ?? ''));
-    return out;
+    return (rows as { id: string; email: string | null }[]).map((r) => ({
+      id: r.id,
+      email: r.email ?? null,
+    }));
   };
 
   const [placeRequests, flaggedReviews, ownershipClaims, admins, places, reviews, approvedAdmins] =
