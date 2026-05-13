@@ -194,6 +194,12 @@ export function PlaceCardBody({
                 <span>Inside {place.parent.name}</span>
               </div>
             )}
+            {place.membership_required && (
+              <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-accent-tint px-2 py-0.5 text-[11px] font-semibold text-accent">
+                <Icon name="Lock" size={10} weight="fill" />
+                <span>{place.membership_required}</span>
+              </div>
+            )}
             <div className="mt-1 text-[13px] text-[var(--text-secondary)] truncate">
               {place.address} · {place.neighborhood}
             </div>

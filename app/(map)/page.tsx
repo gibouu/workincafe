@@ -68,6 +68,7 @@ interface SlimPlace {
   has_user_reviews?: boolean;
   is_validated?: boolean;
   rating?: number;
+  membership_required?: string | null;
 }
 
 function slimToDemo(p: SlimPlace): DemoPlace {
@@ -84,6 +85,7 @@ function slimToDemo(p: SlimPlace): DemoPlace {
     has_user_reviews: p.has_user_reviews,
     is_validated: p.is_validated,
     rating: p.rating ?? 0,
+    membership_required: p.membership_required ?? null,
   };
 }
 
@@ -312,6 +314,11 @@ export default function MapPage() {
       if (filters.wifi !== 'any' && p.wifi !== filters.wifi) return false;
       if (filters.seats !== 'any' && p.seats !== filters.seats) return false;
       if (filters.minRating !== null && p.rating < filters.minRating) return false;
+      // Membership filter (#127): 'free-only' drops paywall'd; 'members-only'
+      // keeps only paywall'd. 'any' (default) passes everything.
+      const hasMembership = Boolean(p.membership_required);
+      if (filters.membership === 'free-only' && hasMembership) return false;
+      if (filters.membership === 'members-only' && !hasMembership) return false;
       return true;
     });
   }, [sourcePlaces, filters]);

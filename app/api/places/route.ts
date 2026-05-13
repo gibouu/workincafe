@@ -12,6 +12,7 @@ interface SlimPlaceRow {
   lng: number;
   brand: string | null;
   user_validated_at: string | null;
+  membership_required: string | null;
 }
 
 const MAX_SLIM = 5000;
@@ -36,7 +37,9 @@ export async function GET(request: NextRequest) {
   const [w, s, e, n] = bbox;
   const { data, error } = await supabase
     .from('places')
-    .select('id, name, address, neighborhood, category, lat, lng, brand, user_validated_at')
+    .select(
+      'id, name, address, neighborhood, category, lat, lng, brand, user_validated_at, membership_required',
+    )
     .gte('lng', w)
     .lte('lng', e)
     .gte('lat', s)
@@ -84,6 +87,7 @@ export async function GET(request: NextRequest) {
       rating: r?.study_spot_rating ?? 0,
       has_user_reviews: hasUserReviews,
       is_validated: hasUserReviews || userValidated,
+      membership_required: p.membership_required ?? null,
     };
   });
 

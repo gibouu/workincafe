@@ -16,6 +16,7 @@
     "seed:fr": "tsx --env-file=.env.local scripts/seed-osm.ts --country=FR",
     "seed:malls:paris": "tsx --env-file=.env.local scripts/seed-mall-children.ts paris",
     "seed:malls:toronto": "tsx --env-file=.env.local scripts/seed-mall-children.ts toronto",
+    "seed:curated": "tsx --env-file=.env.local scripts/seed-curated-workspaces.ts",
     "migrate:photos": "tsx --env-file=.env.local scripts/migrate-photos-to-cloudinary.ts",
     "prune:hours": "tsx --env-file=.env.local scripts/prune-non-work-conducive.ts",
     "prune:residences": "tsx --env-file=.env.local scripts/prune-apartment-residences.ts",

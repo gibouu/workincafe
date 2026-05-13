@@ -7,6 +7,10 @@ export type NoiseFilter = 'quiet' | 'moderate' | 'loud' | 'any';
 export type WifiFilter = 'slow' | 'moderate' | 'fast' | 'any';
 export type SeatsFilter = 'plenty' | 'some' | 'any';
 export type RatingFilter = 3.5 | 4.0 | 4.5 | null;
+/** Membership filter: 'any' = include all, 'free-only' = exclude
+ *  paywall'd places, 'members-only' = only those with a membership
+ *  note. Default 'any'. See #127. */
+export type MembershipFilter = 'any' | 'free-only' | 'members-only';
 
 export interface FilterState {
   categories: Set<PlaceCategory>;
@@ -19,6 +23,7 @@ export interface FilterState {
   seats: SeatsFilter;
   minRating: RatingFilter;
   maxDistanceKm: number;
+  membership: MembershipFilter;
   setCategories: (c: Set<PlaceCategory>) => void;
   toggleCategory: (c: PlaceCategory) => void;
   setOpenNow: (v: boolean) => void;
@@ -30,6 +35,7 @@ export interface FilterState {
   setSeats: (v: SeatsFilter) => void;
   setMinRating: (v: RatingFilter) => void;
   setMaxDistanceKm: (v: number) => void;
+  setMembership: (v: MembershipFilter) => void;
   reset: () => void;
   activeCount: () => number;
 }
@@ -57,6 +63,7 @@ export const useFilters = create<FilterState>((set, get) => ({
   seats: 'any',
   minRating: null,
   maxDistanceKm: 2,
+  membership: 'any',
   setCategories: (categories) => set({ categories }),
   toggleCategory: (c) => {
     const next = new Set(get().categories);
@@ -73,6 +80,7 @@ export const useFilters = create<FilterState>((set, get) => ({
   setSeats: (seats) => set({ seats }),
   setMinRating: (minRating) => set({ minRating }),
   setMaxDistanceKm: (maxDistanceKm) => set({ maxDistanceKm }),
+  setMembership: (membership) => set({ membership }),
   reset: () =>
     set({
       categories: new Set<PlaceCategory>(DEFAULT_CATEGORIES),
@@ -85,6 +93,7 @@ export const useFilters = create<FilterState>((set, get) => ({
       seats: 'any',
       minRating: null,
       maxDistanceKm: 2,
+      membership: 'any',
     }),
   activeCount: () => {
     const s = get();
@@ -103,6 +112,7 @@ export const useFilters = create<FilterState>((set, get) => ({
     if (s.seats !== 'any') n++;
     if (s.minRating !== null) n++;
     if (s.maxDistanceKm !== 2) n++;
+    if (s.membership !== 'any') n++;
     return n;
   },
 }));

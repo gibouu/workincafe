@@ -16,6 +16,7 @@ interface PlaceRow {
   hours_json: { raw?: string } | null;
   user_validated_at: string | null;
   parent_place_id: string | null;
+  membership_required: string | null;
 }
 
 interface ParentSummary {
@@ -46,7 +47,7 @@ export async function GET(
   const { data: row, error } = await supabase
     .from('places')
     .select(
-      'id, name, address, neighborhood, city, country, category, lat, lng, brand, hours_json, user_validated_at, parent_place_id',
+      'id, name, address, neighborhood, city, country, category, lat, lng, brand, hours_json, user_validated_at, parent_place_id, membership_required',
     )
     .eq('id', id)
     .maybeSingle();
@@ -137,6 +138,7 @@ export async function GET(
       ? { id: parent.id, name: parent.name, category: parent.category }
       : null,
     children,
+    membership_required: r.membership_required ?? null,
   };
 
   return NextResponse.json(
