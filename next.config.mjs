@@ -2,10 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   pageExtensions: ['ts', 'tsx'],
-  eslint: {
-    ignoreDuringBuilds: false,
-    dirs: ['app', 'components', 'lib', 'types'],
-  },
+  // Note: the `eslint` block was removed in Next.js 16 (#153). Linting is
+  // now driven by `npm run lint` → `eslint .` via the flat config in
+  // eslint.config.mjs. `next build` no longer runs lint internally.
   typescript: {
     ignoreBuildErrors: false,
   },
