@@ -15,7 +15,10 @@ type CookieToSet = { name: string; value: string; options?: CookieOptions };
 // instead of once per request. Resets when the function instance recycles.
 let hasWarnedMissingEnv = false;
 
-export async function middleware(request: NextRequest) {
+// Renamed from `middleware` → `proxy` for Next.js 16 (#153). Edge runtime
+// is NOT supported in `proxy` — runs on Node.js by default, which is fine
+// for our Supabase session refresh.
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   // Fail-open if Supabase env isn't configured for this environment (e.g. a
@@ -32,7 +35,7 @@ export async function middleware(request: NextRequest) {
     if (!hasWarnedMissingEnv) {
       hasWarnedMissingEnv = true;
       console.warn(
-        '[middleware] NEXT_PUBLIC_SUPABASE_URL/ANON_KEY missing — auth gate disabled. Add them to this env in Vercel project settings.',
+        '[proxy] NEXT_PUBLIC_SUPABASE_URL/ANON_KEY missing — auth gate disabled. Add them to this env in Vercel project settings.',
       );
     }
     return response;
