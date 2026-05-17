@@ -76,6 +76,9 @@ export function AllReviewsSheet({
   useEffect(() => {
     if (!open || segment !== 'imported' || imported !== null || importedLoading) return;
     let aborted = false;
+    // Lazy data-fetch effect: loading flag synced before the request, then
+    // results fill in async — correct external sync, not a render cascade (#174).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setImportedLoading(true);
     fetch(`/api/places/${encodeURIComponent(place.id)}/reviews?source=imported&limit=50`)
       .then((r) => (r.ok ? r.json() : { reviews: [] }))
