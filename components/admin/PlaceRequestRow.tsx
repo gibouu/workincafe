@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Icon } from '@/components/icons/Icon';
 import { categoryMeta } from '@/lib/categories';
 import type { PlaceCategory } from '@/lib/categories';
+import { REJECT_REASON_PRESETS } from '@/lib/admin/reject-reasons';
 
 export interface PlaceRequestRecord {
   id: string;
@@ -34,6 +35,14 @@ export function PlaceRequestRow({ req }: { req: PlaceRequestRecord }) {
   const [error, setError] = useState<string | null>(null);
   const [showReject, setShowReject] = useState(false);
   const [reason, setReason] = useState('');
+  // 'other' reveals the free-text box; a preset click fills `reason` directly.
+  const [otherMode, setOtherMode] = useState(false);
+
+  const resetReject = () => {
+    setShowReject(false);
+    setOtherMode(false);
+    setReason('');
+  };
   const meta = categoryMeta((req.category_suggestion as PlaceCategory) ?? 'other');
 
   if (done) {
@@ -105,20 +114,61 @@ export function PlaceRequestRow({ req }: { req: PlaceRequestRecord }) {
       )}
       {showReject ? (
         <div className="mt-3 flex flex-col gap-2">
-          <textarea
-            value={reason}
-            onChange={(e) => setReason(e.target.value.slice(0, 280))}
-            placeholder="Why? (optional, shown to the submitter when notifications ship)"
-            rows={2}
-            className="w-full resize-none rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-          <div className="flex gap-2">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+            Reason
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {REJECT_REASON_PRESETS.map((preset) => {
+              const active = !otherMode && reason === preset;
+              return (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => {
+                    setOtherMode(false);
+                    setReason(preset);
+                  }}
+                  disabled={pending !== null}
+                  className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition disabled:opacity-60 ${
+                    active
+                      ? 'bg-[var(--text-primary)] text-white'
+                      : 'bg-white text-[var(--text-secondary)] border border-[var(--surface-border)] hover:bg-sys-gray-6'
+                  }`}
+                >
+                  {preset}
+                </button>
+              );
+            })}
             <button
               type="button"
               onClick={() => {
-                setShowReject(false);
+                setOtherMode(true);
                 setReason('');
               }}
+              disabled={pending !== null}
+              className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition disabled:opacity-60 ${
+                otherMode
+                  ? 'bg-[var(--text-primary)] text-white'
+                  : 'bg-white text-[var(--text-secondary)] border border-[var(--surface-border)] hover:bg-sys-gray-6'
+              }`}
+            >
+              Other
+            </button>
+          </div>
+          {otherMode && (
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value.slice(0, 280))}
+              placeholder="Why? (shown to the submitter when notifications ship)"
+              rows={2}
+              autoFocus
+              className="w-full resize-none rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={resetReject}
               disabled={pending !== null}
               className="flex-1 rounded-xl border border-[var(--surface-border)] bg-white py-2 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60 transition"
             >
