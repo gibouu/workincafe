@@ -106,6 +106,9 @@ export function SearchPanel({
   useEffect(() => {
     const q = query.trim();
     if (q.length < 2) {
+      // Debounced-fetch effect: clearing stale hits on a too-short query
+      // is the correct external sync, not a render-cascade bug.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchHits(null);
       return;
     }
@@ -154,6 +157,9 @@ export function SearchPanel({
   useEffect(() => {
     const q = query.trim();
     if (q.length < 2) {
+      // Debounced-fetch effect: clearing stale hits on a too-short query
+      // is the correct external sync, not a render-cascade bug.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocationHits([]);
       return;
     }

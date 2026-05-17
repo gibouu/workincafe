@@ -16,6 +16,27 @@ export interface PlaceRequestRecord {
   notes: string | null;
   created_at: string;
   submitter_email: string | null;
+  /** Submitter's historical approved / decided count (#167). null = no
+   *  prior decided submissions. */
+  submitter_stats: { approved: number; decided: number } | null;
+}
+
+function TrustBadge({ stats }: { stats: { approved: number; decided: number } }) {
+  const ratio = stats.approved / stats.decided;
+  const tone =
+    ratio >= 0.7
+      ? 'bg-accent-green-tint text-accent-green'
+      : ratio <= 0.34
+        ? 'bg-accent-red-tint text-accent-red'
+        : 'bg-accent-amber-tint text-accent-amber';
+  return (
+    <span
+      className={`ml-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${tone}`}
+      title={`${stats.approved} approved of ${stats.decided} decided submissions`}
+    >
+      {stats.approved}/{stats.decided} approved
+    </span>
+  );
 }
 
 function timeAgo(iso: string): string {
@@ -99,6 +120,9 @@ export function PlaceRequestRow({ req }: { req: PlaceRequestRecord }) {
           <div className="mt-1 text-[11px] text-[var(--text-tertiary)]">
             {req.lat.toFixed(4)}, {req.lng.toFixed(4)}
             {req.submitter_email ? ` · by ${req.submitter_email}` : ''}
+            {req.submitter_stats && req.submitter_stats.decided > 0 && (
+              <TrustBadge stats={req.submitter_stats} />
+            )}
           </div>
           {req.notes && (
             <div className="mt-2 whitespace-pre-wrap text-[13px] text-[var(--text-primary)]">

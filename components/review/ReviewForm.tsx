@@ -289,7 +289,10 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
   useEffect(() => {
     const draft = loadReviewDraft(place.id);
     if (draft) {
+      // SSR-safe one-shot draft restore; a lazy init would read localStorage
+      // during the first client render and mismatch the SSR HTML (#171).
       if (typeof draft.stepIndex === 'number' && draft.stepIndex >= 0 && draft.stepIndex < STEPS.length)
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setStepIndex(draft.stepIndex);
       if (typeof draft.seating === 'number') setSeating(draft.seating);
       if (typeof draft.outlets === 'number') setOutlets(draft.outlets);
@@ -437,10 +440,14 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
     ],
   );
 
-  // Auto-fill the overall slider until the user touches it
+  // Seed the overall slider from the suggestion until the user touches it.
+  // `overall` is the canonical submitted/persisted value (draft, payload,
+  // canSubmit, slider) — deriving it instead would fork submission +
+  // draft-restore semantics, so the one-time seed stays an effect (#171).
   useEffect(() => {
     if (overallTouched) return;
     if (suggestedOverall === 0) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOverall(suggestedOverall);
   }, [suggestedOverall, overallTouched]);
 
@@ -477,6 +484,9 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
 
     if (!env || env.placeId !== place.id) return;
     const p = env.payload;
+    // One-shot replay of a pre-OAuth draft; consumePending() guards SSR and
+    // the param-gated effect runs exactly once on return (#171).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (typeof p.overall_rating === 'number') setOverall(p.overall_rating);
     if (typeof p.seating_rating === 'number') setSeating(p.seating_rating);
     if (typeof p.outlets_rating === 'number') setOutlets(p.outlets_rating);
