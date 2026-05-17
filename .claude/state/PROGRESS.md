@@ -1,5 +1,45 @@
 # Progress Log
 Newest first. One line per entry.
+[2026-05-17 10:39] Edit: .claude/state/PROGRESS.md
+[2026-05-17 10:40] admin: #167 final slice → PR #182; /admin/activity feed (API-side union over reviewed_*/resolved_* cols, no migration). Closes #167 (all 4 items shipped). Why: monitoring without an audit-table migration.
+[2026-05-17 10:38] Edit: app/admin/page.tsx
+[2026-05-17 10:37] Edit: app/admin/page.tsx
+[2026-05-17 10:37] Edit: app/admin/page.tsx
+[2026-05-17 10:37] Write: app/admin/activity/page.tsx
+[2026-05-17 10:37] Write: components/admin/AdminActivityFeed.tsx
+[2026-05-17 10:37] Write: app/api/admin/activity/route.ts
+[2026-05-17 09:51] Edit: .claude/state/PROGRESS.md
+[2026-05-17 09:45] Merged this session to main (2f06a7d): #173(#171 eslint), #176/#177/#180/#181(#167 trust badge/reject presets/bulk approve-reject/bulk dismiss-hide), #175(#174 imported reviews), #179(#178 live-updates feed). Why: cleared the 4-PR train + shipped 6 more.
+[2026-05-17 09:37] Edit: app/admin/flagged-reviews/page.tsx
+[2026-05-17 09:37] Edit: app/admin/flagged-reviews/page.tsx
+[2026-05-17 09:36] Write: components/admin/FlaggedReviewsQueue.tsx
+[2026-05-17 09:36] Write: app/api/admin/flagged-reviews/bulk/route.ts
+[2026-05-17 09:36] Write: app/api/admin/flagged-reviews/[id]/decision/route.ts
+[2026-05-17 09:35] Write: lib/admin/decide-flagged-review.ts
+[2026-05-17 09:35] Edit: components/admin/FlaggedReviewRow.tsx
+[2026-05-17 09:35] Edit: components/admin/FlaggedReviewRow.tsx
+[2026-05-17 09:35] Edit: components/admin/FlaggedReviewRow.tsx
+[2026-05-17 09:32] Edit: app/admin/place-requests/page.tsx
+[2026-05-17 09:31] Edit: app/admin/place-requests/page.tsx
+[2026-05-17 09:31] Write: components/admin/PlaceRequestsQueue.tsx
+[2026-05-17 09:31] Edit: components/admin/PlaceRequestRow.tsx
+[2026-05-17 09:31] Edit: components/admin/PlaceRequestRow.tsx
+[2026-05-17 09:31] Edit: components/admin/PlaceRequestRow.tsx
+[2026-05-17 09:30] Edit: components/admin/PlaceRequestRow.tsx
+[2026-05-17 09:30] Write: app/api/admin/place-requests/bulk/route.ts
+[2026-05-17 09:30] Write: app/api/admin/place-requests/[id]/decision/route.ts
+[2026-05-17 09:29] Edit: lib/admin/decide-place-request.ts
+[2026-05-17 09:29] Edit: lib/admin/decide-place-request.ts
+[2026-05-17 09:29] Write: lib/admin/decide-place-request.ts
+[2026-05-17 09:08] Edit: app/admin/page.tsx
+[2026-05-17 09:07] Edit: app/admin/page.tsx
+[2026-05-17 09:07] Edit: app/admin/page.tsx
+[2026-05-17 09:06] Edit: app/admin/page.tsx
+[2026-05-17 09:06] Edit: app/admin/page.tsx
+[2026-05-17 09:06] Write: app/admin/live-updates/page.tsx
+[2026-05-17 09:06] Write: components/admin/AdminLiveUpdatesBrowser.tsx
+[2026-05-17 09:05] Write: components/admin/LiveUpdateRow.tsx
+[2026-05-17 09:05] Write: app/api/admin/live-updates/route.ts
 [2026-05-17 08:14] Edit: .claude/state/PROGRESS.md
 [2026-05-17 08:15] reviews #174/PR#175: re-synced onto main after #177 merge (state-log conflict only). Why: serialize the 4-PR merge train.
 [2026-05-17 08:01] Edit: .claude/state/PROGRESS.md
@@ -60,43 +100,3 @@ Newest first. One line per entry.
 [2026-05-07 23:51] Edit: .claude/state/DECISIONS.md
 [2026-05-07 23:48] Edit: app/(map)/page.tsx
 [2026-05-07 23:48] Edit: app/(map)/page.tsx
-[2026-05-07 23:47] Edit: lib/store/filters.ts
-[2026-05-07 23:47] Edit: lib/store/filters.ts
-[2026-05-07 23:47] Edit: lib/demo/paris-places.ts
-[2026-05-07 23:46] Edit: app/api/places/route.ts
-[2026-05-07 23:46] Edit: app/api/places/route.ts
-[2026-05-07 23:46] Edit: app/api/places/route.ts
-[2026-05-07 23:46] Edit: app/api/places/route.ts
-[2026-05-07 23:46] Write: supabase/migrations/018_user_rating_count.sql
-[2026-05-07 23:42] Write: /Users/gibou/.claude/plans/i-would-like-you-cryptic-quokka.md
-[2026-05-07 23:36] Write: /Users/gibou/.claude/plans/i-would-like-you-cryptic-quokka.md
-[2026-05-07 23:30] Write: /Users/gibou/.claude/plans/i-would-like-you-cryptic-quokka.md
-[2026-05-07 20:30] Edit: components/review/ReviewForm.tsx
-[2026-05-07 20:30] Edit: components/review/ReviewForm.tsx
-[2026-05-07 20:30] Edit: components/review/ReviewForm.tsx
-[2026-05-07 11:04] Edit: .claude/state/PROGRESS.md
-[2026-05-07 11:02] #17/PR#46 + #16/PR#44 + #15/PR#42 — five PRs landed today; pin-spread next to merge. Why: rolling through form/review/map polish backlog.
-[2026-05-07 11:04] Edit: .claude/state/DECISIONS.md
-[2026-05-07 11:03] Write: .claude/state/TASKS.md
-[2026-05-07 11:00] Edit: components/map/MapContainer.tsx
-[2026-05-07 11:00] Edit: components/map/MapContainer.tsx
-[2026-05-07 11:00] Edit: components/map/MapContainer.tsx
-[2026-05-07 11:00] Write: lib/map/spread.ts
-[2026-05-07 10:50] Edit: components/review/PhotoLightbox.tsx
-[2026-05-07 10:50] Write: components/review/ReviewPhotos.tsx
-[2026-05-07 10:49] Write: components/review/PhotoLightbox.tsx
-[2026-05-07 10:49] Edit: components/review/AllReviewsSheet.tsx
-[2026-05-07 10:49] Edit: components/review/AllReviewsSheet.tsx
-[2026-05-07 10:49] Edit: components/review/AllReviewsSheet.tsx
-[2026-05-07 10:49] Edit: components/review/AllReviewsSheet.tsx
-[2026-05-07 10:49] Edit: components/review/AllReviewsSheet.tsx
-[2026-05-07 10:26] Edit: /Users/gibou/.claude/projects/-Users-gibou-code-github-workincafe/memory/MEMORY.md
-[2026-05-07 10:26] Write: /Users/gibou/.claude/projects/-Users-gibou-code-github-workincafe/memory/feedback_commit_pr_signature.md
-[2026-05-07 10:18] Edit: components/bottom-bar/BottomBar.tsx
-[2026-05-07 10:00] Edit: .claude/state/PROGRESS.md
-[2026-05-07 10:05] #14/PR#33: Vercel preview deployed Ready, 0 review comments. Why: no actionable feedback to address.
-[2026-05-07 09:56] Edit: .claude/state/PROGRESS.md
-[2026-05-07 10:00] #14: PR #33 opened — PlaceCard snap points + AddPlaceWizard/ReviewForm localStorage drafts. Why: iPhone SE reach + no draft loss on X.
-[2026-05-07 09:56] Edit: .claude/state/DECISIONS.md
-[2026-05-07 09:55] Write: .claude/state/TASKS.md
-[2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
