@@ -25,21 +25,11 @@ const config = [
     ],
   },
   ...nextCoreWebVitals,
-  {
-    // React Compiler rules — newly enabled by default in next/core-web-vitals
-    // 16.x. They prepare for the React Compiler, but we don't have
-    // `reactCompiler: true` set, so they flag valid non-compiled patterns
-    // as errors (localStorage hydration in effects, debounce-via-closure,
-    // initialCenterRef.current reads during render).
-    //
-    // Disabling here for the #153 migration to avoid a sprawling refactor.
-    // Revisit when we adopt the React Compiler — see the follow-up issue.
-    rules: {
-      'react-hooks/set-state-in-effect': 'off',
-      'react-hooks/immutability': 'off',
-      'react-hooks/refs': 'off',
-    },
-  },
+  // React Compiler rules (set-state-in-effect / immutability / refs) ship
+  // enabled by default in next/core-web-vitals 16.x and are kept ON (#171).
+  // Genuinely effect-driven sites (SSR-safe hydration, OAuth replay,
+  // debounced fetch, deliberate prop→state resets) carry a scoped,
+  // commented eslint-disable-next-line rather than a blanket override.
 ];
 
 export default config;
