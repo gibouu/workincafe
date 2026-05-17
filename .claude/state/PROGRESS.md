@@ -1,5 +1,20 @@
 # Progress Log
 Newest first. One line per entry.
+[2026-05-17 07:47] Edit: .claude/state/PROGRESS.md
+[2026-05-17 07:45] reviews: shipped #174 → PR #175; ?source=imported API + Imported segment in AllReviewsSheet + shared lib/review/db-review.ts mapper. Why: surface seeded Yelp/FSQ reviews separately from visitor ones.
+[2026-05-17 07:43] Edit: components/review/AllReviewsSheet.tsx
+[2026-05-17 07:42] Write: components/review/AllReviewsSheet.tsx
+[2026-05-17 07:41] Edit: components/card/PlaceCardBody.tsx
+[2026-05-17 07:41] Edit: components/card/PlaceCardBody.tsx
+[2026-05-17 07:40] Write: lib/review/db-review.ts
+[2026-05-17 07:39] Edit: components/card/PlaceCardBody.tsx
+[2026-05-17 07:39] Edit: components/card/PlaceCardBody.tsx
+[2026-05-17 07:39] Edit: components/card/PlaceCardBody.tsx
+[2026-05-17 07:39] Edit: lib/demo/reviews.ts
+[2026-05-17 07:39] Edit: components/card/PlaceCardBody.tsx
+[2026-05-17 07:39] Edit: app/api/places/[id]/reviews/route.ts
+[2026-05-17 07:38] Edit: app/api/places/[id]/reviews/route.ts
+[2026-05-17 07:38] Edit: app/api/places/[id]/reviews/route.ts
 [2026-05-10 10:29] Edit: .claude/state/MEMORY.md
 [2026-05-10 10:28] Edit: .claude/state/TASKS.md
 [2026-05-10 10:28] Edit: .claude/state/DECISIONS.md
@@ -85,16 +100,3 @@ Newest first. One line per entry.
 [2026-05-05 13:41] Edit: .claude/state/DECISIONS.md
 [2026-05-05 13:41] Edit: .claude/state/PROGRESS.md
 [2026-05-05 13:35] backlog: filed issues #3 (address autocomplete), #4 (radius 150→500), #5 (admin email allowlist), #6 (admin parking lot). Why: trace each gap separately.
-[2026-05-05 13:30] add-place: shipped #1 → PR #2; 2-step wizard at /places/new + Foursquare lookup. Why: iOS keyboard squashed the drawer.
-[2026-05-05 13:14] Edit: ARCHITECTURE.md
-[2026-05-05 13:13] Edit: ARCHITECTURE.md
-[2026-05-05 13:13] Edit: ARCHITECTURE.md
-[2026-05-05 13:13] Edit: app/(map)/page.tsx
-[2026-05-05 13:13] Edit: app/(map)/page.tsx
-[2026-05-05 13:12] Edit: app/(map)/page.tsx
-[2026-05-05 13:12] Edit: app/(map)/page.tsx
-[2026-05-05 13:12] Write: app/places/new/AddPlaceWizard.tsx
-[2026-05-05 13:11] Write: app/places/new/page.tsx
-[2026-05-05 13:10] Edit: app/api/places/lookup/route.ts
-[2026-05-05 13:10] Edit: app/api/places/lookup/route.ts
-[2026-05-05 13:10] Edit: app/api/places/lookup/route.ts
