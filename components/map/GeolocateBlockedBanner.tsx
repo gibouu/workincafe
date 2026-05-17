@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Icon } from '@/components/icons/Icon';
 
 // Persistent (not auto-dismissed) recovery instructions when the user
@@ -60,10 +60,9 @@ export function GeolocateBlockedBanner({
   open: boolean;
   onClose: () => void;
 }) {
-  const [platform, setPlatform] = useState<ReturnType<typeof detectPlatform>>('unknown');
-  useEffect(() => {
-    setPlatform(detectPlatform());
-  }, []);
+  // Lazy init — detectPlatform() self-guards for SSR and the banner only
+  // renders post-interaction (open), so there's no hydration mismatch.
+  const [platform] = useState<ReturnType<typeof detectPlatform>>(detectPlatform);
   if (!open) return null;
   const isAppleSafari = platform === 'ios-safari' || platform === 'macos-safari';
   const settingsPath =

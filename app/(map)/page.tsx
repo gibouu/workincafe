@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { consumePending } from '@/lib/auth/pending-submit';
 import { useToasts } from '@/lib/store/toasts';
@@ -124,14 +124,14 @@ export default function MapPage() {
   // Pick the first-render center: cached browser geolocation if we have it
   // (returning visitor), otherwise the world centroid at zoom 2. The user
   // sees their last neighborhood instantly without a flash of "everywhere".
-  const initialCenterRef = useRef<{ lat: number; lng: number; zoom: number }>(
-    (() => {
-      if (typeof window === 'undefined') return { ...WORLD_CENTER };
-      const cached = readCachedPosition();
-      if (cached) return { lat: cached.lat, lng: cached.lng, zoom: 13 };
-      return { ...WORLD_CENTER };
-    })(),
-  );
+  // First-render-only value: a lazy useState initializer (not a ref read
+  // during render — react-hooks/refs).
+  const [initialCenter] = useState<{ lat: number; lng: number; zoom: number }>(() => {
+    if (typeof window === 'undefined') return { ...WORLD_CENTER };
+    const cached = readCachedPosition();
+    if (cached) return { lat: cached.lat, lng: cached.lng, zoom: 13 };
+    return { ...WORLD_CENTER };
+  });
 
   useEffect(() => () => setCardOpen(false), [setCardOpen]);
 
@@ -139,6 +139,9 @@ export default function MapPage() {
     if (typeof window === 'undefined') return;
     try {
       const seen = window.localStorage.getItem('wic:onboarded');
+      // Deliberately deferred to post-mount: a lazy useState init would emit
+      // the overlay in SSR HTML and cause a hydration mismatch (#171).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (!seen) setShowWelcome(true);
     } catch {
       // ignore
@@ -231,33 +234,34 @@ export default function MapPage() {
   // a metro area at most latitudes (Paris fits in <0.1°, GTA in ~0.5°).
   const MAX_FETCH_SPAN_DEG = 2;
 
-  const fetchMapBbox = useMemo(() => {
-    let inflight: AbortController | null = null;
-    return (bbox: [number, number, number, number]) => {
-      const [w, s, e, n] = bbox;
-      const span = Math.max(e - w, n - s);
-      if (span > MAX_FETCH_SPAN_DEG) {
-        // Zoom out beyond a metro — clear stale markers and skip the call.
-        if (inflight) inflight.abort();
-        setMapPlaces([]);
-        return;
-      }
-      if (inflight) inflight.abort();
-      const ctrl = new AbortController();
-      inflight = ctrl;
-      const url = `/api/places?bbox=${w},${s},${e},${n}`;
-      fetch(url, { signal: ctrl.signal })
-        .then((r) => (r.ok ? r.json() : { places: [] }))
-        .then((data: { places?: SlimPlace[] }) => {
-          if (Array.isArray(data.places)) setMapPlaces(data.places);
-        })
-        .catch(() => null);
-    };
+  // Cross-render mutable handles live in refs, not `let` inside useMemo
+  // (react-hooks/immutability).
+  const inflightRef = useRef<AbortController | null>(null);
+  const viewportTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchMapBbox = useCallback((bbox: [number, number, number, number]) => {
+    const [w, s, e, n] = bbox;
+    const span = Math.max(e - w, n - s);
+    if (span > MAX_FETCH_SPAN_DEG) {
+      // Zoom out beyond a metro — clear stale markers and skip the call.
+      if (inflightRef.current) inflightRef.current.abort();
+      setMapPlaces([]);
+      return;
+    }
+    if (inflightRef.current) inflightRef.current.abort();
+    const ctrl = new AbortController();
+    inflightRef.current = ctrl;
+    const url = `/api/places?bbox=${w},${s},${e},${n}`;
+    fetch(url, { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : { places: [] }))
+      .then((data: { places?: SlimPlace[] }) => {
+        if (Array.isArray(data.places)) setMapPlaces(data.places);
+      })
+      .catch(() => null);
   }, []);
 
-  const onViewportChange = useMemo(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    return (bbox: [number, number, number, number]) => {
+  const onViewportChange = useCallback(
+    (bbox: [number, number, number, number]) => {
       const last = lastBboxRef.current;
       // Skip if movement was tiny (under ~10% of viewport span).
       if (last) {
@@ -273,13 +277,14 @@ export default function MapPage() {
         bbox,
         center: { lat: (bbox[1] + bbox[3]) / 2, lng: (bbox[0] + bbox[2]) / 2 },
       });
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
+      if (viewportTimerRef.current) clearTimeout(viewportTimerRef.current);
+      viewportTimerRef.current = setTimeout(() => {
         lastBboxRef.current = bbox;
         fetchMapBbox(bbox);
       }, 250);
-    };
-  }, [fetchMapBbox]);
+    },
+    [fetchMapBbox],
+  );
 
   const sourcePlaces: DemoPlace[] = useMemo(
     () => mapPlaces.map(slimToDemo),
@@ -542,8 +547,8 @@ export default function MapPage() {
       <main className="relative flex-1 overflow-hidden">
         <MapContainer
           ref={mapRef}
-          center={initialCenterRef.current}
-          initialZoom={initialCenterRef.current.zoom}
+          center={initialCenter}
+          initialZoom={initialCenter.zoom}
           places={visiblePlaces}
           onSelectPlace={handleSelectPlace}
           onViewportChange={onViewportChange}
