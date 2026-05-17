@@ -11,6 +11,7 @@ interface QueueCounts {
   admins: number;
   places: number;
   reviews: number;
+  liveUpdates: number;
 }
 
 interface AdminLite {
@@ -32,6 +33,7 @@ async function loadPanel(): Promise<AdminPanelData> {
     admins: 0,
     places: 0,
     reviews: 0,
+    liveUpdates: 0,
   };
   const supabase = await createClient();
   const {
@@ -74,19 +76,28 @@ async function loadPanel(): Promise<AdminPanelData> {
     }));
   };
 
-  const [placeRequests, flaggedReviews, ownershipClaims, admins, places, reviews, approvedAdmins] =
-    await Promise.all([
-      safeCount('place_requests', { col: 'status', val: 'pending' }),
-      safeCount('flagged_reviews', { col: 'status', val: 'pending' }),
-      safeCount('place_claims', { col: 'status', val: 'pending' }),
-      safeCount('users', { col: 'is_admin', val: 'true' }),
-      safeCount('places'),
-      safeCount('reviews'),
-      loadAdminEmails(),
-    ]);
+  const [
+    placeRequests,
+    flaggedReviews,
+    ownershipClaims,
+    admins,
+    places,
+    reviews,
+    liveUpdates,
+    approvedAdmins,
+  ] = await Promise.all([
+    safeCount('place_requests', { col: 'status', val: 'pending' }),
+    safeCount('flagged_reviews', { col: 'status', val: 'pending' }),
+    safeCount('place_claims', { col: 'status', val: 'pending' }),
+    safeCount('users', { col: 'is_admin', val: 'true' }),
+    safeCount('places'),
+    safeCount('reviews'),
+    safeCount('live_updates'),
+    loadAdminEmails(),
+  ]);
 
   return {
-    counts: { placeRequests, flaggedReviews, ownershipClaims, admins, places, reviews },
+    counts: { placeRequests, flaggedReviews, ownershipClaims, admins, places, reviews, liveUpdates },
     approvedAdmins,
     selfId: user.id,
   };
@@ -183,6 +194,13 @@ export default async function AdminIndex() {
             hint="Dismiss, hide, or ban"
           />
           <QueueCard
+            href="/admin/live-updates"
+            icon="Broadcast"
+            title="Live updates"
+            count={counts.liveUpdates}
+            hint="Read-only feed of submissions"
+          />
+          <QueueCard
             href="/admin/ownership-claims"
             icon="Storefront"
             title="Ownership claims"
@@ -210,7 +228,7 @@ function QueueCard({
   hint,
 }: {
   href: string;
-  icon: 'MapPinLine' | 'Flag' | 'Storefront' | 'UsersThree' | 'Compass' | 'ChatText';
+  icon: 'MapPinLine' | 'Flag' | 'Storefront' | 'UsersThree' | 'Compass' | 'ChatText' | 'Broadcast';
   title: string;
   count: number;
   hint: string;
