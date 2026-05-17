@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Icon } from '@/components/icons/Icon';
 import { categoryMeta } from '@/lib/categories';
 import type { PlaceCategory } from '@/lib/categories';
@@ -50,7 +50,15 @@ function timeAgo(iso: string): string {
   return `${d} d ago`;
 }
 
-export function PlaceRequestRow({ req }: { req: PlaceRequestRecord }) {
+export function PlaceRequestRow({
+  req,
+  leading,
+}: {
+  req: PlaceRequestRecord;
+  /** Optional slot rendered at the row's top-left — used by the bulk-select
+   *  queue wrapper to inject a checkbox without owning the row layout (#167). */
+  leading?: ReactNode;
+}) {
   const [pending, setPending] = useState<'approve' | 'reject' | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +111,7 @@ export function PlaceRequestRow({ req }: { req: PlaceRequestRecord }) {
   return (
     <li className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
       <div className="flex items-start gap-3">
+        {leading}
         <div
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white shadow-bubble"
           style={{ background: meta.color }}
