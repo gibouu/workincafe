@@ -1,5 +1,11 @@
 # Progress Log
 Newest first. One line per entry.
+[2026-05-17 07:54] Edit: .claude/state/PROGRESS.md
+[2026-05-17 07:55] admin: shipped #167 slice 2 → PR #177; reject-reason presets + Other on place-requests (UI only, reuses existing rejection_reason col). Shared lib/admin/reject-reasons.ts. Why: faster, consistent rejections.
+[2026-05-17 07:53] Edit: components/admin/PlaceRequestRow.tsx
+[2026-05-17 07:53] Edit: components/admin/PlaceRequestRow.tsx
+[2026-05-17 07:53] Edit: components/admin/PlaceRequestRow.tsx
+[2026-05-17 07:53] Write: lib/admin/reject-reasons.ts
 [2026-05-10 10:29] Edit: .claude/state/MEMORY.md
 [2026-05-10 10:28] Edit: .claude/state/TASKS.md
 [2026-05-10 10:28] Edit: .claude/state/DECISIONS.md
@@ -94,7 +100,3 @@ Newest first. One line per entry.
 [2026-05-05 13:12] Edit: app/(map)/page.tsx
 [2026-05-05 13:12] Edit: app/(map)/page.tsx
 [2026-05-05 13:12] Write: app/places/new/AddPlaceWizard.tsx
-[2026-05-05 13:11] Write: app/places/new/page.tsx
-[2026-05-05 13:10] Edit: app/api/places/lookup/route.ts
-[2026-05-05 13:10] Edit: app/api/places/lookup/route.ts
-[2026-05-05 13:10] Edit: app/api/places/lookup/route.ts
