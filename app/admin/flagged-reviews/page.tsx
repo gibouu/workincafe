@@ -3,7 +3,8 @@ import { Icon } from '@/components/icons/Icon';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
-import { FlaggedReviewRow, type FlaggedReviewRecord } from '@/components/admin/FlaggedReviewRow';
+import { type FlaggedReviewRecord } from '@/components/admin/FlaggedReviewRow';
+import { FlaggedReviewsQueue } from '@/components/admin/FlaggedReviewsQueue';
 
 async function loadFlagged(): Promise<FlaggedReviewRecord[]> {
   const supabase = await createClient();
@@ -54,19 +55,7 @@ export default async function FlaggedReviewsPage() {
         </div>
 
         <h1 className="mt-6 text-[28px] font-bold text-[var(--text-primary)]">Pending</h1>
-        <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
-          {flagged.length === 0
-            ? 'Nothing flagged. Reports from users land here.'
-            : `${flagged.length} pending`}
-        </p>
-
-        {flagged.length > 0 && (
-          <ul className="mt-6 flex flex-col gap-3">
-            {flagged.map((f) => (
-              <FlaggedReviewRow key={f.id} flag={f} />
-            ))}
-          </ul>
-        )}
+        <FlaggedReviewsQueue flagged={flagged} />
       </div>
     </div>
   );

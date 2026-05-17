@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Icon } from '@/components/icons/Icon';
 
 const REASON_LABEL: Record<string, string> = {
@@ -51,7 +51,15 @@ const ACTION_LABEL: Record<Decision, string> = {
   ban: 'Ban author',
 };
 
-export function FlaggedReviewRow({ flag }: { flag: FlaggedReviewRecord }) {
+export function FlaggedReviewRow({
+  flag,
+  leading,
+}: {
+  flag: FlaggedReviewRecord;
+  /** Optional top-left slot — used by the bulk-select queue wrapper to
+   *  inject a checkbox without owning the row layout (#167). */
+  leading?: ReactNode;
+}) {
   const [pending, setPending] = useState<Decision | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +118,8 @@ export function FlaggedReviewRow({ flag }: { flag: FlaggedReviewRecord }) {
   return (
     <li className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        {leading}
+        <div className="min-w-0 flex-1">
           <div className="text-[15px] font-semibold text-[var(--text-primary)]">
             {flag.reviews?.places?.name ?? '(place not found)'}
           </div>
