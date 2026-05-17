@@ -201,6 +201,12 @@ export default async function AdminIndex() {
             hint="Read-only feed of submissions"
           />
           <QueueCard
+            href="/admin/activity"
+            icon="ClockCounterClockwise"
+            title="Activity"
+            hint="Who approved / rejected / hid what"
+          />
+          <QueueCard
             href="/admin/ownership-claims"
             icon="Storefront"
             title="Ownership claims"
@@ -228,9 +234,17 @@ function QueueCard({
   hint,
 }: {
   href: string;
-  icon: 'MapPinLine' | 'Flag' | 'Storefront' | 'UsersThree' | 'Compass' | 'ChatText' | 'Broadcast';
+  icon:
+    | 'MapPinLine'
+    | 'Flag'
+    | 'Storefront'
+    | 'UsersThree'
+    | 'Compass'
+    | 'ChatText'
+    | 'Broadcast'
+    | 'ClockCounterClockwise';
   title: string;
-  count: number;
+  count?: number;
   hint: string;
 }) {
   return (
@@ -245,7 +259,9 @@ function QueueCard({
         <div className="text-[15px] font-semibold text-[var(--text-primary)]">{title}</div>
         <div className="text-[12px] text-[var(--text-secondary)]">{hint}</div>
       </div>
-      <div className="text-[22px] font-semibold text-[var(--text-primary)]">{count}</div>
+      {typeof count === 'number' && (
+        <div className="text-[22px] font-semibold text-[var(--text-primary)]">{count}</div>
+      )}
       <Icon name="ArrowRight" size={16} className="text-[var(--text-secondary)]" />
     </Link>
   );
