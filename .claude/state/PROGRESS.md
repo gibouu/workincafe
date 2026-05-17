@@ -1,5 +1,10 @@
 # Progress Log
 Newest first. One line per entry.
+[2026-05-17 07:52] Edit: .claude/state/PROGRESS.md
+[2026-05-17 07:52] admin: shipped #167 slice 1 → PR #176; submitter trust badge (approved/decided ratio) on place-requests queue, server-computed single grouped query. Why: spot repeat-bad submitters at a glance.
+[2026-05-17 07:50] Edit: components/admin/PlaceRequestRow.tsx
+[2026-05-17 07:50] Edit: components/admin/PlaceRequestRow.tsx
+[2026-05-17 07:50] Edit: app/admin/place-requests/page.tsx
 [2026-05-10 10:29] Edit: .claude/state/MEMORY.md
 [2026-05-10 10:28] Edit: .claude/state/TASKS.md
 [2026-05-10 10:28] Edit: .claude/state/DECISIONS.md
@@ -95,6 +100,3 @@ Newest first. One line per entry.
 [2026-05-05 13:12] Edit: app/(map)/page.tsx
 [2026-05-05 13:12] Write: app/places/new/AddPlaceWizard.tsx
 [2026-05-05 13:11] Write: app/places/new/page.tsx
-[2026-05-05 13:10] Edit: app/api/places/lookup/route.ts
-[2026-05-05 13:10] Edit: app/api/places/lookup/route.ts
-[2026-05-05 13:10] Edit: app/api/places/lookup/route.ts
