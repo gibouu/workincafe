@@ -54,8 +54,10 @@ export function AllReviewsSheet({
   const [sort, setSort] = useState<SortKey>('newest');
   const [onlyWithPhotos, setOnlyWithPhotos] = useState(initiallyOnlyPhotos);
 
-  // Re-sync when caller changes the preset between opens.
+  // Re-sync the preset each time the sheet opens. Deliberate prop→state
+  // reset on an open transition — an effect is the right tool here.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (open) setOnlyWithPhotos(initiallyOnlyPhotos);
   }, [open, initiallyOnlyPhotos]);
 

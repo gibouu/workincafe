@@ -32,8 +32,10 @@ export function AdminPlacesBrowser() {
     return () => clearTimeout(t);
   }, [q]);
 
-  // Reset to page 0 whenever filters change.
+  // Reset to page 0 whenever filters change. Deliberate cross-field reset
+  // driven by several independent inputs — cleanest as an effect.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(0);
   }, [debouncedQ, city, country, category]);
 
@@ -49,6 +51,8 @@ export function AdminPlacesBrowser() {
     if (city) params.set('city', city);
     if (country) params.set('country', country);
     if (category) params.set('category', category);
+    // Data-fetch effect: loading/error flags synced before the request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
     fetch(`/api/admin/places?${params.toString()}`, { signal: ctrl.signal })

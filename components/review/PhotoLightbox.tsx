@@ -30,8 +30,10 @@ export function PhotoLightbox({ photos, initialIndex, open, onOpenChange }: Phot
   const safeStart = Math.min(Math.max(initialIndex, 0), Math.max(photos.length - 1, 0));
   const [index, setIndex] = useState(safeStart);
 
-  // Reset to the requested photo every time the lightbox opens.
+  // Reset to the requested photo every time the lightbox opens. Deliberate
+  // prop→state reset on an open transition — an effect is the right tool.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (open) setIndex(safeStart);
   }, [open, safeStart]);
 
