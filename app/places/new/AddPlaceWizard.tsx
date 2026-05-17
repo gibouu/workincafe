@@ -207,6 +207,9 @@ export function AddPlaceWizard({
   useEffect(() => {
     const draft = loadDraft();
     if (draft) {
+      // SSR-safe one-shot draft restore; a lazy init would read localStorage
+      // during the first client render and mismatch the SSR HTML (#171).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStep(draft.step);
       setName(draft.name);
       setCategory(draft.category);
@@ -268,6 +271,9 @@ export function AddPlaceWizard({
     if (picked) return;
     const q = search.trim();
     if (q.length < 2) {
+      // Debounced-fetch effect: clearing stale predictions on a too-short
+      // query is the correct external sync, not a render-cascade bug.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPredictions([]);
       return;
     }
@@ -326,6 +332,9 @@ export function AddPlaceWizard({
   useEffect(() => {
     const q = addressQuery.trim();
     if (q.length < 3) {
+      // Debounced-fetch effect: clearing stale predictions on a too-short
+      // query is the correct external sync, not a render-cascade bug.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAddressPredictions([]);
       return;
     }
@@ -414,6 +423,9 @@ export function AddPlaceWizard({
   const matchLng = picked?.lng ?? null;
   useEffect(() => {
     if (!matchQuery || matchQuery.length < 3 || matchLat === null || matchLng === null) {
+      // Debounced-fetch effect: clearing stale matches when the query is
+      // incomplete is the correct external sync, not a render-cascade bug.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNearbyMatches([]);
       return;
     }

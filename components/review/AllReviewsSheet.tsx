@@ -63,9 +63,11 @@ export function AllReviewsSheet({
   const [imported, setImported] = useState<DemoReview[] | null>(null);
   const [importedLoading, setImportedLoading] = useState(false);
 
-  // Re-sync when caller changes the preset between opens.
+  // Re-sync the preset + segment each time the sheet opens. Deliberate
+  // prop→state reset on an open transition — an effect is the right tool.
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOnlyWithPhotos(initiallyOnlyPhotos);
       setSegment('visitors');
     }

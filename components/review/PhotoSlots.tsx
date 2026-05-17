@@ -65,8 +65,10 @@ function PhotoSlotCard({
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // Object-URL lifecycle effect (create on photo, revoke on cleanup).
   useEffect(() => {
     if (!photo) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewUrl(null);
       return;
     }

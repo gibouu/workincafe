@@ -32,7 +32,10 @@ export function AdminReviewsBrowser() {
     return () => clearTimeout(t);
   }, [q]);
 
+  // Reset to page 0 whenever filters change. Deliberate cross-field reset
+  // driven by several independent inputs — cleanest as an effect.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(0);
   }, [debouncedQ, placeId, userEmail, status]);
 
@@ -50,6 +53,8 @@ export function AdminReviewsBrowser() {
     // Note: API expects user_id (uuid) — if the operator typed an email,
     // they need to look up the id separately. The field is labelled clearly.
     if (userEmail && /^[0-9a-f-]{36}$/i.test(userEmail)) params.set('user_id', userEmail);
+    // Data-fetch effect: loading/error flags synced before the request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
     fetch(`/api/admin/reviews?${params.toString()}`, { signal: ctrl.signal })

@@ -1,20 +1,39 @@
 # Progress Log
 Newest first. One line per entry.
-[2026-05-17 07:47] Edit: .claude/state/PROGRESS.md
-[2026-05-17 07:45] reviews: shipped #174 → PR #175; ?source=imported API + Imported segment in AllReviewsSheet + shared lib/review/db-review.ts mapper. Why: surface seeded Yelp/FSQ reviews separately from visitor ones.
-[2026-05-17 07:43] Edit: components/review/AllReviewsSheet.tsx
-[2026-05-17 07:42] Write: components/review/AllReviewsSheet.tsx
-[2026-05-17 07:41] Edit: components/card/PlaceCardBody.tsx
-[2026-05-17 07:41] Edit: components/card/PlaceCardBody.tsx
-[2026-05-17 07:40] Write: lib/review/db-review.ts
-[2026-05-17 07:39] Edit: components/card/PlaceCardBody.tsx
-[2026-05-17 07:39] Edit: components/card/PlaceCardBody.tsx
-[2026-05-17 07:39] Edit: components/card/PlaceCardBody.tsx
-[2026-05-17 07:39] Edit: lib/demo/reviews.ts
-[2026-05-17 07:39] Edit: components/card/PlaceCardBody.tsx
-[2026-05-17 07:39] Edit: app/api/places/[id]/reviews/route.ts
-[2026-05-17 07:38] Edit: app/api/places/[id]/reviews/route.ts
-[2026-05-17 07:38] Edit: app/api/places/[id]/reviews/route.ts
+[2026-05-17 08:03] Edit: .claude/state/PROGRESS.md
+[2026-05-17 08:08] reviews: shipped #174 → PR #175; ?source=imported API + Imported segment + shared lib/review/db-review.ts. Rebased onto main (#173 rules) — added scoped eslint-disable to the open-reset effect. Why: surface seeded reviews separately.
+[2026-05-17 08:02] Edit: components/review/AllReviewsSheet.tsx
+[2026-05-17 07:58] Edit: .claude/state/PROGRESS.md
+[2026-05-17 08:00] admin: shipped #167 slice 1 → PR #176; submitter trust badge on place-requests queue. Why: spot repeat-bad submitters at a glance.
+[2026-05-17 07:29] Edit: .claude/state/PROGRESS.md
+[2026-05-17 07:30] lint: re-enabled 3 React Compiler eslint rules (#171), refactored map page refs/immutability + GeolocateBlockedBanner, 16 scoped disables; PR #173. Why: stop drift, catch future violations.
+[2026-05-17 07:26] Edit: eslint.config.mjs
+[2026-05-17 07:26] Edit: components/review/ReviewForm.tsx
+[2026-05-17 07:26] Edit: components/review/ReviewForm.tsx
+[2026-05-17 07:26] Edit: components/review/ReviewForm.tsx
+[2026-05-17 07:26] Edit: components/review/ReviewForm.tsx
+[2026-05-17 07:25] Edit: components/review/PhotoSlots.tsx
+[2026-05-17 07:25] Edit: components/review/PhotoLightbox.tsx
+[2026-05-17 07:25] Edit: components/review/AllReviewsSheet.tsx
+[2026-05-17 07:25] Edit: components/layout/SearchPanel.tsx
+[2026-05-17 07:25] Edit: components/layout/SearchPanel.tsx
+[2026-05-17 07:25] Edit: components/admin/AdminReviewsBrowser.tsx
+[2026-05-17 07:25] Edit: components/admin/AdminReviewsBrowser.tsx
+[2026-05-17 07:25] Edit: components/admin/AdminPlacesBrowser.tsx
+[2026-05-17 07:25] Edit: components/admin/AdminPlacesBrowser.tsx
+[2026-05-17 07:24] Edit: app/places/new/AddPlaceWizard.tsx
+[2026-05-17 07:24] Edit: app/places/new/AddPlaceWizard.tsx
+[2026-05-17 07:24] Edit: app/places/new/AddPlaceWizard.tsx
+[2026-05-17 07:24] Edit: app/places/new/AddPlaceWizard.tsx
+[2026-05-17 07:24] Edit: app/auth/page.tsx
+[2026-05-17 07:24] Edit: components/map/GeolocateBlockedBanner.tsx
+[2026-05-17 07:24] Edit: components/map/GeolocateBlockedBanner.tsx
+[2026-05-17 07:23] Edit: app/(map)/page.tsx
+[2026-05-17 07:23] Edit: app/(map)/page.tsx
+[2026-05-17 07:23] Edit: app/(map)/page.tsx
+[2026-05-17 07:23] Edit: app/(map)/page.tsx
+[2026-05-17 07:23] Edit: app/(map)/page.tsx
+[2026-05-17 07:05] Write: /Users/gibou/.claude/plans/lets-look-at-the-encapsulated-trinket.md
 [2026-05-10 10:29] Edit: .claude/state/MEMORY.md
 [2026-05-10 10:28] Edit: .claude/state/TASKS.md
 [2026-05-10 10:28] Edit: .claude/state/DECISIONS.md
@@ -81,22 +100,3 @@ Newest first. One line per entry.
 [2026-05-07 09:55] Write: .claude/state/TASKS.md
 [2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
 [2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
-[2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
-[2026-05-07 09:51] Edit: components/review/ReviewForm.tsx
-[2026-05-07 09:51] Edit: app/places/new/AddPlaceWizard.tsx
-[2026-05-07 09:50] Edit: app/places/new/AddPlaceWizard.tsx
-[2026-05-07 09:50] Edit: app/places/new/AddPlaceWizard.tsx
-[2026-05-07 09:50] Edit: app/places/new/AddPlaceWizard.tsx
-[2026-05-07 09:50] Edit: components/card/PlaceCard.tsx
-[2026-05-05 13:44] Edit: app/places/new/AddPlaceWizard.tsx
-[2026-05-05 13:44] Edit: app/places/new/AddPlaceWizard.tsx
-[2026-05-05 13:44] Edit: app/places/new/AddPlaceWizard.tsx
-[2026-05-05 13:43] Edit: app/places/new/AddPlaceWizard.tsx
-[2026-05-05 13:43] Edit: app/api/places/lookup/route.ts
-[2026-05-05 13:43] Edit: app/api/places/lookup/route.ts
-[2026-05-05 13:42] Edit: app/api/places/lookup/route.ts
-[2026-05-05 13:42] Edit: app/api/places/lookup/route.ts
-[2026-05-05 13:42] Edit: .claude/state/TASKS.md
-[2026-05-05 13:41] Edit: .claude/state/DECISIONS.md
-[2026-05-05 13:41] Edit: .claude/state/PROGRESS.md
-[2026-05-05 13:35] backlog: filed issues #3 (address autocomplete), #4 (radius 150→500), #5 (admin email allowlist), #6 (admin parking lot). Why: trace each gap separately.

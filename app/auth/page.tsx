@@ -33,6 +33,9 @@ export default function AuthPage() {
 
   useEffect(() => {
     const next = new URLSearchParams(window.location.search).get('next') ?? '/';
+    // Deliberately post-hydration: reading window.location in a lazy init
+    // would diverge from the SSR render and mismatch (see comment above).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOwnerContext(isOwnerContext(next));
   }, []);
 

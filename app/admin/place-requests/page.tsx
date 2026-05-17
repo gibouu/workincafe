@@ -44,6 +44,25 @@ async function loadRequests(): Promise<PlaceRequestRecord[]> {
     emailById.set(u.id, u.email ?? null);
   }
 
+  // Submitter trust signal (#167): each submitter's historical approved /
+  // decided ratio. One bounded query over only the submitters in this queue.
+  const submitterIds = [...new Set(data.map((r) => r.submitted_by as string))];
+  const statsById = new Map<string, { approved: number; decided: number }>();
+  if (submitterIds.length > 0) {
+    const { data: hist } = await admin
+      .from('place_requests')
+      .select('submitted_by, status')
+      .in('submitted_by', submitterIds)
+      .neq('status', 'pending');
+    for (const row of hist ?? []) {
+      const sid = row.submitted_by as string;
+      const s = statsById.get(sid) ?? { approved: 0, decided: 0 };
+      s.decided += 1;
+      if (row.status === 'approved') s.approved += 1;
+      statsById.set(sid, s);
+    }
+  }
+
   return data.map((r) => ({
     id: r.id as string,
     name: r.name as string,
@@ -54,6 +73,7 @@ async function loadRequests(): Promise<PlaceRequestRecord[]> {
     notes: (r.notes as string | null) ?? null,
     created_at: r.created_at as string,
     submitter_email: emailById.get(r.submitted_by as string) ?? null,
+    submitter_stats: statsById.get(r.submitted_by as string) ?? null,
   }));
 }
 
