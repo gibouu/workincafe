@@ -3,10 +3,8 @@ import { Icon } from '@/components/icons/Icon';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
-import {
-  PlaceRequestRow,
-  type PlaceRequestRecord,
-} from '@/components/admin/PlaceRequestRow';
+import { type PlaceRequestRecord } from '@/components/admin/PlaceRequestRow';
+import { PlaceRequestsQueue } from '@/components/admin/PlaceRequestsQueue';
 
 interface AuthUserLite {
   id: string;
@@ -98,19 +96,7 @@ export default async function PlaceRequestsPage() {
         </div>
 
         <h1 className="mt-6 text-[28px] font-bold text-[var(--text-primary)]">Pending</h1>
-        <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
-          {requests.length === 0
-            ? 'Nothing pending. New submissions from the Add-a-place wizard land here.'
-            : `${requests.length} pending`}
-        </p>
-
-        {requests.length > 0 && (
-          <ul className="mt-6 flex flex-col gap-3">
-            {requests.map((r) => (
-              <PlaceRequestRow key={r.id} req={r} />
-            ))}
-          </ul>
-        )}
+        <PlaceRequestsQueue requests={requests} />
       </div>
     </div>
   );
