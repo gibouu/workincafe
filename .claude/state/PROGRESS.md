@@ -1,8 +1,9 @@
 # Progress Log
 Newest first. One line per entry.
-[2026-05-17 08:03] Edit: .claude/state/PROGRESS.md
-[2026-05-17 08:08] reviews: shipped #174 → PR #175; ?source=imported API + Imported segment + shared lib/review/db-review.ts. Rebased onto main (#173 rules) — added scoped eslint-disable to the open-reset effect. Why: surface seeded reviews separately.
-[2026-05-17 08:02] Edit: components/review/AllReviewsSheet.tsx
+[2026-05-17 08:14] Edit: .claude/state/PROGRESS.md
+[2026-05-17 08:15] reviews #174/PR#175: re-synced onto main after #177 merge (state-log conflict only). Why: serialize the 4-PR merge train.
+[2026-05-17 08:01] Edit: .claude/state/PROGRESS.md
+[2026-05-17 08:05] admin: shipped #167 slice 2 → PR #177; reject-reason presets + Other on place-requests. Why: faster, consistent rejections.
 [2026-05-17 07:58] Edit: .claude/state/PROGRESS.md
 [2026-05-17 08:00] admin: shipped #167 slice 1 → PR #176; submitter trust badge on place-requests queue. Why: spot repeat-bad submitters at a glance.
 [2026-05-17 07:29] Edit: .claude/state/PROGRESS.md
@@ -98,5 +99,4 @@ Newest first. One line per entry.
 [2026-05-07 10:00] #14: PR #33 opened — PlaceCard snap points + AddPlaceWizard/ReviewForm localStorage drafts. Why: iPhone SE reach + no draft loss on X.
 [2026-05-07 09:56] Edit: .claude/state/DECISIONS.md
 [2026-05-07 09:55] Write: .claude/state/TASKS.md
-[2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
 [2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
