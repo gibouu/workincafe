@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { Drawer } from 'vaul';
 import { Icon } from '@/components/icons/Icon';
 import { ReviewList } from '@/components/review/ReviewList';
+import { mapDbReviewToDemoShape } from '@/lib/review/db-review';
 import type { DemoPlace } from '@/lib/demo/paris-places';
 import type { DemoReview } from '@/lib/demo/reviews';
 
 type SortKey = 'newest' | 'top' | 'low' | 'verified';
+type Segment = 'visitors' | 'imported';
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'newest', label: 'Newest' },
@@ -53,30 +55,66 @@ export function AllReviewsSheet({
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortKey>('newest');
   const [onlyWithPhotos, setOnlyWithPhotos] = useState(initiallyOnlyPhotos);
+  const [segment, setSegment] = useState<Segment>('visitors');
 
-  // Re-sync the preset each time the sheet opens. Deliberate prop→state
-  // reset on an open transition — an effect is the right tool here.
+  // Imported (Yelp / Foursquare / Google / system) reviews are fetched lazily
+  // the first time the user switches to that segment — the common path (user
+  // reviews, passed in via props) costs no extra request. null = not fetched.
+  const [imported, setImported] = useState<DemoReview[] | null>(null);
+  const [importedLoading, setImportedLoading] = useState(false);
+
+  // Re-sync the preset + segment each time the sheet opens. Deliberate
+  // prop→state reset on an open transition — an effect is the right tool.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (open) setOnlyWithPhotos(initiallyOnlyPhotos);
+    if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOnlyWithPhotos(initiallyOnlyPhotos);
+      setSegment('visitors');
+    }
   }, [open, initiallyOnlyPhotos]);
 
+  useEffect(() => {
+    if (!open || segment !== 'imported' || imported !== null || importedLoading) return;
+    let aborted = false;
+    // Lazy data-fetch effect: loading flag synced before the request, then
+    // results fill in async — correct external sync, not a render cascade (#174).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setImportedLoading(true);
+    fetch(`/api/places/${encodeURIComponent(place.id)}/reviews?source=imported&limit=50`)
+      .then((r) => (r.ok ? r.json() : { reviews: [] }))
+      .then((body: { reviews?: unknown[] }) => {
+        if (aborted) return;
+        setImported((body.reviews ?? []).map(mapDbReviewToDemoShape));
+      })
+      .catch(() => {
+        if (!aborted) setImported([]);
+      })
+      .finally(() => {
+        if (!aborted) setImportedLoading(false);
+      });
+    return () => {
+      aborted = true;
+    };
+  }, [open, segment, imported, importedLoading, place.id]);
+
+  const sourceList = useMemo(
+    () => (segment === 'visitors' ? reviews : (imported ?? [])),
+    [segment, reviews, imported],
+  );
+
   const photoCount = useMemo(
-    () => reviews.filter((r) => r.photos && r.photos.length > 0).length,
-    [reviews],
+    () => sourceList.filter((r) => r.photos && r.photos.length > 0).length,
+    [sourceList],
   );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    let list = reviews;
-    if (q) {
-      list = list.filter(
-        (r) => r.comment.toLowerCase().includes(q) || r.author.toLowerCase().includes(q),
-      );
-    }
-    if (onlyWithPhotos) {
-      list = list.filter((r) => r.photos && r.photos.length > 0);
-    }
+    const base = q
+      ? sourceList.filter(
+          (r) => r.comment.toLowerCase().includes(q) || r.author.toLowerCase().includes(q),
+        )
+      : sourceList;
+    const list = onlyWithPhotos ? base.filter((r) => r.photos && r.photos.length > 0) : base;
     const sorted = [...list];
     sorted.sort((a, b) => {
       switch (sort) {
@@ -91,7 +129,15 @@ export function AllReviewsSheet({
       }
     });
     return sorted;
-  }, [reviews, query, sort, onlyWithPhotos]);
+  }, [sourceList, query, sort, onlyWithPhotos]);
+
+  const SEGMENTS: { value: Segment; label: string }[] = [
+    { value: 'visitors', label: `From visitors${reviews.length ? ` · ${reviews.length}` : ''}` },
+    {
+      value: 'imported',
+      label: `Imported${imported && imported.length ? ` · ${imported.length}` : ''}`,
+    },
+  ];
 
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
@@ -110,7 +156,7 @@ export function AllReviewsSheet({
                 {place.name}
               </div>
               <div className="text-[11px] text-[var(--text-tertiary)]">
-                {filtered.length} of {reviews.length} shown
+                {filtered.length} of {sourceList.length} shown
               </div>
             </div>
             <button
@@ -124,6 +170,26 @@ export function AllReviewsSheet({
           </div>
 
           <div className="mt-3 flex flex-col gap-2 px-5">
+            <div className="flex gap-1 rounded-xl bg-sys-gray-6 p-1">
+              {SEGMENTS.map((seg) => {
+                const active = segment === seg.value;
+                return (
+                  <button
+                    key={seg.value}
+                    type="button"
+                    onClick={() => setSegment(seg.value)}
+                    aria-pressed={active}
+                    className={`flex-1 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition ${
+                      active
+                        ? 'bg-white text-[var(--text-primary)] shadow-card'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    {seg.label}
+                  </button>
+                );
+              })}
+            </div>
             <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 border border-[var(--surface-border)]">
               <Icon name="MagnifyingGlass" size={16} className="text-[var(--text-secondary)]" />
               <input
@@ -180,12 +246,28 @@ export function AllReviewsSheet({
           </div>
 
           <div className="mt-4 min-h-0 flex-1 overflow-y-auto px-5 pb-6">
-            {filtered.length === 0 ? (
+            {segment === 'imported' && (importedLoading || imported === null) ? (
+              <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)]">
+                Loading imported reviews…
+              </div>
+            ) : segment === 'imported' && sourceList.length === 0 ? (
+              <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)]">
+                No imported reviews for this place.
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)]">
                 No reviews match your search.
               </div>
             ) : (
-              <ReviewList reviews={filtered} />
+              <>
+                {segment === 'imported' && (
+                  <p className="mb-3 rounded-xl bg-sys-gray-6 px-3 py-2 text-[11px] leading-relaxed text-[var(--text-secondary)]">
+                    Imported from third-party sources to give early signal. They
+                    carry less weight than verified visitor reviews.
+                  </p>
+                )}
+                <ReviewList reviews={filtered} />
+              </>
             )}
           </div>
         </Drawer.Content>

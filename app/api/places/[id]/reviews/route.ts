@@ -10,6 +10,7 @@ interface ReviewRow {
   comment: string | null;
   geo_verified: boolean;
   created_at: string;
+  source: string;
   users: { display_name: string | null } | null;
   review_photos: {
     slot: string;
@@ -27,6 +28,10 @@ export async function GET(
   const { id: placeId } = await params;
   const url = new URL(request.url);
   const limit = Math.min(50, Math.max(1, Number(url.searchParams.get('limit') ?? 5)));
+  // `source=imported` returns the synthetic/seeded rows (Foursquare, Yelp,
+  // Google, system) instead of genuine user reviews. Anything else (incl.
+  // absent) keeps the historical user-only behaviour.
+  const wantImported = url.searchParams.get('source') === 'imported';
 
   const supabase = await createClient();
 
@@ -41,18 +46,19 @@ export async function GET(
     if (ref?.place_id) resolvedId = ref.place_id;
   }
 
-  // Only show real user reviews here. System / Foursquare / Yelp seeded
-  // reviews still feed the aggregate rating in mv_place_ratings, but we
-  // hide them from the visible list — they're labeled "Preliminary" via
-  // a separate UI affordance, not rendered as fake user reviews.
-  const { data, error } = await supabase
+  // Default: only genuine user reviews. System / Foursquare / Yelp seeded
+  // reviews feed the aggregate rating in mv_place_ratings and are surfaced
+  // separately (source=imported) under their own "Imported" section — never
+  // blended into the user list.
+  let q = supabase
     .from('reviews')
     .select(
-      'id, overall_rating, wifi_rating, noise_rating, seating_rating, comment, geo_verified, created_at, users(display_name), review_photos(slot, cloudinary_public_id, cloudinary_version, width, height)',
+      'id, overall_rating, wifi_rating, noise_rating, seating_rating, comment, geo_verified, created_at, source, users(display_name), review_photos(slot, cloudinary_public_id, cloudinary_version, width, height)',
     )
     .eq('place_id', resolvedId)
-    .eq('is_hidden', false)
-    .eq('source', 'user')
+    .eq('is_hidden', false);
+  q = wantImported ? q.neq('source', 'user') : q.eq('source', 'user');
+  const { data, error } = await q
     .order('created_at', { ascending: false })
     .limit(limit);
 

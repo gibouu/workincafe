@@ -24,4 +24,24 @@ export interface DemoReview {
   createdAgo: string;
   geoVerified: boolean;
   photos?: ReviewPhoto[];
+  /** Provenance. Absent / 'user' = a genuine visitor review. Anything else
+   *  ('yelp' | 'foursquare' | 'google' | 'system') is an imported/seeded row
+   *  surfaced under the separate "Imported" section. */
+  source?: string;
+}
+
+/** Human label for an imported review's provider. */
+export function importedReviewLabel(source: string | undefined): string {
+  switch (source) {
+    case 'yelp':
+      return 'From Yelp';
+    case 'foursquare':
+      return 'From Foursquare';
+    case 'google':
+      return 'From Google';
+    case 'system':
+      return 'Preliminary estimate';
+    default:
+      return 'Imported';
+  }
 }
