@@ -1,5 +1,7 @@
 # Progress Log
 Newest first. One line per entry.
+[2026-05-17 07:58] Edit: .claude/state/PROGRESS.md
+[2026-05-17 08:00] admin: shipped #167 slice 1 → PR #176; submitter trust badge on place-requests queue. Why: spot repeat-bad submitters at a glance.
 [2026-05-17 07:29] Edit: .claude/state/PROGRESS.md
 [2026-05-17 07:30] lint: re-enabled 3 React Compiler eslint rules (#171), refactored map page refs/immutability + GeolocateBlockedBanner, 16 scoped disables; PR #173. Why: stop drift, catch future violations.
 [2026-05-17 07:26] Edit: eslint.config.mjs
@@ -98,5 +100,3 @@ Newest first. One line per entry.
 [2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
 [2026-05-07 09:51] Edit: components/review/ReviewForm.tsx
 [2026-05-07 09:51] Edit: app/places/new/AddPlaceWizard.tsx
-[2026-05-07 09:50] Edit: app/places/new/AddPlaceWizard.tsx
-[2026-05-07 09:50] Edit: app/places/new/AddPlaceWizard.tsx
