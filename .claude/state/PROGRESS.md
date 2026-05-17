@@ -1,5 +1,7 @@
 # Progress Log
 Newest first. One line per entry.
+[2026-05-17 08:01] Edit: .claude/state/PROGRESS.md
+[2026-05-17 08:05] admin: shipped #167 slice 2 → PR #177; reject-reason presets + Other on place-requests. Why: faster, consistent rejections.
 [2026-05-17 07:58] Edit: .claude/state/PROGRESS.md
 [2026-05-17 08:00] admin: shipped #167 slice 1 → PR #176; submitter trust badge on place-requests queue. Why: spot repeat-bad submitters at a glance.
 [2026-05-17 07:29] Edit: .claude/state/PROGRESS.md
@@ -98,5 +100,3 @@ Newest first. One line per entry.
 [2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
 [2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
 [2026-05-07 09:52] Edit: components/review/ReviewForm.tsx
-[2026-05-07 09:51] Edit: components/review/ReviewForm.tsx
-[2026-05-07 09:51] Edit: app/places/new/AddPlaceWizard.tsx
