@@ -44,7 +44,7 @@ export default async function EditDealPage({
   const d = (deal as unknown) as DealRow;
 
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
+    <div className="min-h-dvh bg-(--map-bg)">
       <div className="mx-auto max-w-3xl px-5 py-6">
         <div className="flex items-center justify-between">
           <Link
@@ -54,11 +54,11 @@ export default async function EditDealPage({
           >
             <Icon name="ArrowLeft" size={18} />
           </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">Edit deal</div>
+          <div className="text-[15px] font-semibold text-(--text-primary)">Edit deal</div>
           <div className="w-9" />
         </div>
 
-        <h1 className="mt-6 text-[24px] font-bold text-[var(--text-primary)]">Edit deal</h1>
+        <h1 className="mt-6 text-[24px] font-bold text-(--text-primary)">Edit deal</h1>
 
         <DealForm
           placeId={placeId}

@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function PlaceProfileLoading() {
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
+    <div className="min-h-dvh bg-(--map-bg)">
       <div className="h-48 w-full bg-sys-gray-5">
         <div className="relative h-full w-full overflow-hidden">
           <div className="absolute inset-0 shimmer" />

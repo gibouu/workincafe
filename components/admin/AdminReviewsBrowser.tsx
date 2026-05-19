@@ -98,13 +98,13 @@ export function AdminReviewsBrowser() {
   return (
     <div>
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-1 items-center gap-2 rounded-xl bg-white border border-[var(--surface-border)] px-3 py-2 shadow-card">
-          <Icon name="MagnifyingGlass" size={16} className="text-[var(--text-secondary)]" />
+        <div className="flex flex-1 items-center gap-2 rounded-xl bg-white border border-(--surface-border) px-3 py-2 shadow-card">
+          <Icon name="MagnifyingGlass" size={16} className="text-(--text-secondary)" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search review text"
-            className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+            className="flex-1 bg-transparent text-[14px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden"
           />
           {q && (
             <button
@@ -121,18 +121,18 @@ export function AdminReviewsBrowser() {
           value={placeId}
           onChange={(e) => setPlaceId(e.target.value)}
           placeholder="Place ID (uuid)"
-          className="w-44 rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] shadow-card focus:outline-none"
+          className="w-44 rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[13px] text-(--text-primary) placeholder:text-(--text-tertiary) shadow-card focus:outline-hidden"
         />
         <input
           value={userEmail}
           onChange={(e) => setUserEmail(e.target.value)}
           placeholder="User ID (uuid)"
-          className="w-44 rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] shadow-card focus:outline-none"
+          className="w-44 rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[13px] text-(--text-primary) placeholder:text-(--text-tertiary) shadow-card focus:outline-hidden"
         />
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value as StatusFilter)}
-          className="rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[14px] text-[var(--text-primary)] shadow-card focus:outline-none"
+          className="rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[14px] text-(--text-primary) shadow-card focus:outline-hidden"
         >
           <option value="all">All</option>
           <option value="visible">Visible only</option>
@@ -140,7 +140,7 @@ export function AdminReviewsBrowser() {
         </select>
       </div>
 
-      <div className="mt-3 text-[12px] text-[var(--text-secondary)]">
+      <div className="mt-3 text-[12px] text-(--text-secondary)">
         {loading ? 'Loading…' : data ? `${data.total.toLocaleString()} reviews` : ''}
         {error && (
           <span className="ml-2 text-accent-red">· {error}</span>
@@ -159,18 +159,18 @@ export function AdminReviewsBrowser() {
             type="button"
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0 || loading}
-            className="rounded-xl border border-[var(--surface-border)] bg-white px-3 py-1.5 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-50 transition"
+            className="rounded-xl border border-(--surface-border) bg-white px-3 py-1.5 text-[13px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-50 transition"
           >
             Previous
           </button>
-          <div className="text-[13px] text-[var(--text-secondary)]">
+          <div className="text-[13px] text-(--text-secondary)">
             Page {page + 1} / {Math.max(1, totalPages)}
           </div>
           <button
             type="button"
             onClick={() => setPage((p) => p + 1)}
             disabled={page + 1 >= totalPages || loading}
-            className="rounded-xl border border-[var(--surface-border)] bg-white px-3 py-1.5 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-50 transition"
+            className="rounded-xl border border-(--surface-border) bg-white px-3 py-1.5 text-[13px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-50 transition"
           >
             Next
           </button>

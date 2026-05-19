@@ -179,19 +179,19 @@ export function PlaceCardBody({
             background: `linear-gradient(180deg, ${meta.color} 0%, ${meta.color}00 100%)`,
           }}
         >
-          <Icon name={meta.icon} size={40} weight="regular" className="text-white drop-shadow-sm" />
+          <Icon name={meta.icon} size={40} weight="regular" className="text-white drop-shadow-xs" />
         </div>
       )}
 
       <div className="flex-1 overflow-y-auto px-5 pb-6">
         <div className="flex items-start justify-between gap-3 pt-4">
           <div className="min-w-0">
-            <div className="text-[22px] font-semibold leading-tight text-[var(--text-primary)]">
+            <div className="text-[22px] font-semibold leading-tight text-(--text-primary)">
               {place.name}
             </div>
             {place.parent && (
-              <div className="mt-1 inline-flex items-center gap-1 text-[12px] font-medium text-[var(--text-secondary)]">
-                <Icon name="Bed" size={12} className="text-[var(--text-tertiary)]" />
+              <div className="mt-1 inline-flex items-center gap-1 text-[12px] font-medium text-(--text-secondary)">
+                <Icon name="Bed" size={12} className="text-(--text-tertiary)" />
                 <span>Inside {place.parent.name}</span>
               </div>
             )}
@@ -201,7 +201,7 @@ export function PlaceCardBody({
                 <span>{place.membership_required}</span>
               </div>
             )}
-            <div className="mt-1 text-[13px] text-[var(--text-secondary)] truncate">
+            <div className="mt-1 text-[13px] text-(--text-secondary) truncate">
               {place.address} · {place.neighborhood}
             </div>
           </div>
@@ -209,7 +209,7 @@ export function PlaceCardBody({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="shrink-0 rounded-full bg-sys-gray-6 p-1.5 text-[var(--text-secondary)] hover:bg-sys-gray-5 transition"
+            className="shrink-0 rounded-full bg-sys-gray-6 p-1.5 text-(--text-secondary) hover:bg-sys-gray-5 transition"
           >
             <Icon name="X" size={16} />
           </button>
@@ -268,7 +268,7 @@ export function PlaceCardBody({
             highlighted={favorite}
           />
         </div>
-        <p className="mt-2 text-[11px] leading-snug text-[var(--text-tertiary)]">
+        <p className="mt-2 text-[11px] leading-snug text-(--text-tertiary)">
           A live review describes what&apos;s happening right now. A full review describes a visit.
           You can post again later when conditions change.
         </p>
@@ -281,7 +281,7 @@ export function PlaceCardBody({
               size={18}
               className="text-accent-amber shrink-0"
             />
-            <span className="text-[13px] font-medium text-[var(--text-primary)]">
+            <span className="text-[13px] font-medium text-(--text-primary)">
               Known for their coffee
             </span>
             <span className="ml-auto text-[14px] font-semibold text-accent-amber tabular-nums">
@@ -291,7 +291,7 @@ export function PlaceCardBody({
         )}
 
         <div className="mt-5">
-          <div className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">
+          <div className="text-[13px] font-semibold text-(--text-primary) mb-2">
             Study vitals
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -319,10 +319,10 @@ export function PlaceCardBody({
         <PlaceDealsSection placeId={place.id} />
 
         <div className="mt-5">
-          <div className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">
+          <div className="text-[13px] font-semibold text-(--text-primary) mb-2">
             Right now
           </div>
-          <div className="rounded-2xl border border-[var(--surface-border)] bg-white/70 divide-y divide-[var(--divider)]">
+          <div className="rounded-2xl border border-(--surface-border) bg-white/70 divide-y divide-(--divider)">
             <RightNowRow icon={NOISE_ICON[place.noise]} text={place.right_now_noise} />
             <RightNowRow icon="Armchair" text={place.right_now_seating} />
           </div>
@@ -330,10 +330,10 @@ export function PlaceCardBody({
 
         {place.children && place.children.length > 0 && (
           <div className="mt-6">
-            <div className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">
+            <div className="text-[13px] font-semibold text-(--text-primary) mb-2">
               Inside this place ({place.children.length})
             </div>
-            <ul className="flex flex-col gap-1 rounded-2xl border border-[var(--surface-border)] bg-white p-2 shadow-card">
+            <ul className="flex flex-col gap-1 rounded-2xl border border-(--surface-border) bg-white p-2 shadow-card">
               {place.children.map((child) => {
                 const childMeta = categoryMeta(child.category);
                 return (
@@ -349,22 +349,22 @@ export function PlaceCardBody({
                         <Icon name={childMeta.icon} size={14} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-[13px] font-medium text-[var(--text-primary)]">
+                        <div className="truncate text-[13px] font-medium text-(--text-primary)">
                           {child.name}
                           {child.brand && child.brand !== child.name && (
-                            <span className="ml-1.5 text-[11px] font-normal text-[var(--text-tertiary)]">
+                            <span className="ml-1.5 text-[11px] font-normal text-(--text-tertiary)">
                               · {child.brand}
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-[var(--text-secondary)]">
+                        <div className="text-[11px] text-(--text-secondary)">
                           {childMeta.label}
                         </div>
                       </div>
                       <Icon
                         name="ArrowRight"
                         size={12}
-                        className="text-[var(--text-tertiary)]"
+                        className="text-(--text-tertiary)"
                       />
                     </Link>
                   </li>
@@ -375,17 +375,17 @@ export function PlaceCardBody({
         )}
 
         <div className="mt-6">
-          <div className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">
+          <div className="text-[13px] font-semibold text-(--text-primary) mb-2">
             Noise by hour
           </div>
-          <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-3 shadow-card">
+          <div className="rounded-2xl border border-(--surface-border) bg-white p-3 shadow-card">
             <NoiseHeatmap place={place} />
           </div>
         </div>
 
         <div className="mt-6">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+            <div className="text-[13px] font-semibold text-(--text-primary)">
               Reviews ({realReviewCount})
             </div>
             <button
@@ -411,7 +411,7 @@ export function PlaceCardBody({
         <button
           type="button"
           onClick={() => setReviewMode(true)}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--surface-border)] bg-white px-4 py-3 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 transition"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-(--surface-border) bg-white px-4 py-3 text-[13px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 transition"
         >
           <Icon name="PencilSimple" size={16} />
           <span>Leave a review</span>
@@ -419,7 +419,7 @@ export function PlaceCardBody({
 
         <Link
           href={`/place/${place.id}/claim`}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--surface-border)] bg-transparent px-4 py-2.5 text-[12px] font-medium text-[var(--text-secondary)] hover:bg-sys-gray-6 transition"
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-(--surface-border) bg-transparent px-4 py-2.5 text-[12px] font-medium text-(--text-secondary) hover:bg-sys-gray-6 transition"
         >
           <Icon name="Storefront" size={14} />
           <span>Own this place? Claim it</span>
@@ -466,10 +466,10 @@ function ChipButton({
   iconWeight?: 'regular' | 'fill';
   highlighted?: boolean;
 }) {
-  const className = `flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-[var(--surface-border)] py-2.5 text-[13px] font-medium transition ${
+  const className = `flex-1 flex items-center justify-center gap-1.5 rounded-2xl border border-(--surface-border) py-2.5 text-[13px] font-medium transition ${
     highlighted
       ? 'bg-accent-red-tint text-accent-red'
-      : 'bg-white/70 text-[var(--text-primary)] hover:bg-sys-gray-6'
+      : 'bg-white/70 text-(--text-primary) hover:bg-sys-gray-6'
   }`;
   const content = (
     <>
@@ -494,8 +494,8 @@ function ChipButton({
 function RightNowRow({ icon, text }: { icon: PhosphorIconName; text: string }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
-      <Icon name={icon} size={20} className="text-[var(--text-secondary)] shrink-0" />
-      <div className="text-[14px] text-[var(--text-primary)]">{text}</div>
+      <Icon name={icon} size={20} className="text-(--text-secondary) shrink-0" />
+      <div className="text-[14px] text-(--text-primary)">{text}</div>
     </div>
   );
 }

@@ -51,7 +51,7 @@ export default async function AdminUsersPage() {
   const { admins, selfId } = await loadAdmins(user?.id ?? null);
 
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
+    <div className="min-h-dvh bg-(--map-bg)">
       <div className="mx-auto max-w-3xl px-5 py-6">
         <div className="flex items-center justify-between">
           <Link
@@ -61,23 +61,23 @@ export default async function AdminUsersPage() {
           >
             <Icon name="ArrowLeft" size={18} />
           </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">Admins</div>
+          <div className="text-[15px] font-semibold text-(--text-primary)">Admins</div>
           <div className="w-9" />
         </div>
 
-        <h1 className="mt-6 text-[28px] font-bold text-[var(--text-primary)]">
+        <h1 className="mt-6 text-[28px] font-bold text-(--text-primary)">
           Admins ({admins.length})
         </h1>
-        <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
+        <p className="mt-1 text-[14px] text-(--text-secondary)">
           Promote anyone signed up via OAuth to admin. They&apos;ll get access to
           moderation queues + ownership claims.
         </p>
 
-        <h2 className="mt-6 text-[13px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+        <h2 className="mt-6 text-[13px] font-semibold uppercase tracking-wide text-(--text-secondary)">
           Current admins
         </h2>
         {admins.length === 0 ? (
-          <div className="mt-2 rounded-2xl border border-[var(--surface-border)] bg-white p-5 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+          <div className="mt-2 rounded-2xl border border-(--surface-border) bg-white p-5 text-center text-[13px] text-(--text-secondary) shadow-card">
             No admins yet. The first user to sign in becomes admin
             automatically (per migration 009).
           </div>
@@ -86,22 +86,22 @@ export default async function AdminUsersPage() {
             {admins.map((a) => (
               <li
                 key={a.id}
-                className="flex items-center gap-3 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card"
+                className="flex items-center gap-3 rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-tint text-accent">
                   <Icon name="UserCircle" size={22} weight="fill" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14px] font-semibold text-[var(--text-primary)]">
+                  <div className="truncate text-[14px] font-semibold text-(--text-primary)">
                     {a.display_name ?? a.email ?? 'Unnamed admin'}
                     {a.id === selfId && (
-                      <span className="ml-2 rounded-full bg-sys-gray-6 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+                      <span className="ml-2 rounded-full bg-sys-gray-6 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-(--text-tertiary)">
                         You
                       </span>
                     )}
                   </div>
                   {a.email && (
-                    <div className="truncate text-[12px] text-[var(--text-secondary)]">
+                    <div className="truncate text-[12px] text-(--text-secondary)">
                       {a.email}
                     </div>
                   )}
@@ -111,7 +111,7 @@ export default async function AdminUsersPage() {
           </ul>
         )}
 
-        <h2 className="mt-8 text-[13px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+        <h2 className="mt-8 text-[13px] font-semibold uppercase tracking-wide text-(--text-secondary)">
           Promote a user
         </h2>
         <div className="mt-2">

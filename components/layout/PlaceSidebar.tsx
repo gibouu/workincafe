@@ -31,10 +31,10 @@ export function PlaceSidebar({
   } | null;
 }) {
   return (
-    <aside className="hidden md:flex h-full w-[320px] shrink-0 flex-col border-r border-[var(--surface-border)] bg-white/70 backdrop-blur-ios">
+    <aside className="hidden md:flex h-full w-[320px] shrink-0 flex-col border-r border-(--surface-border) bg-white/70 backdrop-blur-ios">
       <div className="flex items-center gap-2 px-5 pt-5 pb-2">
-        <Icon name="Coffee" weight="fill" size={22} className="text-[var(--text-primary)]" />
-        <div className="text-[17px] font-semibold text-[var(--text-primary)]">Work in Cafe</div>
+        <Icon name="Coffee" weight="fill" size={22} className="text-(--text-primary)" />
+        <div className="text-[17px] font-semibold text-(--text-primary)">Work in Cafe</div>
       </div>
       <SearchPanel
         places={places}

@@ -24,12 +24,12 @@ export function FilterSheet({
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/20 z-40" />
-        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 mx-auto flex h-[88dvh] max-w-md flex-col rounded-t-3xl bg-white shadow-float outline-none">
+        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 mx-auto flex h-[88dvh] max-w-md flex-col rounded-t-3xl bg-white shadow-float outline-hidden">
           <Drawer.Title className="sr-only">Filters</Drawer.Title>
           <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-sys-gray-4" />
 
           <div className="flex items-center justify-between px-5 pt-3">
-            <div className="text-[17px] font-semibold text-[var(--text-primary)]">Filters</div>
+            <div className="text-[17px] font-semibold text-(--text-primary)">Filters</div>
             <button
               type="button"
               onClick={() => f.reset()}
@@ -166,7 +166,7 @@ export function FilterSheet({
             </Section>
           </div>
 
-          <div className="border-t border-[var(--surface-border)] p-4">
+          <div className="border-t border-(--surface-border) p-4">
             <button
               type="button"
               onClick={() => onOpenChange(false)}
@@ -184,7 +184,7 @@ export function FilterSheet({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mt-5 first:mt-0">
-      <div className="mb-2 text-[13px] font-semibold text-[var(--text-primary)]">{title}</div>
+      <div className="mb-2 text-[13px] font-semibold text-(--text-primary)">{title}</div>
       {children}
     </div>
   );
@@ -207,7 +207,7 @@ function CategoryChip({
       className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition ${
         active
           ? 'border-transparent text-white'
-          : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
+          : 'border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6'
       }`}
       style={active ? { background: meta.color } : undefined}
     >
@@ -232,11 +232,11 @@ function Toggle({
     <button
       type="button"
       onClick={() => onChange(!value)}
-      className="flex items-center justify-between rounded-2xl border border-[var(--surface-border)] bg-white px-4 py-3 hover:bg-sys-gray-6 transition"
+      className="flex items-center justify-between rounded-2xl border border-(--surface-border) bg-white px-4 py-3 hover:bg-sys-gray-6 transition"
     >
       <div className="flex items-center gap-3">
-        <Icon name={icon} size={18} className="text-[var(--text-secondary)]" />
-        <span className="text-[14px] text-[var(--text-primary)]">{label}</span>
+        <Icon name={icon} size={18} className="text-(--text-secondary)" />
+        <span className="text-[14px] text-(--text-primary)">{label}</span>
       </div>
       <div
         className={`flex h-6 w-10 items-center rounded-full transition ${
@@ -273,8 +273,8 @@ function SegmentedControl<T extends string>({
             onClick={() => onChange(opt.value)}
             className={`flex-1 rounded-lg py-2 text-[13px] font-medium transition ${
               active
-                ? 'bg-white text-[var(--text-primary)] shadow-sm'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                ? 'bg-white text-(--text-primary) shadow-xs'
+                : 'text-(--text-secondary) hover:text-(--text-primary)'
             }`}
           >
             {opt.label}

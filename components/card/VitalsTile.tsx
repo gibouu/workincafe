@@ -10,10 +10,10 @@ export function VitalsTile({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--surface-border)] bg-white/70 p-3 flex flex-col gap-1">
-      <Icon name={icon} size={22} className="text-[var(--text-primary)]" />
-      <div className="text-[11px] text-[var(--text-secondary)] leading-none">{label}</div>
-      <div className="text-[13px] font-semibold text-[var(--text-primary)] leading-tight">{value}</div>
+    <div className="rounded-2xl border border-(--surface-border) bg-white/70 p-3 flex flex-col gap-1">
+      <Icon name={icon} size={22} className="text-(--text-primary)" />
+      <div className="text-[11px] text-(--text-secondary) leading-none">{label}</div>
+      <div className="text-[13px] font-semibold text-(--text-primary) leading-tight">{value}</div>
     </div>
   );
 }

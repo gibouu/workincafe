@@ -215,13 +215,13 @@ export function SearchPanel({
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-2 px-5 pt-2">
         <div className="flex flex-1 items-center gap-2 rounded-xl bg-sys-gray-6 px-3 py-2">
-          <Icon name="MagnifyingGlass" size={16} className="text-[var(--text-secondary)]" />
+          <Icon name="MagnifyingGlass" size={16} className="text-(--text-secondary)" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search places, addresses, neighborhoods"
             autoFocus={autoFocus}
-            className="flex-1 bg-transparent text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+            className="flex-1 bg-transparent text-[13px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden"
           />
           {query && (
             <button
@@ -239,7 +239,7 @@ export function SearchPanel({
             type="button"
             onClick={onOpenFilter}
             aria-label="Filter"
-            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6 transition"
+            className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6 transition"
           >
             <Icon name="SlidersHorizontal" size={16} />
             {filterCount > 0 && (
@@ -255,8 +255,8 @@ export function SearchPanel({
           place list when the user is typing and Photon returned matches.
           Tap a location to set the anchor (#103, #120). */}
       {query.trim() && locationHits.length > 0 && (
-        <div className="mt-2 mx-3 overflow-hidden rounded-xl border border-[var(--surface-border)] bg-white shadow-card">
-          <div className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
+        <div className="mt-2 mx-3 overflow-hidden rounded-xl border border-(--surface-border) bg-white shadow-card">
+          <div className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-(--text-tertiary)">
             Locations
           </div>
           <ul className="flex flex-col">
@@ -269,16 +269,16 @@ export function SearchPanel({
                 >
                   <Icon name={KIND_ICON[h.kind]} size={16} className="text-accent" />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[13px] font-medium text-[var(--text-primary)]">
+                    <div className="truncate text-[13px] font-medium text-(--text-primary)">
                       {h.label}
                     </div>
                     {h.subLabel && (
-                      <div className="truncate text-[11px] text-[var(--text-tertiary)]">
+                      <div className="truncate text-[11px] text-(--text-tertiary)">
                         {h.subLabel}
                       </div>
                     )}
                   </div>
-                  <Icon name="ArrowRight" size={12} className="text-[var(--text-tertiary)]" />
+                  <Icon name="ArrowRight" size={12} className="text-(--text-tertiary)" />
                 </button>
               </li>
             ))}
@@ -309,7 +309,7 @@ export function SearchPanel({
         {shownPlaces.length === 0 ? (
           <div className="flex flex-col items-center justify-center pt-16 text-center">
             <Icon name="MagnifyingGlass" size={32} className="text-sys-gray-3 mb-2" />
-            <div className="text-[13px] text-[var(--text-secondary)]">
+            <div className="text-[13px] text-(--text-secondary)">
               {query.trim() ? 'No places match' : 'Pan or zoom the map to see places'}
             </div>
           </div>
@@ -375,17 +375,17 @@ function PlaceRow({
       <div className="min-w-0 flex-1">
         <div
           className={`truncate text-[14px] font-semibold leading-tight ${
-            selected ? 'text-accent' : 'text-[var(--text-primary)]'
+            selected ? 'text-accent' : 'text-(--text-primary)'
           }`}
         >
           {place.name}
         </div>
-        <div className="mt-0.5 truncate text-[12px] text-[var(--text-secondary)]">
+        <div className="mt-0.5 truncate text-[12px] text-(--text-secondary)">
           {[place.address, place.neighborhood].filter(Boolean).join(' · ') || '—'}
         </div>
       </div>
       <div className="shrink-0 text-right">
-        <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+        <div className="text-[13px] font-semibold text-(--text-primary)">
           {place.review_count > 0 || place.has_user_reviews ? place.rating.toFixed(1) : '—'}
         </div>
         {anchor ? (
@@ -393,7 +393,7 @@ function PlaceRow({
             {formatKm(haversineKm(anchor.lat, anchor.lng, place.lat, place.lng))}
           </div>
         ) : (
-          <div className="text-[10px] text-[var(--text-tertiary)]">/10</div>
+          <div className="text-[10px] text-(--text-tertiary)">/10</div>
         )}
       </div>
     </button>

@@ -23,7 +23,7 @@ export function SignOutButton() {
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--surface-border)] bg-white py-3.5 text-[15px] font-semibold text-accent-red hover:bg-accent-red-tint disabled:opacity-60 transition"
+      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-(--surface-border) bg-white py-3.5 text-[15px] font-semibold text-accent-red hover:bg-accent-red-tint disabled:opacity-60 transition"
     >
       <Icon
         name={loading ? 'CircleNotch' : 'SignOut'}

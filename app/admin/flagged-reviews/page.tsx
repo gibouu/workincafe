@@ -38,7 +38,7 @@ export default async function FlaggedReviewsPage() {
   const flagged = await loadFlagged();
 
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
+    <div className="min-h-dvh bg-(--map-bg)">
       <div className="mx-auto max-w-3xl px-5 py-6">
         <div className="flex items-center justify-between">
           <Link
@@ -48,13 +48,13 @@ export default async function FlaggedReviewsPage() {
           >
             <Icon name="ArrowLeft" size={18} />
           </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">
+          <div className="text-[15px] font-semibold text-(--text-primary)">
             Flagged reviews
           </div>
           <div className="w-9" />
         </div>
 
-        <h1 className="mt-6 text-[28px] font-bold text-[var(--text-primary)]">Pending</h1>
+        <h1 className="mt-6 text-[28px] font-bold text-(--text-primary)">Pending</h1>
         <FlaggedReviewsQueue flagged={flagged} />
       </div>
     </div>

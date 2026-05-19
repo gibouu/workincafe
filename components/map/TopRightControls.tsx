@@ -57,7 +57,7 @@ export function TopRightControls({
           <Icon name="SlidersHorizontal" size={20} />
         </PillButton>
         {filterCount > 0 && (
-          <span className="pointer-events-none absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold text-white shadow">
+          <span className="pointer-events-none absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-semibold text-white shadow-sm">
             {filterCount}
           </span>
         )}
@@ -106,7 +106,7 @@ function PillButton({
     <button
       type="button"
       onClick={onClick}
-      className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface)] backdrop-blur-ios shadow-float text-[var(--text-primary)] hover:bg-white transition"
+      className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-(--surface-border) bg-(--surface) backdrop-blur-ios shadow-float text-(--text-primary) hover:bg-white transition"
       {...rest}
     >
       {children}

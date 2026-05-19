@@ -88,7 +88,7 @@ export function NoiseHeatmap({ place }: { place: DemoPlace }) {
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+        <div className="text-[13px] font-semibold text-(--text-primary)">
           Noise + open hours
         </div>
         <Legend />
@@ -99,7 +99,7 @@ export function NoiseHeatmap({ place }: { place: DemoPlace }) {
             <div className="w-10 shrink-0" />
             <div className="grid gap-[2px]" style={{ gridTemplateColumns: 'repeat(24, 18px)' }}>
               {HOURS.map((h) => (
-                <div key={h} className="text-center text-[9px] text-[var(--text-secondary)]">
+                <div key={h} className="text-center text-[9px] text-(--text-secondary)">
                   {h % 3 === 0 ? h : ''}
                 </div>
               ))}
@@ -108,7 +108,7 @@ export function NoiseHeatmap({ place }: { place: DemoPlace }) {
           <div className="mt-1 flex flex-col gap-[2px]">
             {DAYS.map((day, d) => (
               <div key={day} className="flex items-center">
-                <div className="w-10 shrink-0 text-[11px] text-[var(--text-secondary)]">
+                <div className="w-10 shrink-0 text-[11px] text-(--text-secondary)">
                   {day}
                 </div>
                 <div className="grid gap-[2px]" style={{ gridTemplateColumns: 'repeat(24, 18px)' }}>
@@ -145,14 +145,14 @@ export function NoiseHeatmap({ place }: { place: DemoPlace }) {
 
 function Legend() {
   return (
-    <div className="flex items-center gap-2 text-[10px] text-[var(--text-secondary)]">
+    <div className="flex items-center gap-2 text-[10px] text-(--text-secondary)">
       <span>Quiet</span>
       <div className="flex gap-[2px]">
-        <div className="h-3 w-3 rounded-sm" style={{ background: '#34C759' }} />
-        <div className="h-3 w-3 rounded-sm" style={{ background: '#8FD14F' }} />
-        <div className="h-3 w-3 rounded-sm" style={{ background: '#FF9500' }} />
-        <div className="h-3 w-3 rounded-sm" style={{ background: '#FF6B35' }} />
-        <div className="h-3 w-3 rounded-sm" style={{ background: '#FF3B30' }} />
+        <div className="h-3 w-3 rounded-xs" style={{ background: '#34C759' }} />
+        <div className="h-3 w-3 rounded-xs" style={{ background: '#8FD14F' }} />
+        <div className="h-3 w-3 rounded-xs" style={{ background: '#FF9500' }} />
+        <div className="h-3 w-3 rounded-xs" style={{ background: '#FF6B35' }} />
+        <div className="h-3 w-3 rounded-xs" style={{ background: '#FF3B30' }} />
       </div>
       <span>Loud</span>
     </div>

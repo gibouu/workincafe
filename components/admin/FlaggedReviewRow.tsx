@@ -68,8 +68,8 @@ export function FlaggedReviewRow({
 
   if (done) {
     return (
-      <li className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-        <div className="text-[13px] text-[var(--text-secondary)]">
+      <li className="rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card">
+        <div className="text-[13px] text-(--text-secondary)">
           {flag.reviews?.places?.name ?? '(place not found)'} — {done}
         </div>
       </li>
@@ -116,14 +116,14 @@ export function FlaggedReviewRow({
   };
 
   return (
-    <li className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
+    <li className="rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card">
       <div className="flex items-start justify-between gap-3">
         {leading}
         <div className="min-w-0 flex-1">
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">
+          <div className="text-[15px] font-semibold text-(--text-primary)">
             {flag.reviews?.places?.name ?? '(place not found)'}
           </div>
-          <div className="mt-0.5 flex items-center gap-2 text-[12px] text-[var(--text-secondary)]">
+          <div className="mt-0.5 flex items-center gap-2 text-[12px] text-(--text-secondary)">
             <span className="rounded-full bg-accent-red-tint px-2 py-0.5 text-accent-red font-semibold">
               {REASON_LABEL[flag.reason] ?? flag.reason}
             </span>
@@ -132,7 +132,7 @@ export function FlaggedReviewRow({
         </div>
         {flag.reviews && (
           <div className="shrink-0 text-right">
-            <div className="mt-1 flex items-center gap-1 text-[10px] text-[var(--text-secondary)]">
+            <div className="mt-1 flex items-center gap-1 text-[10px] text-(--text-secondary)">
               <Icon
                 name={flag.reviews.geo_verified ? 'CheckCircle' : 'Warning'}
                 size={12}
@@ -148,20 +148,20 @@ export function FlaggedReviewRow({
       </div>
 
       {flag.notes && (
-        <div className="mt-2 rounded-xl bg-sys-gray-6 px-3 py-2 text-[12px] text-[var(--text-secondary)]">
+        <div className="mt-2 rounded-xl bg-sys-gray-6 px-3 py-2 text-[12px] text-(--text-secondary)">
           <span className="font-semibold">Reporter notes:</span> {flag.notes}
         </div>
       )}
 
       {flag.reviews?.comment && (
-        <blockquote className="mt-3 border-l-2 border-sys-gray-4 pl-3 text-[13px] italic text-[var(--text-primary)]">
+        <blockquote className="mt-3 border-l-2 border-sys-gray-4 pl-3 text-[13px] italic text-(--text-primary)">
           {flag.reviews.comment}
         </blockquote>
       )}
 
       {showReason && showReason !== 'dismiss' && (
         <div className="mt-3">
-          <label className="block text-[11px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+          <label className="block text-[11px] font-semibold uppercase tracking-wide text-(--text-secondary)">
             Optional moderator note
           </label>
           <input
@@ -173,9 +173,9 @@ export function FlaggedReviewRow({
                 ? 'Why this user is banned (visible in admin logs only)'
                 : 'Why this review is hidden (visible in admin logs only)'
             }
-            className="mt-1 w-full rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent"
+            className="mt-1 w-full rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[13px] text-(--text-primary) focus:outline-hidden focus:ring-2 focus:ring-accent"
           />
-          <div className="mt-2 text-[11px] text-[var(--text-secondary)]">
+          <div className="mt-2 text-[11px] text-(--text-secondary)">
             Confirm by tapping &ldquo;{ACTION_LABEL[showReason]}&rdquo; again.
           </div>
         </div>
@@ -192,7 +192,7 @@ export function FlaggedReviewRow({
           type="button"
           onClick={() => onClick('dismiss')}
           disabled={pending !== null}
-          className="rounded-2xl border border-[var(--surface-border)] bg-white px-4 py-2 text-[13px] font-medium text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60"
+          className="rounded-2xl border border-(--surface-border) bg-white px-4 py-2 text-[13px] font-medium text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60"
         >
           {pending === 'dismiss' ? 'Dismissing…' : 'Dismiss'}
         </button>

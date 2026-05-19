@@ -59,7 +59,7 @@ export function DealPurchaseModal({
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
       <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-float">
         <div className="flex items-center justify-between">
-          <div className="text-[17px] font-semibold text-[var(--text-primary)]">{deal.title}</div>
+          <div className="text-[17px] font-semibold text-(--text-primary)">{deal.title}</div>
           <button
             type="button"
             onClick={onClose}
@@ -70,19 +70,19 @@ export function DealPurchaseModal({
           </button>
         </div>
         {deal.description && (
-          <p className="mt-2 text-[13px] text-[var(--text-secondary)]">{deal.description}</p>
+          <p className="mt-2 text-[13px] text-(--text-secondary)">{deal.description}</p>
         )}
 
         <div className="mt-4 rounded-xl bg-sys-gray-6 px-3 py-3 text-[13px]">
           <div className="flex items-center justify-between">
-            <span className="text-[var(--text-secondary)]">
+            <span className="text-(--text-secondary)">
               {deal.kind === 'pack' ? `Pack of ${deal.pack_size}` : 'Single use'}
             </span>
-            <span className="text-[15px] font-semibold text-[var(--text-primary)]">
+            <span className="text-[15px] font-semibold text-(--text-primary)">
               {formatCents(fee.total_cents, deal.currency)}
             </span>
           </div>
-          <div className="mt-1 flex items-center justify-between text-[11px] text-[var(--text-tertiary)]">
+          <div className="mt-1 flex items-center justify-between text-[11px] text-(--text-tertiary)">
             <span>Includes platform fee</span>
             <span>{formatCents(fee.platform_fee_cents, deal.currency)}</span>
           </div>
@@ -107,7 +107,7 @@ export function DealPurchaseModal({
               : `Demo: pay ${formatCents(fee.total_cents, deal.currency)} (no real charge)`}
           </span>
         </button>
-        <p className="mt-2 text-center text-[10px] text-[var(--text-tertiary)]">
+        <p className="mt-2 text-center text-[10px] text-(--text-tertiary)">
           Real card payments via Stripe Connect land in a future update.
         </p>
       </div>

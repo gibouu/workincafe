@@ -6,8 +6,8 @@ export const metadata = { title: 'For businesses · Work in Cafe' };
 
 export default function BusinessWaitlistPage() {
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
-      <header className="border-b border-[var(--surface-border)] bg-white/80 backdrop-blur-ios">
+    <div className="min-h-dvh bg-(--map-bg)">
+      <header className="border-b border-(--surface-border) bg-white/80 backdrop-blur-ios">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-3">
           <Link
             href="/"
@@ -16,7 +16,7 @@ export default function BusinessWaitlistPage() {
           >
             <Icon name="ArrowLeft" size={18} />
           </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">Business</div>
+          <div className="text-[15px] font-semibold text-(--text-primary)">Business</div>
           <div className="w-9" />
         </div>
       </header>

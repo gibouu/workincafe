@@ -67,12 +67,12 @@ export function WelcomeOverlay({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/15 backdrop-blur-[2px] px-4">
-      <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-[var(--surface-border)] bg-white/95 shadow-float backdrop-blur-ios">
+      <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-(--surface-border) bg-white/95 shadow-float backdrop-blur-ios">
         <button
           type="button"
           onClick={dismiss}
           aria-label="Skip"
-          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)] hover:bg-sys-gray-5 transition"
+          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-secondary) hover:bg-sys-gray-5 transition"
         >
           <Icon name="X" size={14} />
         </button>
@@ -85,10 +85,10 @@ export function WelcomeOverlay({
             <Icon name={slide.icon} size={32} weight="fill" className="text-white" />
           </div>
 
-          <h2 className="mt-5 text-center text-[20px] font-semibold leading-tight text-[var(--text-primary)]">
+          <h2 className="mt-5 text-center text-[20px] font-semibold leading-tight text-(--text-primary)">
             {slide.title}
           </h2>
-          <p className="mt-2 text-center text-[13px] leading-snug text-[var(--text-secondary)]">
+          <p className="mt-2 text-center text-[13px] leading-snug text-(--text-secondary)">
             {slide.body}
           </p>
 
@@ -113,13 +113,13 @@ export function WelcomeOverlay({
           )}
         </div>
 
-        <div className="flex items-center justify-between border-t border-[var(--surface-border)] px-5 py-3">
+        <div className="flex items-center justify-between border-t border-(--surface-border) px-5 py-3">
           <div className="flex items-center gap-1.5">
             {SLIDES.map((_, i) => (
               <span
                 key={i}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === step ? 'w-5 bg-[var(--text-primary)]' : 'w-1.5 bg-sys-gray-4'
+                  i === step ? 'w-5 bg-(--text-primary)' : 'w-1.5 bg-sys-gray-4'
                 }`}
               />
             ))}
@@ -129,7 +129,7 @@ export function WelcomeOverlay({
               <button
                 type="button"
                 onClick={() => setStep(step - 1)}
-                className="rounded-full px-3 py-1.5 text-[13px] font-medium text-[var(--text-secondary)] hover:bg-sys-gray-6 transition"
+                className="rounded-full px-3 py-1.5 text-[13px] font-medium text-(--text-secondary) hover:bg-sys-gray-6 transition"
               >
                 Back
               </button>

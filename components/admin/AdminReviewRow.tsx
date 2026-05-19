@@ -87,7 +87,7 @@ export function AdminReviewRow({
       className={`rounded-2xl border p-4 shadow-card ${
         review.is_hidden
           ? 'border-accent-red-tint bg-accent-red-tint/40'
-          : 'border-[var(--surface-border)] bg-white'
+          : 'border-(--surface-border) bg-white'
       }`}
     >
       <div className="flex items-start gap-3">
@@ -100,7 +100,7 @@ export function AdminReviewRow({
           <div className="flex flex-wrap items-baseline gap-x-2">
             <Link
               href={`/place/${review.place_id}`}
-              className="text-[14px] font-semibold text-[var(--text-primary)] hover:underline"
+              className="text-[14px] font-semibold text-(--text-primary) hover:underline"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -117,13 +117,13 @@ export function AdminReviewRow({
               </span>
             )}
           </div>
-          <div className="text-[11px] text-[var(--text-tertiary)]">
+          <div className="text-[11px] text-(--text-tertiary)">
             {review.user_email ?? review.user_id.slice(0, 8)} · {timeAgo(review.created_at)}
             {review.upvotes_count > 0 ? ` · ${review.upvotes_count} ▲` : ''}
             {review.geo_verified ? ' · geo ✓' : ''}
           </div>
           {review.comment && (
-            <div className="mt-2 whitespace-pre-wrap text-[13px] text-[var(--text-primary)]">
+            <div className="mt-2 whitespace-pre-wrap text-[13px] text-(--text-primary)">
               {review.comment}
             </div>
           )}
@@ -133,7 +133,7 @@ export function AdminReviewRow({
             type="button"
             onClick={toggleHidden}
             disabled={busy !== null}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-primary)] hover:bg-sys-gray-5 disabled:opacity-60 transition"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-primary) hover:bg-sys-gray-5 disabled:opacity-60 transition"
             aria-label={review.is_hidden ? 'Restore' : 'Hide'}
             title={review.is_hidden ? 'Restore' : 'Hide'}
           >
@@ -156,14 +156,14 @@ export function AdminReviewRow({
       </div>
       {showConfirm && (
         <div className="mt-3 rounded-xl border border-accent-red bg-accent-red-tint p-3">
-          <div className="text-[12px] text-[var(--text-primary)]">
+          <div className="text-[12px] text-(--text-primary)">
             Type <strong>DELETE</strong> to permanently remove this review. Prefer Hide for moderation.
           </div>
           <input
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder="DELETE"
-            className="mt-2 w-full rounded-lg border border-[var(--surface-border)] bg-white px-2 py-1.5 text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent-red"
+            className="mt-2 w-full rounded-lg border border-(--surface-border) bg-white px-2 py-1.5 text-[13px] text-(--text-primary) focus:outline-hidden focus:ring-2 focus:ring-accent-red"
           />
           <div className="mt-2 flex gap-2">
             <button
@@ -173,7 +173,7 @@ export function AdminReviewRow({
                 setConfirmText('');
               }}
               disabled={busy !== null}
-              className="flex-1 rounded-lg border border-[var(--surface-border)] bg-white py-1.5 text-[12px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60 transition"
+              className="flex-1 rounded-lg border border-(--surface-border) bg-white py-1.5 text-[12px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60 transition"
             >
               Cancel
             </button>

@@ -13,9 +13,9 @@ export default async function AdminActivityPage() {
   } = await supabase.auth.getUser();
   if (!user || !isEmailAllowlisted(user.email)) {
     return (
-      <div className="min-h-dvh bg-[var(--map-bg)] p-6">
-        <div className="mx-auto max-w-md rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center shadow-card">
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">
+      <div className="min-h-dvh bg-(--map-bg) p-6">
+        <div className="mx-auto max-w-md rounded-2xl border border-(--surface-border) bg-white p-6 text-center shadow-card">
+          <div className="text-[15px] font-semibold text-(--text-primary)">
             Sign in as an admin to view this page.
           </div>
         </div>
@@ -29,9 +29,9 @@ export default async function AdminActivityPage() {
     .maybeSingle();
   if (!me?.is_admin) {
     return (
-      <div className="min-h-dvh bg-[var(--map-bg)] p-6">
-        <div className="mx-auto max-w-md rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center shadow-card">
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">
+      <div className="min-h-dvh bg-(--map-bg) p-6">
+        <div className="mx-auto max-w-md rounded-2xl border border-(--surface-border) bg-white p-6 text-center shadow-card">
+          <div className="text-[15px] font-semibold text-(--text-primary)">
             Admin access required.
           </div>
         </div>
@@ -40,7 +40,7 @@ export default async function AdminActivityPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
+    <div className="min-h-dvh bg-(--map-bg)">
       <div className="mx-auto max-w-3xl px-5 py-6">
         <div className="flex items-center justify-between">
           <Link
@@ -50,11 +50,11 @@ export default async function AdminActivityPage() {
           >
             <Icon name="ArrowLeft" size={18} />
           </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">Activity</div>
+          <div className="text-[15px] font-semibold text-(--text-primary)">Activity</div>
           <div className="w-9" />
         </div>
-        <h1 className="mt-6 text-[28px] font-bold text-[var(--text-primary)]">Recent activity</h1>
-        <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
+        <h1 className="mt-6 text-[28px] font-bold text-(--text-primary)">Recent activity</h1>
+        <p className="mt-1 text-[14px] text-(--text-secondary)">
           Approvals, rejections, dismissals and hides across the moderation
           queues — who did what, when.
         </p>

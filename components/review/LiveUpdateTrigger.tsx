@@ -12,7 +12,7 @@ export function LiveUpdateTrigger({ place }: { place: DemoPlace }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--surface-border)] bg-white py-3 text-[14px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 transition"
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-(--surface-border) bg-white py-3 text-[14px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 transition"
       >
         <Icon name="Broadcast" size={18} />
         <span>Share a live update</span>

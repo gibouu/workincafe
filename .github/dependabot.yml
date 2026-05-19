@@ -25,6 +25,13 @@ updates:
       include: scope
     labels:
       - dependencies
+    # ESLint 10 is blocked upstream: eslint-config-next (incl. canary) bundles
+    # eslint-plugin-react, whose every published release peers `eslint ^9.7`
+    # only, so v10 crashes `npm run lint`. Ignore the major until upstream
+    # ships ESLint 10 support; patch/minor on the ^9 line still flow. See #185.
+    ignore:
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /

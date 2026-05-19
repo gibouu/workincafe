@@ -16,14 +16,14 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center bg-[var(--map-bg)] px-6 text-center">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-(--map-bg) px-6 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent-red-tint">
         <Icon name="Warning" weight="fill" size={36} className="text-accent-red" />
       </div>
-      <h1 className="mt-5 text-[28px] font-bold text-[var(--text-primary)]">
+      <h1 className="mt-5 text-[28px] font-bold text-(--text-primary)">
         Something went sideways
       </h1>
-      <p className="mt-2 max-w-sm text-[14px] text-[var(--text-secondary)]">
+      <p className="mt-2 max-w-sm text-[14px] text-(--text-secondary)">
         An unexpected error occurred. Please try again.
       </p>
       <div className="mt-8 flex gap-3">
@@ -36,7 +36,7 @@ export default function GlobalError({
         </button>
         <Link
           href="/"
-          className="rounded-2xl border border-[var(--surface-border)] bg-white px-6 py-3 text-[15px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 transition"
+          className="rounded-2xl border border-(--surface-border) bg-white px-6 py-3 text-[15px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 transition"
         >
           Back to map
         </Link>

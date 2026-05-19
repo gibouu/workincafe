@@ -531,9 +531,9 @@ export function AddPlaceWizard({
   return (
     <form
       onSubmit={onSubmit}
-      className="flex min-h-dvh flex-col bg-[var(--map-bg)] pb-28"
+      className="flex min-h-dvh flex-col bg-(--map-bg) pb-28"
     >
-      <header className="sticky top-0 z-10 border-b border-[var(--surface-border)] bg-white/90 backdrop-blur-ios">
+      <header className="sticky top-0 z-10 border-b border-(--surface-border) bg-white/90 backdrop-blur-ios">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
           <Link
             href="/"
@@ -543,10 +543,10 @@ export function AddPlaceWizard({
             <Icon name="X" size={18} />
           </Link>
           <div className="flex flex-col items-center text-center">
-            <div className="text-[11px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+            <div className="text-[11px] font-medium uppercase tracking-wide text-(--text-tertiary)">
               Step {stepIndex + 1} of {STEPS.length}
             </div>
-            <div className="text-[14px] font-semibold text-[var(--text-primary)]">
+            <div className="text-[14px] font-semibold text-(--text-primary)">
               {STEP_TITLES[step]}
             </div>
           </div>
@@ -568,14 +568,14 @@ export function AddPlaceWizard({
         {step === 'find' && (
           <div className="flex flex-col gap-4">
             <div>
-              <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+              <div className="text-[13px] font-semibold text-(--text-primary)">
                 Search for it
               </div>
-              <div className="mt-1 text-[12px] text-[var(--text-secondary)]">
+              <div className="mt-1 text-[12px] text-(--text-secondary)">
                 Try the place name. We&apos;ll auto-fill what we know.
               </div>
-              <div className="mt-2 flex items-center gap-2 rounded-xl border border-[var(--surface-border)] bg-white px-3 py-3 focus-within:ring-2 focus-within:ring-accent">
-                <Icon name="MagnifyingGlass" size={16} className="text-[var(--text-tertiary)]" />
+              <div className="mt-2 flex items-center gap-2 rounded-xl border border-(--surface-border) bg-white px-3 py-3 focus-within:ring-2 focus-within:ring-accent">
+                <Icon name="MagnifyingGlass" size={16} className="text-(--text-tertiary)" />
                 <input
                   value={search}
                   onChange={(e) => {
@@ -583,20 +583,20 @@ export function AddPlaceWizard({
                     if (picked) setPicked(null);
                   }}
                   placeholder="e.g. Fuwa Fuwa"
-                  className="flex-1 bg-transparent text-[16px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+                  className="flex-1 bg-transparent text-[16px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden"
                   autoFocus
                 />
                 {searching && (
-                  <Icon name="CircleNotch" size={16} className="animate-spin text-[var(--text-tertiary)]" />
+                  <Icon name="CircleNotch" size={16} className="animate-spin text-(--text-tertiary)" />
                 )}
               </div>
               {search.trim().length >= 2 && !picked && (
-                <ul className="mt-2 max-h-[244px] overflow-y-auto rounded-xl border border-[var(--surface-border)] bg-white shadow-card">
+                <ul className="mt-2 max-h-[244px] overflow-y-auto rounded-xl border border-(--surface-border) bg-white shadow-card">
                   {/* Always-on "I don't see it" CTA at the top — gives the
                       user an immediate fall-through to manual entry when
                       the autocomplete returns the wrong place (or none).
                       #134. */}
-                  <li className="border-b border-[var(--surface-border)] bg-[var(--map-bg)]">
+                  <li className="border-b border-(--surface-border) bg-(--map-bg)">
                     <button
                       type="button"
                       onClick={() => {
@@ -616,7 +616,7 @@ export function AddPlaceWizard({
                         <div className="text-[14px] font-semibold text-accent">
                           I don&apos;t see it — type the name
                         </div>
-                        <div className="text-[12px] text-[var(--text-secondary)]">
+                        <div className="text-[12px] text-(--text-secondary)">
                           {predictions.length === 0
                             ? 'No matches found in our index'
                             : 'None of these are the right place'}
@@ -631,11 +631,11 @@ export function AddPlaceWizard({
                         onClick={() => onPick(p)}
                         className="block w-full px-3 py-2.5 text-left hover:bg-sys-gray-6"
                       >
-                        <div className="text-[15px] font-medium text-[var(--text-primary)]">
+                        <div className="text-[15px] font-medium text-(--text-primary)">
                           {p.primary || p.text}
                         </div>
                         {p.secondary && (
-                          <div className="text-[12px] text-[var(--text-secondary)]">
+                          <div className="text-[12px] text-(--text-secondary)">
                             {p.secondary}
                           </div>
                         )}
@@ -645,12 +645,12 @@ export function AddPlaceWizard({
                 </ul>
               )}
               {picked && (
-                <div className="mt-2 flex items-start gap-2 rounded-xl bg-accent-tint p-3 text-[13px] text-[var(--text-primary)]">
+                <div className="mt-2 flex items-start gap-2 rounded-xl bg-accent-tint p-3 text-[13px] text-(--text-primary)">
                   <Icon name="MapPin" size={16} className="mt-0.5 text-accent" />
                   <div className="flex-1">
                     <div className="font-semibold">{picked.name}</div>
                     {picked.address && (
-                      <div className="text-[var(--text-secondary)]">{picked.address}</div>
+                      <div className="text-(--text-secondary)">{picked.address}</div>
                     )}
                     <button
                       type="button"
@@ -664,11 +664,11 @@ export function AddPlaceWizard({
               )}
             </div>
 
-            <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-4">
-              <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+            <div className="rounded-2xl border border-(--surface-border) bg-white p-4">
+              <div className="text-[13px] font-semibold text-(--text-primary)">
                 Or type the name
               </div>
-              <div className="mt-1 text-[12px] text-[var(--text-secondary)]">
+              <div className="mt-1 text-[12px] text-(--text-secondary)">
                 If search doesn&apos;t find it, name it yourself.
               </div>
               <input
@@ -679,20 +679,20 @@ export function AddPlaceWizard({
                   if (picked && e.target.value !== picked.name) setPicked(null);
                 }}
                 placeholder="Place name"
-                className="mt-2 w-full rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-3 text-[16px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
+                className="mt-2 w-full rounded-xl border border-(--surface-border) bg-(--map-bg) px-3 py-3 text-[16px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden focus:ring-2 focus:ring-accent"
               />
             </div>
 
-            <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-4">
-              <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+            <div className="rounded-2xl border border-(--surface-border) bg-white p-4">
+              <div className="text-[13px] font-semibold text-(--text-primary)">
                 Or use an address
               </div>
-              <div className="mt-1 text-[12px] text-[var(--text-secondary)]">
+              <div className="mt-1 text-[12px] text-(--text-secondary)">
                 If GPS isn&apos;t working, type an address — we&apos;ll look up the
                 coordinates.
               </div>
-              <div className="mt-2 flex items-center gap-2 rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-3 focus-within:ring-2 focus-within:ring-accent">
-                <Icon name="MapPinLine" size={16} className="text-[var(--text-tertiary)]" />
+              <div className="mt-2 flex items-center gap-2 rounded-xl border border-(--surface-border) bg-(--map-bg) px-3 py-3 focus-within:ring-2 focus-within:ring-accent">
+                <Icon name="MapPinLine" size={16} className="text-(--text-tertiary)" />
                 <input
                   value={addressQuery}
                   onChange={(e) => {
@@ -700,18 +700,18 @@ export function AddPlaceWizard({
                     if (picked && picked.types.length === 0) setPicked(null);
                   }}
                   placeholder="e.g. 12 rue de la Convention, Paris"
-                  className="flex-1 bg-transparent text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+                  className="flex-1 bg-transparent text-[15px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden"
                 />
                 {addressSearching && (
                   <Icon
                     name="CircleNotch"
                     size={16}
-                    className="animate-spin text-[var(--text-tertiary)]"
+                    className="animate-spin text-(--text-tertiary)"
                   />
                 )}
               </div>
               {addressPredictions.length > 0 && (
-                <ul className="mt-2 overflow-hidden rounded-xl border border-[var(--surface-border)] bg-white shadow-card">
+                <ul className="mt-2 overflow-hidden rounded-xl border border-(--surface-border) bg-white shadow-card">
                   {addressPredictions.map((p) => (
                     <li key={p.placeId}>
                       <button
@@ -719,11 +719,11 @@ export function AddPlaceWizard({
                         onClick={() => onPickAddress(p)}
                         className="block w-full px-3 py-2.5 text-left hover:bg-sys-gray-6"
                       >
-                        <div className="text-[14px] font-medium text-[var(--text-primary)]">
+                        <div className="text-[14px] font-medium text-(--text-primary)">
                           {p.primary || p.text}
                         </div>
                         {p.secondary && (
-                          <div className="text-[11px] text-[var(--text-secondary)]">
+                          <div className="text-[11px] text-(--text-secondary)">
                             {p.secondary}
                           </div>
                         )}
@@ -733,14 +733,14 @@ export function AddPlaceWizard({
                 </ul>
               )}
               {picked && picked.types.length === 0 && (
-                <div className="mt-2 flex items-start gap-2 rounded-xl bg-accent-tint p-3 text-[12px] text-[var(--text-primary)]">
+                <div className="mt-2 flex items-start gap-2 rounded-xl bg-accent-tint p-3 text-[12px] text-(--text-primary)">
                   <Icon name="MapPin" size={14} className="mt-0.5 text-accent" />
                   <div className="flex-1">
                     <div className="font-semibold">Address locked in</div>
                     {picked.address && (
-                      <div className="text-[var(--text-secondary)]">{picked.address}</div>
+                      <div className="text-(--text-secondary)">{picked.address}</div>
                     )}
-                    <div className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
+                    <div className="mt-0.5 text-[11px] text-(--text-tertiary)">
                       {picked.lat.toFixed(5)}, {picked.lng.toFixed(5)}
                     </div>
                   </div>
@@ -752,11 +752,11 @@ export function AddPlaceWizard({
                 with a similar name so users don't double-add a place that's
                 already on the map but hidden by the cafés-only default. */}
             {nearbyMatches.length > 0 && reviewPromptForId === null && (
-              <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-4">
-                <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+              <div className="rounded-2xl border border-(--surface-border) bg-white p-4">
+                <div className="text-[13px] font-semibold text-(--text-primary)">
                   Did you mean…?
                 </div>
-                <div className="mt-1 text-[12px] text-[var(--text-secondary)]">
+                <div className="mt-1 text-[12px] text-(--text-secondary)">
                   We already have these nearby. Tap one to confirm it&rsquo;s the place — we&rsquo;ll show it on the map.
                 </div>
                 <ul className="mt-3 flex flex-col gap-2">
@@ -766,7 +766,7 @@ export function AddPlaceWizard({
                         type="button"
                         disabled={validatingId !== null}
                         onClick={() => handleValidateMatch(m)}
-                        className="flex w-full items-start gap-3 rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2.5 text-left transition hover:bg-sys-gray-6 disabled:opacity-60"
+                        className="flex w-full items-start gap-3 rounded-xl border border-(--surface-border) bg-(--map-bg) px-3 py-2.5 text-left transition hover:bg-sys-gray-6 disabled:opacity-60"
                       >
                         <Icon
                           name={CATEGORIES[m.category as PlaceCategory]?.icon ?? 'MapPin'}
@@ -774,11 +774,11 @@ export function AddPlaceWizard({
                           className="mt-0.5 text-accent"
                         />
                         <div className="flex-1">
-                          <div className="text-[14px] font-medium text-[var(--text-primary)]">
+                          <div className="text-[14px] font-medium text-(--text-primary)">
                             {m.name}
                           </div>
                           {(m.brand || m.category) && (
-                            <div className="text-[11px] text-[var(--text-secondary)]">
+                            <div className="text-[11px] text-(--text-secondary)">
                               {m.brand ? `${m.brand} · ` : ''}
                               {CATEGORIES[m.category as PlaceCategory]?.label ?? m.category}
                             </div>
@@ -788,13 +788,13 @@ export function AddPlaceWizard({
                           <Icon
                             name="CircleNotch"
                             size={14}
-                            className="mt-1 animate-spin text-[var(--text-tertiary)]"
+                            className="mt-1 animate-spin text-(--text-tertiary)"
                           />
                         ) : (
                           <Icon
                             name="CaretRight"
                             size={14}
-                            className="mt-1 text-[var(--text-tertiary)]"
+                            className="mt-1 text-(--text-tertiary)"
                           />
                         )}
                       </button>
@@ -816,10 +816,10 @@ export function AddPlaceWizard({
                     className="mt-0.5 text-accent"
                   />
                   <div className="flex-1">
-                    <div className="text-[14px] font-semibold text-[var(--text-primary)]">
+                    <div className="text-[14px] font-semibold text-(--text-primary)">
                       Added to the map
                     </div>
-                    <div className="mt-1 text-[12px] text-[var(--text-secondary)]">
+                    <div className="mt-1 text-[12px] text-(--text-secondary)">
                       Want to leave a review while you&rsquo;re here? Helps
                       others find it too.
                     </div>
@@ -842,7 +842,7 @@ export function AddPlaceWizard({
                       clearDraft();
                       router.push('/');
                     }}
-                    className="flex-1 rounded-xl border border-[var(--surface-border)] bg-white py-2.5 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6"
+                    className="flex-1 rounded-xl border border-(--surface-border) bg-white py-2.5 text-[13px] font-semibold text-(--text-primary) hover:bg-sys-gray-6"
                   >
                     No thanks
                   </button>
@@ -854,23 +854,23 @@ export function AddPlaceWizard({
 
         {step === 'describe' && (
           <div className="flex flex-col gap-4">
-            <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-4">
-              <div className="flex items-center gap-2 text-[12px] text-[var(--text-secondary)]">
+            <div className="rounded-2xl border border-(--surface-border) bg-white p-4">
+              <div className="flex items-center gap-2 text-[12px] text-(--text-secondary)">
                 <Icon name="Storefront" size={14} />
                 <span className="font-medium uppercase tracking-wide">Adding</span>
               </div>
-              <div className="mt-1 text-[16px] font-semibold text-[var(--text-primary)]">
+              <div className="mt-1 text-[16px] font-semibold text-(--text-primary)">
                 {name.trim() || 'Untitled place'}
               </div>
               {picked?.address && (
-                <div className="text-[12px] text-[var(--text-secondary)]">
+                <div className="text-[12px] text-(--text-secondary)">
                   {picked.address}
                 </div>
               )}
             </div>
 
             <div>
-              <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+              <div className="text-[13px] font-semibold text-(--text-primary)">
                 Category
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -885,7 +885,7 @@ export function AddPlaceWizard({
                       className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-[13px] font-medium transition ${
                         active
                           ? 'border-transparent text-white'
-                          : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
+                          : 'border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6'
                       }`}
                       style={active ? { background: meta.color } : undefined}
                     >
@@ -900,13 +900,13 @@ export function AddPlaceWizard({
                   value={customType}
                   onChange={(e) => setCustomType(e.target.value.slice(0, 60))}
                   placeholder="What kind? e.g. brewery, museum café…"
-                  className="mt-3 w-full rounded-xl border border-[var(--surface-border)] bg-white px-3 py-3 text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="mt-3 w-full rounded-xl border border-(--surface-border) bg-white px-3 py-3 text-[15px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden focus:ring-2 focus:ring-accent"
                 />
               )}
             </div>
 
             <label className="block">
-              <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+              <div className="text-[13px] font-semibold text-(--text-primary)">
                 Notes (optional)
               </div>
               <textarea
@@ -914,17 +914,17 @@ export function AddPlaceWizard({
                 onChange={(e) => setNotes(e.target.value.slice(0, 280))}
                 placeholder="Hours, Wi-Fi, anything a future worker should know."
                 rows={4}
-                className="mt-2 w-full resize-none rounded-xl border border-[var(--surface-border)] bg-white px-3 py-3 text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
+                className="mt-2 w-full resize-none rounded-xl border border-(--surface-border) bg-white px-3 py-3 text-[15px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden focus:ring-2 focus:ring-accent"
               />
-              <div className="mt-1 text-right text-[11px] text-[var(--text-tertiary)]">
+              <div className="mt-1 text-right text-[11px] text-(--text-tertiary)">
                 {notes.length}/280
               </div>
             </label>
 
-            <div className="rounded-2xl bg-sys-gray-6 px-4 py-3 text-[12px] text-[var(--text-secondary)]">
+            <div className="rounded-2xl bg-sys-gray-6 px-4 py-3 text-[12px] text-(--text-secondary)">
               <div className="flex items-center gap-2">
                 <Icon name="MapPinLine" size={14} />
-                <span className="font-semibold text-[var(--text-primary)]">Location</span>
+                <span className="font-semibold text-(--text-primary)">Location</span>
               </div>
               <div className="mt-1">
                 {picked
@@ -940,13 +940,13 @@ export function AddPlaceWizard({
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--surface-border)] bg-white/95 p-4 backdrop-blur-ios">
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-(--surface-border) bg-white/95 p-4 backdrop-blur-ios">
         <div className="mx-auto flex max-w-2xl items-center gap-3">
           <button
             type="button"
             onClick={goBack}
             disabled={submitting}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60"
             aria-label={isFirst ? 'Cancel' : 'Back'}
           >
             <Icon name="ArrowLeft" size={20} />

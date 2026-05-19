@@ -65,11 +65,11 @@ export function LoyaltyCard() {
 
   if (!progress) {
     return (
-      <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
-        <div className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">
+      <div className="rounded-2xl border border-(--surface-border) bg-white p-5 shadow-card">
+        <div className="text-[11px] uppercase tracking-wide text-(--text-secondary)">
           Loyalty
         </div>
-        <div className="mt-2 text-[13px] text-[var(--text-tertiary)]">Loading…</div>
+        <div className="mt-2 text-[13px] text-(--text-tertiary)">Loading…</div>
       </div>
     );
   }
@@ -78,13 +78,13 @@ export function LoyaltyCard() {
   const placesPct = Math.min(100, (progress.distinct_places / FREEBIE_DISTINCT_PLACES) * 100);
 
   return (
-    <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
+    <div className="rounded-2xl border border-(--surface-border) bg-white p-5 shadow-card">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">
+          <div className="text-[11px] uppercase tracking-wide text-(--text-secondary)">
             Loyalty points
           </div>
-          <div className="mt-1 text-[34px] font-bold text-[var(--text-primary)]">
+          <div className="mt-1 text-[34px] font-bold text-(--text-primary)">
             {progress.balance}
           </div>
         </div>
@@ -137,7 +137,7 @@ export function LoyaltyCard() {
         How it works
       </button>
       {howOpen && (
-        <div className="mt-2 space-y-1.5 text-[12px] text-[var(--text-secondary)]">
+        <div className="mt-2 space-y-1.5 text-[12px] text-(--text-secondary)">
           <p>• Buy a deal in the app, walk in, café scans your code → +1 point per scan.</p>
           <p>
             • Earn {FREEBIE_POINT_COST} points across {FREEBIE_DISTINCT_PLACES} different places to
@@ -157,7 +157,7 @@ export function LoyaltyCard() {
 function ProgressBar({ label, pct }: { label: string; pct: number }) {
   return (
     <div>
-      <div className="text-[11px] text-[var(--text-secondary)]">{label}</div>
+      <div className="text-[11px] text-(--text-secondary)">{label}</div>
       <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-sys-gray-5">
         <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
       </div>

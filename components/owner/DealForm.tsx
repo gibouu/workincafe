@@ -104,9 +104,9 @@ export function DealForm({
           onChange={(e) => setTitle(e.target.value.slice(0, 80))}
           placeholder="Coffee + croissant"
           required
-          className="w-full rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent"
+          className="w-full rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[14px] focus:outline-hidden focus:ring-2 focus:ring-accent"
         />
-        <div className="mt-1 text-right text-[10px] text-[var(--text-tertiary)]">
+        <div className="mt-1 text-right text-[10px] text-(--text-tertiary)">
           {title.length}/80
         </div>
       </Section>
@@ -117,9 +117,9 @@ export function DealForm({
           onChange={(e) => setDescription(e.target.value.slice(0, 280))}
           placeholder="What does this deal include? Any conditions?"
           rows={3}
-          className="w-full resize-none rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent"
+          className="w-full resize-none rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[14px] focus:outline-hidden focus:ring-2 focus:ring-accent"
         />
-        <div className="mt-1 text-right text-[10px] text-[var(--text-tertiary)]">
+        <div className="mt-1 text-right text-[10px] text-(--text-tertiary)">
           {description.length}/280
         </div>
       </Section>
@@ -139,7 +139,7 @@ export function DealForm({
         </div>
         {kind === 'pack' && (
           <div className="mt-3">
-            <label className="block text-[12px] font-medium text-[var(--text-secondary)]">
+            <label className="block text-[12px] font-medium text-(--text-secondary)">
               Pack size (uses per purchase, max 100)
             </label>
             <input
@@ -148,7 +148,7 @@ export function DealForm({
               max={100}
               value={packSize}
               onChange={(e) => setPackSize(Math.max(2, Math.min(100, Number(e.target.value) || 0)))}
-              className="mt-1 w-full rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent"
+              className="mt-1 w-full rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[14px] focus:outline-hidden focus:ring-2 focus:ring-accent"
             />
           </div>
         )}
@@ -159,7 +159,7 @@ export function DealForm({
           <select
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
-            className="rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent"
+            className="rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[14px] focus:outline-hidden focus:ring-2 focus:ring-accent"
           >
             <option value="EUR">EUR €</option>
             <option value="CAD">CAD C$</option>
@@ -170,13 +170,13 @@ export function DealForm({
             step={0.01}
             value={(priceCents / 100).toFixed(2)}
             onChange={(e) => setPriceCents(Math.round((Number(e.target.value) || 0) * 100))}
-            className="flex-1 rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent"
+            className="flex-1 rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[14px] focus:outline-hidden focus:ring-2 focus:ring-accent"
           />
         </div>
-        <div className="mt-3 rounded-xl bg-sys-gray-6 px-3 py-2 text-[12px] text-[var(--text-secondary)]">
+        <div className="mt-3 rounded-xl bg-sys-gray-6 px-3 py-2 text-[12px] text-(--text-secondary)">
           <div className="flex items-center justify-between">
             <span>Customer pays</span>
-            <span className="font-semibold text-[var(--text-primary)]">
+            <span className="font-semibold text-(--text-primary)">
               {formatCents(fee.total_cents, currency)}
             </span>
           </div>
@@ -184,7 +184,7 @@ export function DealForm({
             <span>Platform fee (5% + €0.25)</span>
             <span>−{formatCents(fee.platform_fee_cents, currency)}</span>
           </div>
-          <div className="mt-1 flex items-center justify-between border-t border-[var(--surface-border)] pt-1">
+          <div className="mt-1 flex items-center justify-between border-t border-(--surface-border) pt-1">
             <span>You receive (before processor fees)</span>
             <span className="font-semibold text-accent-green">
               {formatCents(fee.owner_receives_cents, currency)}
@@ -195,18 +195,18 @@ export function DealForm({
 
       <Section title="Expiry & limits">
         <label className="block">
-          <div className="text-[12px] font-medium text-[var(--text-secondary)]">
+          <div className="text-[12px] font-medium text-(--text-secondary)">
             Ends at (optional)
           </div>
           <input
             type="date"
             value={endsAt}
             onChange={(e) => setEndsAt(e.target.value)}
-            className="mt-1 w-full rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent"
+            className="mt-1 w-full rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[14px] focus:outline-hidden focus:ring-2 focus:ring-accent"
           />
         </label>
         <label className="mt-3 block">
-          <div className="text-[12px] font-medium text-[var(--text-secondary)]">
+          <div className="text-[12px] font-medium text-(--text-secondary)">
             Purchase limit per user (blank = unlimited)
           </div>
           <input
@@ -218,20 +218,20 @@ export function DealForm({
               setLimit(v === '' ? '' : Math.max(1, Number(v) || 0));
             }}
             placeholder="Unlimited"
-            className="mt-1 w-full rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent"
+            className="mt-1 w-full rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[14px] focus:outline-hidden focus:ring-2 focus:ring-accent"
           />
         </label>
       </Section>
 
       <Section title="Status">
-        <label className="flex items-center gap-3 rounded-xl border border-[var(--surface-border)] bg-white px-3 py-3">
+        <label className="flex items-center gap-3 rounded-xl border border-(--surface-border) bg-white px-3 py-3">
           <input
             type="checkbox"
             checked={active}
             onChange={(e) => setActive(e.target.checked)}
-            className="h-4 w-4 accent-[var(--accent)]"
+            className="h-4 w-4 accent-(--accent)"
           />
-          <span className="text-[14px] text-[var(--text-primary)]">
+          <span className="text-[14px] text-(--text-primary)">
             Active — visible to customers and purchasable
           </span>
         </label>
@@ -243,7 +243,7 @@ export function DealForm({
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--surface-border)] bg-white/95 p-4 backdrop-blur-ios">
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-(--surface-border) bg-white/95 p-4 backdrop-blur-ios">
         <div className="mx-auto max-w-3xl">
           <button
             type="submit"
@@ -274,7 +274,7 @@ function KindButton({
       className={`rounded-xl border px-3 py-3 text-[14px] font-semibold transition ${
         active
           ? 'border-transparent bg-accent text-white'
-          : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
+          : 'border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6'
       }`}
     >
       <Icon

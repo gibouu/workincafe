@@ -41,7 +41,7 @@ export default async function OwnerPage() {
   const owned = await loadOwnedPlaces();
 
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
+    <div className="min-h-dvh bg-(--map-bg)">
       <div className="mx-auto max-w-3xl px-5 py-6">
         <div className="flex items-center justify-between">
           <Link
@@ -51,21 +51,21 @@ export default async function OwnerPage() {
           >
             <Icon name="ArrowLeft" size={18} />
           </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">
+          <div className="text-[15px] font-semibold text-(--text-primary)">
             Owner
           </div>
           <div className="w-9" />
         </div>
 
-        <h1 className="mt-6 text-[28px] font-bold text-[var(--text-primary)]">Your places</h1>
-        <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
+        <h1 className="mt-6 text-[28px] font-bold text-(--text-primary)">Your places</h1>
+        <p className="mt-1 text-[14px] text-(--text-secondary)">
           {owned.length === 0
             ? 'You don’t own any places yet.'
             : `${owned.length} ${owned.length === 1 ? 'place' : 'places'}`}
         </p>
 
         {owned.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+          <div className="mt-6 rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary) shadow-card">
             <p>Find your place on the map and tap “Claim this place.”</p>
             <Link
               href="/"
@@ -84,7 +84,7 @@ export default async function OwnerPage() {
                 <li key={row.place_id}>
                   <Link
                     href={`/owner/places/${row.place_id}`}
-                    className="flex items-center gap-3 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card hover:shadow-float transition"
+                    className="flex items-center gap-3 rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card hover:shadow-float transition"
                   >
                     <div
                       className="flex h-12 w-12 items-center justify-center rounded-full text-white shadow-bubble"
@@ -93,14 +93,14 @@ export default async function OwnerPage() {
                       <Icon name={meta.icon} size={20} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[15px] font-semibold text-[var(--text-primary)]">
+                      <div className="truncate text-[15px] font-semibold text-(--text-primary)">
                         {row.places.name}
                       </div>
-                      <div className="truncate text-[12px] text-[var(--text-secondary)]">
+                      <div className="truncate text-[12px] text-(--text-secondary)">
                         {row.places.address} · {row.places.neighborhood}
                       </div>
                     </div>
-                    <Icon name="ArrowRight" size={16} className="text-[var(--text-secondary)]" />
+                    <Icon name="ArrowRight" size={16} className="text-(--text-secondary)" />
                   </Link>
                 </li>
               );

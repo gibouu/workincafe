@@ -38,7 +38,7 @@ async function loadClaims(): Promise<ClaimRecord[]> {
 export default async function OwnershipClaimsPage() {
   const claims = await loadClaims();
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
+    <div className="min-h-dvh bg-(--map-bg)">
       <div className="mx-auto max-w-3xl px-5 py-6">
         <div className="flex items-center justify-between">
           <Link
@@ -48,19 +48,19 @@ export default async function OwnershipClaimsPage() {
           >
             <Icon name="ArrowLeft" size={18} />
           </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">
+          <div className="text-[15px] font-semibold text-(--text-primary)">
             Ownership claims
           </div>
           <div className="w-9" />
         </div>
 
-        <h1 className="mt-6 text-[28px] font-bold text-[var(--text-primary)]">Pending</h1>
-        <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
+        <h1 className="mt-6 text-[28px] font-bold text-(--text-primary)">Pending</h1>
+        <p className="mt-1 text-[14px] text-(--text-secondary)">
           {claims.length} pending
         </p>
 
         {claims.length === 0 ? (
-          <div className="mt-6 rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+          <div className="mt-6 rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary) shadow-card">
             No pending claims. New claims show up here as café owners submit them.
           </div>
         ) : (

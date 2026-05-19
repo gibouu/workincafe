@@ -799,8 +799,8 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-green-tint">
             <Icon name="CheckCircle" weight="fill" size={36} className="text-accent-green" />
           </div>
-          <h1 className="mt-4 text-[20px] font-bold text-[var(--text-primary)]">Thanks!</h1>
-          <p className="mt-1 max-w-xs text-[13px] text-[var(--text-secondary)]">
+          <h1 className="mt-4 text-[20px] font-bold text-(--text-primary)">Thanks!</h1>
+          <p className="mt-1 max-w-xs text-[13px] text-(--text-secondary)">
             Your review helps the next person find a good spot to work.
           </p>
           <button
@@ -814,12 +814,12 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       );
     }
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-[var(--map-bg)] px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-(--map-bg) px-6 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent-green-tint">
           <Icon name="CheckCircle" weight="fill" size={44} className="text-accent-green" />
         </div>
-        <h1 className="mt-5 text-[28px] font-bold text-[var(--text-primary)]">Thanks!</h1>
-        <p className="mt-2 max-w-xs text-[14px] text-[var(--text-secondary)]">
+        <h1 className="mt-5 text-[28px] font-bold text-(--text-primary)">Thanks!</h1>
+        <p className="mt-2 max-w-xs text-[14px] text-(--text-secondary)">
           Your review helps the next person find a good spot to work.
         </p>
         <Link
@@ -838,14 +838,14 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       className={
         compact
           ? 'flex h-full min-h-0 w-full flex-1 flex-col bg-white'
-          : 'flex min-h-dvh flex-col bg-[var(--map-bg)] pb-[calc(7rem+env(safe-area-inset-bottom))]'
+          : 'flex min-h-dvh flex-col bg-(--map-bg) pb-[calc(7rem+env(safe-area-inset-bottom))]'
       }
     >
       <header
         className={
           compact
-            ? 'shrink-0 border-b border-[var(--surface-border)] bg-white/95 backdrop-blur-ios'
-            : 'sticky top-0 z-10 border-b border-[var(--surface-border)] bg-white/90 backdrop-blur-ios'
+            ? 'shrink-0 border-b border-(--surface-border) bg-white/95 backdrop-blur-ios'
+            : 'sticky top-0 z-10 border-b border-(--surface-border) bg-white/90 backdrop-blur-ios'
         }
       >
         <div
@@ -873,14 +873,14 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
           )}
           <div className="flex flex-col items-center text-center">
             <div
-              className={`font-medium uppercase tracking-wide text-[var(--text-tertiary)] ${
+              className={`font-medium uppercase tracking-wide text-(--text-tertiary) ${
                 compact ? 'text-[10px]' : 'text-[11px]'
               }`}
             >
               Step {stepIndex + 1} of {STEPS.length}
             </div>
             <div
-              className={`font-semibold text-[var(--text-primary)] ${
+              className={`font-semibold text-(--text-primary) ${
                 compact ? 'text-[13px]' : 'text-[14px]'
               }`}
             >
@@ -919,10 +919,10 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
               <Icon name={meta.icon} size={18} />
             </div>
             <div className="min-w-0">
-              <div className="truncate text-[15px] font-semibold text-[var(--text-primary)]">
+              <div className="truncate text-[15px] font-semibold text-(--text-primary)">
                 {place.name}
               </div>
-              <div className="truncate text-[11px] text-[var(--text-secondary)]">
+              <div className="truncate text-[11px] text-(--text-secondary)">
                 {place.address} · {place.neighborhood}
               </div>
             </div>
@@ -1042,7 +1042,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
                   className={`rounded-2xl border px-3 py-3 text-[14px] font-semibold transition ${
                     didOrder === 'yes'
                       ? 'border-transparent bg-accent text-white'
-                      : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
+                      : 'border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6'
                   }`}
                 >
                   Yes
@@ -1057,7 +1057,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
                   className={`rounded-2xl border px-3 py-3 text-[14px] font-semibold transition ${
                     didOrder === 'no'
                       ? 'border-transparent bg-accent text-white'
-                      : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
+                      : 'border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6'
                   }`}
                 >
                   No, just used the space
@@ -1116,7 +1116,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
             )}
             {didOrder === 'no' && (
               <Section title="Got it">
-                <p className="text-[12px] text-[var(--text-secondary)]">
+                <p className="text-[12px] text-(--text-secondary)">
                   We’ll skip the price questions.
                 </p>
               </Section>
@@ -1143,7 +1143,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
                 </Section>
                 <Section title="Latte art">
                   {coffeeNoArt ? (
-                    <div className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-3 text-[12px] text-[var(--text-secondary)]">
+                    <div className="rounded-2xl border border-(--surface-border) bg-white px-3 py-3 text-[12px] text-(--text-secondary)">
                       Marked as no art served — we’ll skip the rating.
                     </div>
                   ) : (
@@ -1172,7 +1172,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
                 </Section>
                 <Section title="The mug">
                   {coffeeNoMug ? (
-                    <div className="rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-3 text-[12px] text-[var(--text-secondary)]">
+                    <div className="rounded-2xl border border-(--surface-border) bg-white px-3 py-3 text-[12px] text-(--text-secondary)">
                       Marked as a to-go cup — we’ll skip the rating.
                     </div>
                   ) : (
@@ -1202,7 +1202,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
               </>
             ) : (
               <Section title="Skipping coffee">
-                <p className="text-[12px] text-[var(--text-secondary)]">
+                <p className="text-[12px] text-(--text-secondary)">
                   You said you didn’t order — we’ll skip the coffee rating.
                 </p>
               </Section>
@@ -1242,7 +1242,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
                       className={`flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition ${
                         active
                           ? 'border-accent bg-accent-tint'
-                          : 'border-[var(--surface-border)] bg-white hover:bg-sys-gray-6'
+                          : 'border-(--surface-border) bg-white hover:bg-sys-gray-6'
                       }`}
                       aria-pressed={active}
                     >
@@ -1250,14 +1250,14 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
                         name={active ? 'CheckSquare' : 'Square'}
                         weight={active ? 'fill' : 'regular'}
                         size={22}
-                        className={active ? 'text-accent' : 'text-[var(--text-tertiary)]'}
+                        className={active ? 'text-accent' : 'text-(--text-tertiary)'}
                       />
                       <Icon
                         name={opt.icon}
                         size={18}
-                        className="text-[var(--text-secondary)]"
+                        className="text-(--text-secondary)"
                       />
-                      <span className="text-[14px] text-[var(--text-primary)]">{opt.label}</span>
+                      <span className="text-[14px] text-(--text-primary)">{opt.label}</span>
                     </button>
                   );
                 })}
@@ -1272,7 +1272,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
             subtitle="Up to 4. Each slot has a specific job — please don’t fill all four with food and coffee."
           >
             <PhotoSlots value={photos} onChange={setPhotos} />
-            <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
+            <p className="mt-2 text-[11px] text-(--text-tertiary)">
               Photos are optional. They’re saved with your review after submit.
             </p>
           </Section>
@@ -1282,7 +1282,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
           <>
             <Section title="Overall rating">
               {suggestedOverall > 0 && !overallTouched && (
-                <p className="text-[11px] text-[var(--text-tertiary)]">
+                <p className="text-[11px] text-(--text-tertiary)">
                   Suggested: {suggestedOverall} / 10 — adjust if it doesn’t feel right.
                 </p>
               )}
@@ -1311,7 +1311,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
               )}
             </Section>
             <Section title="Comment">
-              <div className="flex items-center justify-between text-[11px] text-[var(--text-tertiary)]">
+              <div className="flex items-center justify-between text-[11px] text-(--text-tertiary)">
                 <span>Anything a future worker should know?</span>
                 <span>{comment.length}/280</span>
               </div>
@@ -1320,7 +1320,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
                 onChange={(e) => setComment(e.target.value.slice(0, 280))}
                 placeholder="Outlets near the window, music gets loud after 4pm, etc."
                 rows={4}
-                className="mt-2 w-full resize-none rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2 text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
+                className="mt-2 w-full resize-none rounded-xl border border-(--surface-border) bg-(--map-bg) px-3 py-2 text-[14px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden focus:ring-2 focus:ring-accent"
               />
             </Section>
           </>
@@ -1330,8 +1330,8 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       <div
         className={
           compact
-            ? 'shrink-0 border-t border-[var(--surface-border)] bg-white/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-ios'
-            : 'fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--surface-border)] bg-white/95 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-ios'
+            ? 'shrink-0 border-t border-(--surface-border) bg-white/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-ios'
+            : 'fixed bottom-0 left-0 right-0 z-20 border-t border-(--surface-border) bg-white/95 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-ios'
         }
       >
         <div
@@ -1342,7 +1342,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
               type="button"
               onClick={goBack}
               disabled={submitting}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60"
               aria-label="Back"
             >
               <Icon name="ArrowLeft" size={20} />
@@ -1355,14 +1355,14 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
               </div>
             )}
             {needsLogin && (
-              <div className="mb-2 rounded-xl bg-accent-amber-tint px-3 py-2.5 text-[12px] leading-snug text-[var(--text-primary)]">
+              <div className="mb-2 rounded-xl bg-accent-amber-tint px-3 py-2.5 text-[12px] leading-snug text-(--text-primary)">
                 Sorry — you need to sign in to post a review. Tap below to
                 sign in; we&rsquo;ll submit your review automatically right
                 after. You can edit it later from your profile.
               </div>
             )}
             {advanceBlockedReason && !needsLogin && (
-              <div className="mb-2 text-center text-[11px] text-[var(--text-tertiary)]">
+              <div className="mb-2 text-center text-[11px] text-(--text-tertiary)">
                 {advanceBlockedReason}
               </div>
             )}
@@ -1424,7 +1424,7 @@ function GeoBanner({
     <button
       type="button"
       onClick={onDevSkip}
-      className="self-start text-[11px] font-medium text-[var(--text-tertiary)] underline hover:text-[var(--text-secondary)]"
+      className="self-start text-[11px] font-medium text-(--text-tertiary) underline hover:text-(--text-secondary)"
     >
       Use place location (dev only)
     </button>
@@ -1434,8 +1434,8 @@ function GeoBanner({
     const isInsecure =
       typeof window !== 'undefined' && window.isSecureContext === false;
     return (
-      <div className="mt-5 flex flex-col gap-2 rounded-2xl border border-[var(--surface-border)] bg-white px-4 py-3">
-        <div className="flex items-center gap-2 text-[13px] text-[var(--text-secondary)]">
+      <div className="mt-5 flex flex-col gap-2 rounded-2xl border border-(--surface-border) bg-white px-4 py-3">
+        <div className="flex items-center gap-2 text-[13px] text-(--text-secondary)">
           <Icon name="MapPinLine" size={16} />
           <span>Reviews require being within {GEO_VERIFY_METERS} m of the place.</span>
         </div>
@@ -1457,7 +1457,7 @@ function GeoBanner({
   }
   if (geo.kind === 'checking') {
     return (
-      <div className="mt-5 flex items-center gap-2 rounded-2xl bg-sys-gray-6 px-4 py-3 text-[13px] text-[var(--text-secondary)]">
+      <div className="mt-5 flex items-center gap-2 rounded-2xl bg-sys-gray-6 px-4 py-3 text-[13px] text-(--text-secondary)">
         <Icon name="CircleNotch" size={16} className="animate-spin" />
         <span>Checking your location…</span>
       </div>
@@ -1565,7 +1565,7 @@ function MeasureCard({
           : 'Measuring upload (~6 s)…'
       : null;
   return (
-    <div className="rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] p-4">
+    <div className="rounded-xl border border-(--surface-border) bg-(--map-bg) p-4">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-bubble">
           <Icon
@@ -1575,8 +1575,8 @@ function MeasureCard({
           />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[14px] font-semibold text-[var(--text-primary)]">{label}</div>
-          <div className="text-[11px] text-[var(--text-tertiary)]">{description}</div>
+          <div className="text-[14px] font-semibold text-(--text-primary)">{label}</div>
+          <div className="text-[11px] text-(--text-tertiary)">{description}</div>
         </div>
         <button
           type="button"
@@ -1588,7 +1588,7 @@ function MeasureCard({
         </button>
       </div>
       {phaseCopy && (
-        <div className="mt-3 text-[12px] text-[var(--text-secondary)]">{phaseCopy}</div>
+        <div className="mt-3 text-[12px] text-(--text-secondary)">{phaseCopy}</div>
       )}
       {state.kind === 'measured' && (
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">
@@ -1609,7 +1609,7 @@ function MeasureNoiseCard({
   onRun: () => void;
 }) {
   return (
-    <div className="rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] p-4">
+    <div className="rounded-xl border border-(--surface-border) bg-(--map-bg) p-4">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-bubble">
           <Icon
@@ -1619,8 +1619,8 @@ function MeasureNoiseCard({
           />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[14px] font-semibold text-[var(--text-primary)]">Test ambient noise</div>
-          <div className="text-[11px] text-[var(--text-tertiary)]">
+          <div className="text-[14px] font-semibold text-(--text-primary)">Test ambient noise</div>
+          <div className="text-[11px] text-(--text-tertiary)">
             10 s sample. Audio stays on your device.
           </div>
         </div>
@@ -1634,7 +1634,7 @@ function MeasureNoiseCard({
         </button>
       </div>
       {state.kind === 'measuring' && (
-        <div className="mt-3 text-[12px] text-[var(--text-secondary)]">Listening…</div>
+        <div className="mt-3 text-[12px] text-(--text-secondary)">Listening…</div>
       )}
       {state.kind === 'measured' && (
         <div className="mt-3 grid grid-cols-2 gap-2 text-center">
@@ -1649,8 +1649,8 @@ function MeasureNoiseCard({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-white px-2 py-1.5">
-      <div className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">{label}</div>
-      <div className="text-[13px] font-semibold tabular-nums text-[var(--text-primary)]">{value}</div>
+      <div className="text-[10px] uppercase tracking-wide text-(--text-tertiary)">{label}</div>
+      <div className="text-[13px] font-semibold tabular-nums text-(--text-primary)">{value}</div>
     </div>
   );
 }

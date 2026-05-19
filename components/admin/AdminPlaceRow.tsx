@@ -186,7 +186,7 @@ export function AdminPlaceRow({
 
   if (!editing) {
     return (
-      <li className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
+      <li className="rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card">
         <div className="flex items-start gap-3">
           <div
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white shadow-bubble"
@@ -195,20 +195,20 @@ export function AdminPlaceRow({
             <Icon name={meta.icon} size={18} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[15px] font-semibold text-[var(--text-primary)]">
+            <div className="text-[15px] font-semibold text-(--text-primary)">
               {place.name}
               {place.brand ? (
-                <span className="ml-2 text-[12px] font-normal text-[var(--text-tertiary)]">
+                <span className="ml-2 text-[12px] font-normal text-(--text-tertiary)">
                   · {place.brand}
                 </span>
               ) : null}
             </div>
-            <div className="text-[12px] text-[var(--text-secondary)]">
+            <div className="text-[12px] text-(--text-secondary)">
               {meta.label}
               {place.address ? ` · ${place.address}` : ''}
               {place.neighborhood ? ` · ${place.neighborhood}` : ''}
             </div>
-            <div className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+            <div className="mt-1 text-[11px] text-(--text-tertiary)">
               {[place.city, place.country].filter(Boolean).join(', ') || 'no city/country'} ·{' '}
               {place.lat.toFixed(4)}, {place.lng.toFixed(4)}
               {place.user_validated_at ? ' · user-validated' : ''}
@@ -222,7 +222,7 @@ export function AdminPlaceRow({
                 setDraft(asDraft(place));
                 setEditing(true);
               }}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-primary)] hover:bg-sys-gray-5 transition"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-primary) hover:bg-sys-gray-5 transition"
               aria-label="Edit"
               title="Edit"
             >
@@ -235,7 +235,7 @@ export function AdminPlaceRow({
                 setMergeQuery(place.name);
                 void searchMergeCandidates(place.name);
               }}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-primary)] hover:bg-sys-gray-5 transition"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-primary) hover:bg-sys-gray-5 transition"
               aria-label="Merge into another place"
               title="Merge into another place"
             >
@@ -258,7 +258,7 @@ export function AdminPlaceRow({
         {showMerge && (
           <div className="mt-3 rounded-xl border border-accent bg-accent-tint p-3">
             {mergeSummary ? (
-              <div className="text-[12px] text-[var(--text-primary)]">
+              <div className="text-[12px] text-(--text-primary)">
                 <div className="font-semibold mb-1">
                   Merged into {mergeTarget?.name}. Rows moved:
                 </div>
@@ -272,18 +272,18 @@ export function AdminPlaceRow({
                     ))}
                 </ul>
                 {Object.values(mergeSummary).every((n) => n === 0 || n === 1) && (
-                  <div className="mt-1 text-[11px] text-[var(--text-secondary)]">
+                  <div className="mt-1 text-[11px] text-(--text-secondary)">
                     Row removed; closing in a moment…
                   </div>
                 )}
               </div>
             ) : mergeTarget ? (
               <>
-                <div className="text-[12px] text-[var(--text-primary)]">
+                <div className="text-[12px] text-(--text-primary)">
                   Merge <strong>{place.name}</strong> into{' '}
                   <strong>{mergeTarget.name}</strong>?
                 </div>
-                <div className="mt-1 text-[11px] text-[var(--text-secondary)]">
+                <div className="mt-1 text-[11px] text-(--text-secondary)">
                   Reviews, claims, owners, deals, source-refs, children — all
                   transfer to <strong>{mergeTarget.name}</strong>. This row is
                   then deleted. Cannot be undone.
@@ -293,7 +293,7 @@ export function AdminPlaceRow({
                     type="button"
                     onClick={() => setMergeTarget(null)}
                     disabled={merging}
-                    className="flex-1 rounded-lg border border-[var(--surface-border)] bg-white py-1.5 text-[12px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60 transition"
+                    className="flex-1 rounded-lg border border-(--surface-border) bg-white py-1.5 text-[12px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60 transition"
                   >
                     Pick different target
                   </button>
@@ -309,7 +309,7 @@ export function AdminPlaceRow({
               </>
             ) : (
               <>
-                <div className="text-[12px] font-semibold text-[var(--text-primary)]">
+                <div className="text-[12px] font-semibold text-(--text-primary)">
                   Pick the canonical place to merge <em>{place.name}</em> into:
                 </div>
                 <input
@@ -323,16 +323,16 @@ export function AdminPlaceRow({
                     }
                   }}
                   placeholder="Search by name…"
-                  className="mt-2 w-full rounded-lg border border-[var(--surface-border)] bg-white px-2 py-1.5 text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="mt-2 w-full rounded-lg border border-(--surface-border) bg-white px-2 py-1.5 text-[13px] text-(--text-primary) focus:outline-hidden focus:ring-2 focus:ring-accent"
                 />
                 <div className="mt-2 max-h-48 overflow-y-auto">
                   {mergeSearching && (
-                    <div className="text-[11px] text-[var(--text-secondary)] py-1">
+                    <div className="text-[11px] text-(--text-secondary) py-1">
                       Searching…
                     </div>
                   )}
                   {!mergeSearching && mergeCandidates.length === 0 && (
-                    <div className="text-[11px] text-[var(--text-secondary)] py-1">
+                    <div className="text-[11px] text-(--text-secondary) py-1">
                       No matches.
                     </div>
                   )}
@@ -345,7 +345,7 @@ export function AdminPlaceRow({
                           className="w-full rounded-lg bg-white px-2 py-1.5 text-left text-[12px] hover:bg-sys-gray-6 transition"
                         >
                           <div className="font-medium">{c.name}</div>
-                          <div className="text-[10px] text-[var(--text-secondary)]">
+                          <div className="text-[10px] text-(--text-secondary)">
                             {c.category} · {c.city ?? 'no city'} ·{' '}
                             {c.lat.toFixed(4)}, {c.lng.toFixed(4)}
                           </div>
@@ -361,7 +361,7 @@ export function AdminPlaceRow({
                     setMergeCandidates([]);
                     setMergeQuery('');
                   }}
-                  className="mt-2 w-full rounded-lg border border-[var(--surface-border)] bg-white py-1.5 text-[12px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 transition"
+                  className="mt-2 w-full rounded-lg border border-(--surface-border) bg-white py-1.5 text-[12px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 transition"
                 >
                   Cancel
                 </button>
@@ -371,14 +371,14 @@ export function AdminPlaceRow({
         )}
         {showConfirm && (
           <div className="mt-3 rounded-xl border border-accent-red bg-accent-red-tint p-3">
-            <div className="text-[12px] text-[var(--text-primary)]">
+            <div className="text-[12px] text-(--text-primary)">
               Type the place name to confirm hard delete (this also removes all reviews + claims):
             </div>
             <input
               value={confirmName}
               onChange={(e) => setConfirmName(e.target.value)}
               placeholder={place.name}
-              className="mt-2 w-full rounded-lg border border-[var(--surface-border)] bg-white px-2 py-1.5 text-[13px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent-red"
+              className="mt-2 w-full rounded-lg border border-(--surface-border) bg-white px-2 py-1.5 text-[13px] text-(--text-primary) focus:outline-hidden focus:ring-2 focus:ring-accent-red"
             />
             <div className="mt-2 flex gap-2">
               <button
@@ -388,7 +388,7 @@ export function AdminPlaceRow({
                   setConfirmName('');
                 }}
                 disabled={deleting}
-                className="flex-1 rounded-lg border border-[var(--surface-border)] bg-white py-1.5 text-[12px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60 transition"
+                className="flex-1 rounded-lg border border-(--surface-border) bg-white py-1.5 text-[12px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60 transition"
               >
                 Cancel
               </button>
@@ -416,27 +416,27 @@ export function AdminPlaceRow({
     <li className="rounded-2xl border border-accent bg-white p-4 shadow-card">
       <div className="grid grid-cols-2 gap-2">
         <label className="col-span-2">
-          <div className="text-[11px] font-semibold text-[var(--text-secondary)]">Name</div>
+          <div className="text-[11px] font-semibold text-(--text-secondary)">Name</div>
           <input
             value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-[var(--surface-border)] bg-[var(--map-bg)] px-2 py-1.5 text-[14px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent"
+            className="mt-1 w-full rounded-lg border border-(--surface-border) bg-(--map-bg) px-2 py-1.5 text-[14px] text-(--text-primary) focus:outline-hidden focus:ring-2 focus:ring-accent"
           />
         </label>
         <label>
-          <div className="text-[11px] font-semibold text-[var(--text-secondary)]">Brand</div>
+          <div className="text-[11px] font-semibold text-(--text-secondary)">Brand</div>
           <input
             value={draft.brand}
             onChange={(e) => setDraft({ ...draft, brand: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-[var(--surface-border)] bg-[var(--map-bg)] px-2 py-1.5 text-[14px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent"
+            className="mt-1 w-full rounded-lg border border-(--surface-border) bg-(--map-bg) px-2 py-1.5 text-[14px] text-(--text-primary) focus:outline-hidden focus:ring-2 focus:ring-accent"
           />
         </label>
         <label>
-          <div className="text-[11px] font-semibold text-[var(--text-secondary)]">Category</div>
+          <div className="text-[11px] font-semibold text-(--text-secondary)">Category</div>
           <select
             value={draft.category}
             onChange={(e) => setDraft({ ...draft, category: e.target.value as PlaceCategory })}
-            className="mt-1 w-full rounded-lg border border-[var(--surface-border)] bg-[var(--map-bg)] px-2 py-1.5 text-[14px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent"
+            className="mt-1 w-full rounded-lg border border-(--surface-border) bg-(--map-bg) px-2 py-1.5 text-[14px] text-(--text-primary) focus:outline-hidden focus:ring-2 focus:ring-accent"
           >
             {(Object.keys(CATEGORIES) as PlaceCategory[]).map((k) => (
               <option key={k} value={k}>
@@ -446,38 +446,38 @@ export function AdminPlaceRow({
           </select>
         </label>
         <label className="col-span-2">
-          <div className="text-[11px] font-semibold text-[var(--text-secondary)]">Address</div>
+          <div className="text-[11px] font-semibold text-(--text-secondary)">Address</div>
           <input
             value={draft.address}
             onChange={(e) => setDraft({ ...draft, address: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-[var(--surface-border)] bg-[var(--map-bg)] px-2 py-1.5 text-[14px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent"
+            className="mt-1 w-full rounded-lg border border-(--surface-border) bg-(--map-bg) px-2 py-1.5 text-[14px] text-(--text-primary) focus:outline-hidden focus:ring-2 focus:ring-accent"
           />
         </label>
         <label>
-          <div className="text-[11px] font-semibold text-[var(--text-secondary)]">Neighborhood</div>
+          <div className="text-[11px] font-semibold text-(--text-secondary)">Neighborhood</div>
           <input
             value={draft.neighborhood}
             onChange={(e) => setDraft({ ...draft, neighborhood: e.target.value })}
-            className="mt-1 w-full rounded-lg border border-[var(--surface-border)] bg-[var(--map-bg)] px-2 py-1.5 text-[14px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent"
+            className="mt-1 w-full rounded-lg border border-(--surface-border) bg-(--map-bg) px-2 py-1.5 text-[14px] text-(--text-primary) focus:outline-hidden focus:ring-2 focus:ring-accent"
           />
         </label>
         <div className="grid grid-cols-2 gap-2">
           <label>
-            <div className="text-[11px] font-semibold text-[var(--text-secondary)]">City</div>
+            <div className="text-[11px] font-semibold text-(--text-secondary)">City</div>
             <input
               value={draft.city}
               onChange={(e) => setDraft({ ...draft, city: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-[var(--surface-border)] bg-[var(--map-bg)] px-2 py-1.5 text-[14px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent"
+              className="mt-1 w-full rounded-lg border border-(--surface-border) bg-(--map-bg) px-2 py-1.5 text-[14px] text-(--text-primary) focus:outline-hidden focus:ring-2 focus:ring-accent"
             />
           </label>
           <label>
-            <div className="text-[11px] font-semibold text-[var(--text-secondary)]">Country</div>
+            <div className="text-[11px] font-semibold text-(--text-secondary)">Country</div>
             <input
               value={draft.country}
               onChange={(e) => setDraft({ ...draft, country: e.target.value.toUpperCase() })}
               maxLength={2}
               placeholder="FR"
-              className="mt-1 w-full rounded-lg border border-[var(--surface-border)] bg-[var(--map-bg)] px-2 py-1.5 text-[14px] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent"
+              className="mt-1 w-full rounded-lg border border-(--surface-border) bg-(--map-bg) px-2 py-1.5 text-[14px] text-(--text-primary) focus:outline-hidden focus:ring-2 focus:ring-accent"
             />
           </label>
         </div>
@@ -487,7 +487,7 @@ export function AdminPlaceRow({
           type="button"
           onClick={() => setEditing(false)}
           disabled={saving}
-          className="flex-1 rounded-xl border border-[var(--surface-border)] bg-white py-2 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60 transition"
+          className="flex-1 rounded-xl border border-(--surface-border) bg-white py-2 text-[13px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60 transition"
         >
           Cancel
         </button>

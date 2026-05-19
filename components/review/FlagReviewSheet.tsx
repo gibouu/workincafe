@@ -49,16 +49,16 @@ export function FlagReviewSheet({
     <Drawer.Root open={open} onOpenChange={handleClose} snapPoints={[0.6, 0.9]}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/20 z-40" />
-        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-md rounded-t-3xl bg-white shadow-float outline-none flex flex-col max-h-[95vh]">
+        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 mx-auto max-w-md rounded-t-3xl bg-white shadow-float outline-hidden flex flex-col max-h-[95vh]">
           <Drawer.Title className="sr-only">Flag review</Drawer.Title>
           <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-sys-gray-4" />
 
           <div className="flex items-center justify-between px-5 pt-3">
             <div>
-              <div className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">
+              <div className="text-[11px] uppercase tracking-wide text-(--text-secondary)">
                 Report
               </div>
-              <div className="text-[17px] font-semibold text-[var(--text-primary)]">
+              <div className="text-[17px] font-semibold text-(--text-primary)">
                 What&apos;s wrong with this review?
               </div>
             </div>
@@ -66,7 +66,7 @@ export function FlagReviewSheet({
               type="button"
               onClick={() => handleClose(false)}
               aria-label="Close"
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)]"
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-secondary)"
             >
               <Icon name="X" size={14} />
             </button>
@@ -82,20 +82,20 @@ export function FlagReviewSheet({
                   className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${
                     reason === r.value
                       ? 'border-accent bg-accent-tint'
-                      : 'border-[var(--surface-border)] bg-white hover:bg-sys-gray-6'
+                      : 'border-(--surface-border) bg-white hover:bg-sys-gray-6'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <Icon
                       name={r.icon}
                       size={18}
-                      className={reason === r.value ? 'text-accent' : 'text-[var(--text-secondary)]'}
+                      className={reason === r.value ? 'text-accent' : 'text-(--text-secondary)'}
                     />
                     <span
                       className={`text-[14px] ${
                         reason === r.value
                           ? 'font-semibold text-accent'
-                          : 'text-[var(--text-primary)]'
+                          : 'text-(--text-primary)'
                       }`}
                     >
                       {r.label}
@@ -107,7 +107,7 @@ export function FlagReviewSheet({
             </div>
 
             <label className="mt-4 block">
-              <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+              <div className="text-[13px] font-semibold text-(--text-primary)">
                 Notes (optional)
               </div>
               <textarea
@@ -115,12 +115,12 @@ export function FlagReviewSheet({
                 onChange={(e) => setNotes(e.target.value.slice(0, 280))}
                 placeholder="Anything a moderator should know"
                 rows={3}
-                className="mt-1 w-full resize-none rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2 text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
+                className="mt-1 w-full resize-none rounded-xl border border-(--surface-border) bg-(--map-bg) px-3 py-2 text-[14px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden focus:ring-2 focus:ring-accent"
               />
             </label>
           </div>
 
-          <div className="border-t border-[var(--surface-border)] p-4">
+          <div className="border-t border-(--surface-border) p-4">
             <button
               type="button"
               disabled={!reason}

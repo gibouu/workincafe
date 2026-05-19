@@ -5,7 +5,7 @@ import { useToasts, type ToastTone } from '@/lib/store/toasts';
 
 const TONE_CLASS: Record<ToastTone, string> = {
   success: 'bg-accent-green text-white',
-  info: 'bg-[var(--text-primary)] text-white',
+  info: 'bg-(--text-primary) text-white',
   error: 'bg-accent-red text-white',
 };
 
@@ -20,7 +20,7 @@ export function Toaster() {
   const dismiss = useToasts((s) => s.dismiss);
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-4 z-[60] flex flex-col items-center gap-2 px-4">
+    <div className="pointer-events-none fixed inset-x-0 top-4 z-60 flex flex-col items-center gap-2 px-4">
       {toasts.map((t) => (
         <div
           key={t.id}

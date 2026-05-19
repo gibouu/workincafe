@@ -46,8 +46,8 @@ export function WaitlistForm({
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent-green-tint">
           <Icon name="CheckCircle" weight="fill" size={44} className="text-accent-green" />
         </div>
-        <h2 className="mt-4 text-[22px] font-bold text-[var(--text-primary)]">You&apos;re on the list</h2>
-        <p className="mt-1 max-w-sm text-[14px] text-[var(--text-secondary)]">
+        <h2 className="mt-4 text-[22px] font-bold text-(--text-primary)">You&apos;re on the list</h2>
+        <p className="mt-1 max-w-sm text-[14px] text-(--text-secondary)">
           We&apos;ll reach out to {email} when we open the {list} program.
         </p>
         <Link
@@ -62,29 +62,29 @@ export function WaitlistForm({
 
   return (
     <form onSubmit={onSubmit} className="mt-8">
-      <h1 className="text-[28px] font-bold leading-tight text-[var(--text-primary)]">{title}</h1>
-      <p className="mt-2 text-[14px] text-[var(--text-secondary)]">{subtitle}</p>
+      <h1 className="text-[28px] font-bold leading-tight text-(--text-primary)">{title}</h1>
+      <p className="mt-2 text-[14px] text-(--text-secondary)">{subtitle}</p>
 
       <label className="mt-6 block">
-        <div className="text-[13px] font-semibold text-[var(--text-primary)]">Email</div>
+        <div className="text-[13px] font-semibold text-(--text-primary)">Email</div>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@domain.com"
-          className="mt-1 w-full rounded-xl border border-[var(--surface-border)] bg-white px-4 py-3 text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
+          className="mt-1 w-full rounded-xl border border-(--surface-border) bg-white px-4 py-3 text-[15px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden focus:ring-2 focus:ring-accent"
         />
       </label>
 
       {extraFields?.map((f) => (
         <label key={f.name} className="mt-4 block">
-          <div className="text-[13px] font-semibold text-[var(--text-primary)]">{f.label}</div>
+          <div className="text-[13px] font-semibold text-(--text-primary)">{f.label}</div>
           <input
             type="text"
             value={extras[f.name] ?? ''}
             onChange={(e) => setExtras({ ...extras, [f.name]: e.target.value })}
             placeholder={f.placeholder}
-            className="mt-1 w-full rounded-xl border border-[var(--surface-border)] bg-white px-4 py-3 text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
+            className="mt-1 w-full rounded-xl border border-(--surface-border) bg-white px-4 py-3 text-[15px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden focus:ring-2 focus:ring-accent"
           />
         </label>
       ))}
@@ -101,7 +101,7 @@ export function WaitlistForm({
       >
         Join the waitlist
       </button>
-      <p className="mt-3 text-center text-[11px] text-[var(--text-tertiary)]">
+      <p className="mt-3 text-center text-[11px] text-(--text-tertiary)">
         Demo storage — saved to your browser&apos;s localStorage. DB wiring lands in Phase 5.
       </p>
     </form>
