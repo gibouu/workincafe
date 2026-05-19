@@ -271,6 +271,7 @@ async function main() {
   }
 
   let totalInserted = 0;
+  const failed: string[] = [];
   for (let i = 0; i < cities.length; i++) {
     const city = cities[i];
     try {
@@ -281,12 +282,17 @@ async function main() {
       // mirror occasionally rejects big queries. Log + continue. Re-running
       // the same key later is idempotent.
       console.error(`[osm] ${city.key} failed:`, err);
+      failed.push(city.key);
     }
     // Be polite to the public Overpass mirror between cities.
     if (i < cities.length - 1) await sleep(5000);
   }
   if (cities.length > 1) {
     console.log(`[osm] batch done: ${totalInserted} total places across ${cities.length} cities`);
+  }
+  if (failed.length > 0) {
+    console.error(`[osm] failed cities: ${failed.join(', ')}`);
+    process.exitCode = 1;
   }
 }
 

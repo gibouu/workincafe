@@ -20,19 +20,23 @@ export async function pickFreebiePlace(
 ): Promise<CandidatePlace | null> {
   const radiusM = FREEBIE_RADIUS_KM * 1000;
 
-  const { data: places } = await db
+  const { data: places, error: placesError } = await db
     .from('places')
     .select('id, name, lat, lng');
+  if (placesError) throw placesError;
   if (!places) return null;
 
-  const { data: bought } = await db
+  const { data: bought, error: boughtError } = await db
     .from('deal_purchases')
     .select('place_id')
     .eq('user_id', args.user_id);
-  const { data: checkedIn } = await db
+  if (boughtError) throw boughtError;
+
+  const { data: checkedIn, error: checkedInError } = await db
     .from('checkins')
     .select('place_id')
     .eq('user_id', args.user_id);
+  if (checkedInError) throw checkedInError;
 
   const visited = new Set<string>();
   for (const row of (bought ?? []) as { place_id: string }[]) visited.add(row.place_id);

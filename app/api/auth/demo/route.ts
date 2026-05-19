@@ -65,7 +65,7 @@ async function ensureDemoUser() {
   };
   const { error } = await admin.from('users').upsert(profile, { onConflict: 'id' });
   if (error && /is_demo/i.test(error.message)) {
-    await admin
+    const { error: fallbackError } = await admin
       .from('users')
       .upsert(
         {
@@ -77,6 +77,9 @@ async function ensureDemoUser() {
         },
         { onConflict: 'id' },
       );
+    if (fallbackError) throw fallbackError;
+  } else if (error) {
+    throw error;
   }
 
   return { id: user.id, email, name };
@@ -103,8 +106,9 @@ export async function POST(request: NextRequest) {
     response.cookies.set(DEMO_SESSION_COOKIE, token, demoSessionCookieOptions());
     return response;
   } catch (err) {
+    console.error('[demo auth] sign-in failed', err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'demo sign-in failed' },
+      { error: 'demo sign-in failed' },
       { status: 500 },
     );
   }

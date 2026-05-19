@@ -232,12 +232,16 @@ async function seedCity(citySlug: string) {
     mallsUpserted++;
 
     // Source-ref so future re-runs can also dedup by FSQ id.
-    await supabase
+    const { error: mallRefErr } = await supabase
       .from('place_source_refs')
       .upsert(
         { source: 'foursquare', external_id: mall.fsq_place_id, normalized_name_hash: mallHash },
         { onConflict: 'source,external_id' },
       );
+    if (mallRefErr) {
+      console.error(`[mall-seed] ${city.key}: source-ref for mall "${mall.name}" failed:`, mallRefErr.message);
+      continue;
+    }
 
     const children = await fetchChildren(fsqKey, mall.fsq_place_id);
     if (children.length === 0) continue;
@@ -297,9 +301,13 @@ async function seedCity(citySlug: string) {
       console.error(`[mall-seed] ${city.key}: upsert children of "${mall.name}" failed:`, childErr.message);
       continue;
     }
-    await supabase
+    const { error: childRefsErr } = await supabase
       .from('place_source_refs')
       .upsert(childRefs, { onConflict: 'source,external_id' });
+    if (childRefsErr) {
+      console.error(`[mall-seed] ${city.key}: source-refs for children of "${mall.name}" failed:`, childRefsErr.message);
+      continue;
+    }
     childrenUpserted += childRows.length;
     console.log(`[mall-seed] ${city.key}: "${mall.name}" → ${childRows.length} tenants`);
   }

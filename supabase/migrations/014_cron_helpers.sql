@@ -15,12 +15,16 @@ as $$
 declare
   inserted_count int;
 begin
+  if not pg_try_advisory_xact_lock(hashtext('cron_expire_loyalty')) then
+    rows_expired := 0;
+    return next;
+  end if;
+
   with totals as (
     select
       user_id,
-      sum(case when kind = 'earned_use' and created_at < now() - interval '12 months'
-               then delta else 0 end) as old_earned,
-      sum(case when kind = 'expired' then -delta else 0 end) as already_expired,
+      sum(case when kind = 'earned_use' and created_at >= now() - interval '12 months'
+               then delta else 0 end) as fresh_earned,
       sum(delta) as current_balance
     from public.point_events
     where is_demo = false
@@ -29,10 +33,7 @@ begin
   candidates as (
     select
       user_id,
-      least(
-        greatest(coalesce(old_earned, 0) - coalesce(already_expired, 0), 0),
-        coalesce(current_balance, 0)
-      )::int as expire_amount
+      greatest(coalesce(current_balance, 0) - greatest(coalesce(fresh_earned, 0), 0), 0)::int as expire_amount
     from totals
   ),
   inserted as (

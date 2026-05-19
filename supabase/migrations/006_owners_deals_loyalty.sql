@@ -170,8 +170,6 @@ create policy "purchases_read_self_or_owner" on public.deal_purchases for select
 );
 
 drop policy if exists "purchases_insert_self" on public.deal_purchases;
-create policy "purchases_insert_self" on public.deal_purchases for insert
-  with check (user_id = auth.uid());
 
 -- Update only via service role (uses_remaining decrement on scan).
 

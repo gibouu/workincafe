@@ -32,6 +32,9 @@ for (const a of args) {
 }
 const DRY_RUN = argMap.get('dry-run') === 'true';
 const CITY_ARG = argMap.get('city')?.toLowerCase();
+if (CITY_ARG && CITY_ARG !== 'paris' && CITY_ARG !== 'toronto') {
+  fail(`unsupported --city value "${CITY_ARG}". Use "paris" or "toronto".`);
+}
 const CITY = CITY_ARG === 'paris' ? 'Paris' : CITY_ARG === 'toronto' ? 'Toronto' : null;
 
 const SUPABASE_URL = requireEnv('NEXT_PUBLIC_SUPABASE_URL');

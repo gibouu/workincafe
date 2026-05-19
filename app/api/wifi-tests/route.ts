@@ -41,14 +41,35 @@ export async function POST(request: NextRequest) {
 
   // Rate limit: 1 per place per user per hour
   const hourAgo = new Date(Date.now() - 3600 * 1000).toISOString();
-  const { count } = await db
+  const { count, error: rateLimitError } = await db
     .from('wifi_tests')
     .select('id', { head: true, count: 'exact' })
     .eq('user_id', user.id)
     .eq('place_id', placeId)
     .gte('created_at', hourAgo);
+  if (rateLimitError) {
+    return NextResponse.json({ error: 'unable to verify Wi-Fi test rate limit' }, { status: 500 });
+  }
   if ((count ?? 0) >= 1) {
     return NextResponse.json({ error: 'one Wi-Fi test per place per hour' }, { status: 429 });
+  }
+
+  if (!isDemo) {
+    const { data, error } = await db.rpc('insert_wifi_test_rate_limited', {
+      p_place_id: placeId,
+      p_download_mbps: body.download_mbps ?? null,
+      p_upload_mbps: body.upload_mbps ?? null,
+      p_ping_ms: body.ping_ms ?? null,
+      p_connection_type: body.connection_type ?? null,
+      p_geo_verified: geoVerified,
+    });
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const inserted = Array.isArray(data) ? data[0] : data;
+    if (!inserted?.inserted) {
+      return NextResponse.json({ error: 'one Wi-Fi test per place per hour' }, { status: 429 });
+    }
+    return NextResponse.json({ id: inserted.id, geo_verified: geoVerified });
   }
 
   const { data, error } = await insertWithDemoFlag(
