@@ -145,7 +145,7 @@ Replay handlers:
 
 ```bash
 npm run typecheck   # tsc --noEmit
-npm run lint        # next lint
+npm run lint        # ESLint flat config
 npm run build       # full Next.js build (slow on WSL)
 npm run dev         # local dev on :3000
 ```

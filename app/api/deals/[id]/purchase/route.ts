@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor } from '@/lib/auth/request-actor';
 import { generateRedemptionCode } from '@/lib/loyalty/qr';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 /**
  * Mock purchase endpoint. Schema is ready for real Stripe / Square; this
@@ -45,7 +46,8 @@ export async function POST(
 
   const qrCode = generateRedemptionCode();
 
-  const { data, error } = await db
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from('deal_purchases')
     .insert({
       deal_id: deal.id,

@@ -52,11 +52,11 @@ export async function awardPointForUse(
     use_id: string;
     purchase_id: string;
     place_id: string;
-    deal_id: string;
+    deal_id: string | null;
     is_demo?: boolean;
   },
 ): Promise<void> {
-  await db.from('point_events').insert({
+  const { error } = await db.from('point_events').insert({
     user_id: args.user_id,
     kind: 'earned_use',
     delta: 1,
@@ -66,13 +66,14 @@ export async function awardPointForUse(
     related_deal_id: args.deal_id,
     is_demo: Boolean(args.is_demo),
   });
+  if (error) throw error;
 }
 
 export async function deductFreebieCost(
   db: any,
   args: { user_id: string; place_id: string; purchase_id: string; is_demo?: boolean },
 ): Promise<void> {
-  await db.from('point_events').insert({
+  const { error } = await db.from('point_events').insert({
     user_id: args.user_id,
     kind: 'spent_freebie',
     delta: -FREEBIE_POINT_COST,
@@ -81,4 +82,5 @@ export async function deductFreebieCost(
     notes: 'Free coffee redemption',
     is_demo: Boolean(args.is_demo),
   });
+  if (error) throw error;
 }

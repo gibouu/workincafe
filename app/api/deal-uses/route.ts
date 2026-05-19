@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor, isOwnerOf } from '@/lib/auth/request-actor';
 import { awardPointForUse } from '@/lib/loyalty/points';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 interface Body {
   qr_code?: string;
@@ -35,8 +36,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'code expired' }, { status: 410 });
   }
 
+  const admin = createAdminClient();
+
   // Atomic decrement — guards against double-scan races
-  const { data: updated, error: uErr } = await db
+  const { data: updated, error: uErr } = await admin
     .from('deal_purchases')
     .update({ uses_remaining: ticket.uses_remaining - 1 })
     .eq('id', ticket.id)
@@ -49,7 +52,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Insert the use record
-  const { data: useRow, error: useErr } = await db
+  const { data: useRow, error: useErr } = await admin
     .from('deal_uses')
     .insert({
       purchase_id: ticket.id,
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
   if (useErr) {
     // Best-effort rollback (uses_remaining was already decremented)
-    await db
+    await admin
       .from('deal_purchases')
       .update({ uses_remaining: updated.uses_remaining + 1 })
       .eq('id', ticket.id);
@@ -69,14 +72,14 @@ export async function POST(request: NextRequest) {
   }
 
   // Award point — server-issued only
-  await awardPointForUse(db, {
+  await awardPointForUse(admin, {
     user_id: ticket.user_id,
     use_id: useRow!.id,
     purchase_id: ticket.id,
     place_id: ticket.place_id,
     deal_id: ticket.deal_id,
     is_demo: isDemo,
-  }).catch(() => null); // tolerable miss; admin can backfill
+  });
 
   return NextResponse.json({
     ok: true,

@@ -19,7 +19,7 @@ export type NoiseLevel = 'quiet' | 'moderate' | 'loud';
 export type SeatingAvailability = 'plenty' | 'some' | 'full';
 export type TemperatureLevel = 'cold' | 'comfortable' | 'warm' | 'hot';
 export type OutletsLevel = 'many' | 'some' | 'none';
-export type PlaceSource = 'apple' | 'google' | 'osm' | 'user_submitted';
+export type PlaceSource = 'apple' | 'google' | 'osm' | 'curated' | 'foursquare' | 'user_submitted';
 export type RequestStatus = 'pending' | 'approved' | 'rejected';
 export type FlagReason = 'spam' | 'offensive' | 'untrue' | 'irrelevant' | 'other';
 
@@ -146,6 +146,8 @@ type ReviewPhotoRow = {
   review_id: string;
   slot: 'menu' | 'inside' | 'outside' | 'special' | 'coffee';
   path: string;
+  cloudinary_public_id: string | null;
+  cloudinary_version: string | null;
   width: number | null;
   height: number | null;
   bytes: number | null;
@@ -334,6 +336,9 @@ type LiveUpdateRow = {
   noise_level: NoiseLevel | null;
   seating_availability: SeatingAvailability | null;
   temperature: TemperatureLevel | null;
+  outlets: OutletsLevel | null;
+  rotating_question: string | null;
+  rotating_answer: string | null;
   hour_of_day: number | null;
   day_of_week: number | null;
   is_demo: boolean;

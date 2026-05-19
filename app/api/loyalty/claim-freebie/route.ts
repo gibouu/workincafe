@@ -7,6 +7,7 @@ import {
 } from '@/lib/loyalty/points';
 import { pickFreebiePlace } from '@/lib/loyalty/freebie';
 import { generateRedemptionCode } from '@/lib/loyalty/qr';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 interface Body {
   near?: { lat: number; lng: number };
@@ -48,7 +49,8 @@ export async function POST(request: NextRequest) {
   // Issue a 0-cost ticket. We don't tie this to a real deals row — it's a
   // platform-issued freebie, marked via payment_method='freebie'.
   const qrCode = generateRedemptionCode();
-  const { data: purchase, error: pErr } = await db
+  const admin = createAdminClient();
+  const { data: purchase, error: pErr } = await admin
     .from('deal_purchases')
     .insert({
       deal_id: null,
@@ -72,7 +74,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: pErr.message }, { status: 500 });
   }
 
-  await deductFreebieCost(db, {
+  await deductFreebieCost(admin, {
     user_id: user.id,
     place_id: pick.id,
     purchase_id: purchase!.id,

@@ -29,6 +29,20 @@ Copy each file into Supabase Dashboard → **SQL Editor** and run, in order:
 | 12 | `migrations/012_live_updates_v2.sql`  | LiveUpdate wizard schema additions (#13 / #30) |
 | 13 | `migrations/013_review_upscale_marker.sql` | `upscaled_at` marker column on reviews — see runbook below (#24) |
 | 14 | `migrations/014_cron_helpers.sql`     | `cron_expire_loyalty()` SECURITY DEFINER function called by the nightly Vercel Cron route (#23) |
+| 15 | `migrations/015_owner_menus.sql`      | Owner-uploaded menus and metadata |
+| 16 | `migrations/016_place_menus_file_kind.sql` | Menu file kind metadata |
+| 17 | `migrations/017_place_menus_visibility.sql` | Menu visibility controls |
+| 18 | `migrations/018_user_rating_count.sql` | User rating count support |
+| 19 | `migrations/019_coffee_review_signals.sql` | Coffee review signal fields and ratings updates |
+| 20 | `migrations/020_fast_food_burger.sql` | Fast-food burger category support |
+| 21 | `migrations/021_user_validated_places.sql` | User-validated place tracking |
+| 22 | `migrations/022_security_hardening.sql` | Security hardening changes |
+| 23 | `migrations/023_parent_place_id.sql`  | Parent/child place relationships |
+| 24 | `migrations/024_review_trigger_security_definer.sql` | Review trigger security definer update |
+| 25 | `migrations/025_membership_required.sql` | Membership-required place metadata |
+| 26 | `migrations/026_admin_users_with_emails.sql` | Admin user email lookup support |
+| 27 | `migrations/027_merge_places.sql`     | Admin place merge RPC |
+| 28 | `migrations/20260519004310_clawpatch_findings_fix.sql` | Clawpatch follow-up fixes for RLS, cron, merge, Wi-Fi RPC, and source enums |
 
 > **`Could not find the table 'public.friend_profiles'`** in your logs is expected when migration 007 hasn't been applied yet. The friend-profile API soft-handles it (returns an empty profile + the wizard renders cleanly). Apply 007 to make the error go away.
 

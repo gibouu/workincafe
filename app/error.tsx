@@ -24,13 +24,8 @@ export default function GlobalError({
         Something went sideways
       </h1>
       <p className="mt-2 max-w-sm text-[14px] text-[var(--text-secondary)]">
-        {error.message || 'An unexpected error occurred.'}
+        An unexpected error occurred. Please try again.
       </p>
-      {error.digest && (
-        <code className="mt-2 rounded bg-sys-gray-6 px-2 py-0.5 text-[11px] text-[var(--text-tertiary)]">
-          {error.digest}
-        </code>
-      )}
       <div className="mt-8 flex gap-3">
         <button
           type="button"

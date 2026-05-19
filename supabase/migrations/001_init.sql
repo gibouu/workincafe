@@ -33,7 +33,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type place_source as enum ('apple','google','osm','user_submitted');
+  create type place_source as enum ('apple','google','osm','curated','foursquare','user_submitted');
 exception when duplicate_object then null; end $$;
 
 do $$ begin

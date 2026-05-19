@@ -8,9 +8,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  experimental: {
-    typedRoutes: false,
-  },
+  typedRoutes: false,
   images: {
     // Review photos live on Cloudinary; configure remotePatterns so we can
     // render them via next/image instead of bare <img>. See #15.
