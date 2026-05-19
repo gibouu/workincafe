@@ -48,13 +48,13 @@ function iconFor(action: string): { name: PhosphorIconName; tone: string } {
       return { name: 'CheckCircle', tone: 'text-accent-green' };
     case 'rejected':
     case 'dismiss':
-      return { name: 'XCircle', tone: 'text-[var(--text-secondary)]' };
+      return { name: 'XCircle', tone: 'text-(--text-secondary)' };
     case 'hide':
       return { name: 'EyeSlash', tone: 'text-accent-red' };
     case 'ban':
       return { name: 'Prohibit', tone: 'text-accent-red' };
     default:
-      return { name: 'ClockCounterClockwise', tone: 'text-[var(--text-secondary)]' };
+      return { name: 'ClockCounterClockwise', tone: 'text-(--text-secondary)' };
   }
 }
 
@@ -119,8 +119,8 @@ export function AdminActivityFeed() {
               onClick={() => setKind(k.value)}
               className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition ${
                 active
-                  ? 'bg-[var(--text-primary)] text-white'
-                  : 'bg-white text-[var(--text-secondary)] border border-[var(--surface-border)] hover:bg-sys-gray-6'
+                  ? 'bg-(--text-primary) text-white'
+                  : 'bg-white text-(--text-secondary) border border-(--surface-border) hover:bg-sys-gray-6'
               }`}
             >
               {k.label}
@@ -129,7 +129,7 @@ export function AdminActivityFeed() {
         })}
       </div>
 
-      <div className="mt-3 text-[12px] text-[var(--text-secondary)]">
+      <div className="mt-3 text-[12px] text-(--text-secondary)">
         {loading ? 'Loading…' : data ? `${data.total.toLocaleString()} actions` : ''}
         {error && <span className="ml-2 text-accent-red">· {error}</span>}
       </div>
@@ -140,19 +140,19 @@ export function AdminActivityFeed() {
           return (
             <li
               key={e.id}
-              className="flex items-start gap-3 rounded-2xl border border-[var(--surface-border)] bg-white p-3 shadow-card"
+              className="flex items-start gap-3 rounded-2xl border border-(--surface-border) bg-white p-3 shadow-card"
             >
               <Icon name={ic.name} size={18} className={`mt-0.5 shrink-0 ${ic.tone}`} />
               <div className="min-w-0 flex-1">
-                <div className="text-[13px] text-[var(--text-primary)]">
+                <div className="text-[13px] text-(--text-primary)">
                   <span className="font-semibold">{e.action}</span> · {e.target}
                 </div>
-                <div className="mt-0.5 text-[11px] text-[var(--text-tertiary)]">
+                <div className="mt-0.5 text-[11px] text-(--text-tertiary)">
                   {e.actor_email ?? e.actor_id ?? 'unknown admin'} · {timeAgo(e.at)} ·{' '}
                   {e.kind === 'place_request' ? 'place request' : 'flagged review'}
                 </div>
                 {e.detail && (
-                  <div className="mt-1 text-[12px] text-[var(--text-secondary)]">{e.detail}</div>
+                  <div className="mt-1 text-[12px] text-(--text-secondary)">{e.detail}</div>
                 )}
               </div>
             </li>
@@ -161,7 +161,7 @@ export function AdminActivityFeed() {
       </ul>
 
       {data && data.total === 0 && !loading && (
-        <div className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)]">
+        <div className="mt-4 rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary)">
           No admin actions yet.
         </div>
       )}
@@ -172,18 +172,18 @@ export function AdminActivityFeed() {
             type="button"
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0 || loading}
-            className="rounded-xl border border-[var(--surface-border)] bg-white px-3 py-1.5 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-50 transition"
+            className="rounded-xl border border-(--surface-border) bg-white px-3 py-1.5 text-[13px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-50 transition"
           >
             Previous
           </button>
-          <div className="text-[13px] text-[var(--text-secondary)]">
+          <div className="text-[13px] text-(--text-secondary)">
             Page {page + 1} / {Math.max(1, totalPages)}
           </div>
           <button
             type="button"
             onClick={() => setPage((p) => p + 1)}
             disabled={page + 1 >= totalPages || loading}
-            className="rounded-xl border border-[var(--surface-border)] bg-white px-3 py-1.5 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-50 transition"
+            className="rounded-xl border border-(--surface-border) bg-white px-3 py-1.5 text-[13px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-50 transition"
           >
             Next
           </button>

@@ -18,7 +18,7 @@ export function ReviewList({ reviews, onPhotoTap }: ReviewListProps) {
 
   if (reviews.length === 0) {
     return (
-      <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+      <div className="rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary) shadow-card">
         No reviews yet — be the first.
       </div>
     );
@@ -30,15 +30,15 @@ export function ReviewList({ reviews, onPhotoTap }: ReviewListProps) {
         {reviews.map((r) => (
           <li
             key={r.id}
-            className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card"
+            className="rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sys-gray-5 text-[13px] font-semibold text-[var(--text-primary)]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sys-gray-5 text-[13px] font-semibold text-(--text-primary)">
                   {r.initials}
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5 text-[14px] font-semibold text-[var(--text-primary)]">
+                  <div className="flex items-center gap-1.5 text-[14px] font-semibold text-(--text-primary)">
                     <span>{r.author}</span>
                     {r.trust >= 80 && (
                       <span
@@ -50,7 +50,7 @@ export function ReviewList({ reviews, onPhotoTap }: ReviewListProps) {
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
+                  <div className="flex items-center gap-2 text-[11px] text-(--text-secondary)">
                     <span>{r.createdAgo}</span>
                     {r.geoVerified && (
                       <span className="inline-flex items-center gap-0.5 text-accent-green">
@@ -65,7 +65,7 @@ export function ReviewList({ reviews, onPhotoTap }: ReviewListProps) {
                 type="button"
                 aria-label="Flag this review"
                 onClick={() => setFlagId(r.id)}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-secondary)] hover:bg-sys-gray-6 hover:text-[var(--text-primary)] transition"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-(--text-secondary) hover:bg-sys-gray-6 hover:text-(--text-primary) transition"
               >
                 <Icon name="Flag" size={14} />
               </button>
@@ -82,7 +82,7 @@ export function ReviewList({ reviews, onPhotoTap }: ReviewListProps) {
                 />
               ))}
               {(r.wifi !== undefined || r.noise !== undefined || r.seating !== undefined) && (
-                <div className="ml-2 flex gap-2 text-[11px] text-[var(--text-secondary)]">
+                <div className="ml-2 flex gap-2 text-[11px] text-(--text-secondary)">
                   {r.wifi !== undefined && <span>Wi-Fi {r.wifi}</span>}
                   {r.noise !== undefined && <span>Noise {r.noise}</span>}
                   {r.seating !== undefined && <span>Seat {r.seating}</span>}
@@ -90,7 +90,7 @@ export function ReviewList({ reviews, onPhotoTap }: ReviewListProps) {
               )}
             </div>
 
-            <p className="mt-2 text-[14px] leading-relaxed text-[var(--text-primary)]">
+            <p className="mt-2 text-[14px] leading-relaxed text-(--text-primary)">
               {r.comment}
             </p>
             {r.photos && r.photos.length > 0 && (

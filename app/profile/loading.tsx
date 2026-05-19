@@ -2,7 +2,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function ProfileLoading() {
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
+    <div className="min-h-dvh bg-(--map-bg)">
       <div className="mx-auto max-w-2xl px-5 py-6">
         <Skeleton className="h-9 w-9" rounded="rounded-full" />
 

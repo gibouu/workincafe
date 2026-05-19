@@ -89,7 +89,7 @@ export function FriendsBody({
 
   if (signedIn === null || initial === null) {
     return (
-      <div className="flex flex-1 items-center justify-center text-[13px] text-[var(--text-tertiary)]">
+      <div className="flex flex-1 items-center justify-center text-[13px] text-(--text-tertiary)">
         Loading…
       </div>
     );
@@ -103,10 +103,10 @@ export function FriendsBody({
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent-tint text-accent">
             <Icon name="UsersThree" size={28} weight="fill" />
           </div>
-          <h2 className="mt-4 text-[18px] font-semibold text-[var(--text-primary)]">
+          <h2 className="mt-4 text-[18px] font-semibold text-(--text-primary)">
             Sign in to cowork
           </h2>
-          <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
+          <p className="mt-1 text-[13px] text-(--text-secondary)">
             We&apos;ll set up a quick profile (occupation, work style, what you&apos;re looking for)
             so we can match you with people working from the same cafés.
           </p>
@@ -164,11 +164,11 @@ export function FriendsBody({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="mt-4 w-full rounded-2xl border border-[var(--surface-border)] bg-white py-3 text-[14px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 transition"
+          className="mt-4 w-full rounded-2xl border border-(--surface-border) bg-white py-3 text-[14px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 transition"
         >
           Edit profile
         </button>
-        <div className="mt-3 rounded-2xl border border-[var(--surface-border)] bg-white p-4 text-[12px] text-[var(--text-secondary)] shadow-card">
+        <div className="mt-3 rounded-2xl border border-(--surface-border) bg-white p-4 text-[12px] text-(--text-secondary) shadow-card">
           Matching opens up once enough people in your city have profiles. We&apos;ll let you know.
         </div>
       </div>
@@ -189,8 +189,8 @@ function Header({
     <header
       className={
         compact
-          ? 'shrink-0 border-b border-[var(--surface-border)] bg-white/95 backdrop-blur-ios'
-          : 'sticky top-0 z-10 border-b border-[var(--surface-border)] bg-white/90 backdrop-blur-ios'
+          ? 'shrink-0 border-b border-(--surface-border) bg-white/95 backdrop-blur-ios'
+          : 'sticky top-0 z-10 border-b border-(--surface-border) bg-white/90 backdrop-blur-ios'
       }
     >
       <div className={`mx-auto flex max-w-2xl items-center justify-between ${compact ? 'px-3 py-2' : 'px-4 py-3'}`}>
@@ -224,22 +224,22 @@ function Header({
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-3 py-1 text-[13px]">
-      <dt className="text-[var(--text-tertiary)]">{label}</dt>
-      <dd className="text-right text-[var(--text-primary)]">{value}</dd>
+      <dt className="text-(--text-tertiary)">{label}</dt>
+      <dd className="text-right text-(--text-primary)">{value}</dd>
     </div>
   );
 }
 
 function SummaryChips({ values }: { values: string[] }) {
   if (values.length === 0) {
-    return <span className="text-[12px] text-[var(--text-tertiary)]">—</span>;
+    return <span className="text-[12px] text-(--text-tertiary)">—</span>;
   }
   return (
     <div className="flex flex-wrap gap-1.5">
       {values.map((v) => (
         <span
           key={v}
-          className="rounded-full bg-sys-gray-6 px-2.5 py-1 text-[12px] text-[var(--text-primary)]"
+          className="rounded-full bg-sys-gray-6 px-2.5 py-1 text-[12px] text-(--text-primary)"
         >
           {pretty(v)}
         </span>

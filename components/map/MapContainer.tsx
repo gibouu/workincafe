@@ -492,10 +492,10 @@ export const MapContainer = forwardRef<
       />
       {!ready && !error && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 bg-[var(--map-bg)]">
+          <div className="absolute inset-0 bg-(--map-bg)">
             <div className="absolute inset-0 shimmer" />
           </div>
-          <div className="absolute inset-0 flex items-center justify-center text-[var(--text-secondary)] text-[13px]">
+          <div className="absolute inset-0 flex items-center justify-center text-(--text-secondary) text-[13px]">
             Loading map…
           </div>
         </div>

@@ -14,10 +14,10 @@ export function StarRow({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-[var(--divider)] py-3 last:border-0">
+    <div className="flex items-center justify-between gap-4 border-b border-(--divider) py-3 last:border-0">
       <div className="flex items-center gap-3">
-        <Icon name={icon} size={20} className="text-[var(--text-secondary)]" />
-        <span className="text-[14px] text-[var(--text-primary)]">{label}</span>
+        <Icon name={icon} size={20} className="text-(--text-secondary)" />
+        <span className="text-[14px] text-(--text-primary)">{label}</span>
       </div>
       <div className="flex items-center gap-1">
         {[1, 2, 3, 4, 5].map((n) => (

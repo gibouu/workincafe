@@ -191,14 +191,14 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h2 className="text-[15px] font-semibold text-[var(--text-primary)]">
+        <h2 className="text-[15px] font-semibold text-(--text-primary)">
           Menus ({menus.length})
         </h2>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--surface-border)] bg-white px-3 py-1.5 text-[12px] font-medium text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-(--surface-border) bg-white px-3 py-1.5 text-[12px] font-medium text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60"
         >
           <Icon name={busy ? 'CircleNotch' : 'Plus'} size={14} className={busy ? 'animate-spin' : ''} />
           <span>{busy ? 'Uploading…' : 'Add menu'}</span>
@@ -213,11 +213,11 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
       </div>
 
       {!loaded ? (
-        <div className="mt-3 rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+        <div className="mt-3 rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary) shadow-card">
           Loading…
         </div>
       ) : menus.length === 0 ? (
-        <div className="mt-3 rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+        <div className="mt-3 rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary) shadow-card">
           No menus yet. Tap &ldquo;Add menu&rdquo; to upload a photo of yours so
           customers can see what you serve.
         </div>
@@ -228,7 +228,7 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
             return (
               <li
                 key={m.id}
-                className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-[var(--surface-border)] bg-sys-gray-6 shadow-card"
+                className="relative aspect-4/3 overflow-hidden rounded-2xl border border-(--surface-border) bg-sys-gray-6 shadow-card"
               >
                 {url && (
                   <Image

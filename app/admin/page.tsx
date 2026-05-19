@@ -111,7 +111,7 @@ export default async function AdminIndex() {
   const { counts, approvedAdmins, selfId } = await loadPanel();
 
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
+    <div className="min-h-dvh bg-(--map-bg)">
       <div className="mx-auto max-w-3xl px-5 py-6">
         <div className="flex items-center justify-between">
           <Link
@@ -121,19 +121,19 @@ export default async function AdminIndex() {
           >
             <Icon name="ArrowLeft" size={18} />
           </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">Admin</div>
+          <div className="text-[15px] font-semibold text-(--text-primary)">Admin</div>
           <div className="w-9" />
         </div>
 
-        <h1 className="mt-6 text-[28px] font-bold text-[var(--text-primary)]">Moderation queues</h1>
-        <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
+        <h1 className="mt-6 text-[28px] font-bold text-(--text-primary)">Moderation queues</h1>
+        <p className="mt-1 text-[14px] text-(--text-secondary)">
           Signed in as {user?.email ?? 'guest'}.
         </p>
 
         {approvedAdmins.length > 0 && (
-          <section className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
+          <section className="mt-4 rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card">
             <div className="flex items-baseline justify-between gap-3">
-              <div className="text-[12px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+              <div className="text-[12px] font-semibold uppercase tracking-wide text-(--text-secondary)">
                 Approved admins ({approvedAdmins.length})
               </div>
               <Link
@@ -150,7 +150,7 @@ export default async function AdminIndex() {
                   className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] ${
                     a.id === selfId
                       ? 'bg-accent-tint text-accent font-semibold'
-                      : 'bg-sys-gray-6 text-[var(--text-primary)]'
+                      : 'bg-sys-gray-6 text-(--text-primary)'
                   }`}
                 >
                   <Icon name="UserCircle" size={12} />
@@ -250,19 +250,19 @@ function QueueCard({
   return (
     <Link
       href={href}
-      className="flex items-center gap-4 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card hover:shadow-float transition"
+      className="flex items-center gap-4 rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card hover:shadow-float transition"
     >
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-tint text-accent">
         <Icon name={icon} size={22} />
       </div>
       <div className="flex-1">
-        <div className="text-[15px] font-semibold text-[var(--text-primary)]">{title}</div>
-        <div className="text-[12px] text-[var(--text-secondary)]">{hint}</div>
+        <div className="text-[15px] font-semibold text-(--text-primary)">{title}</div>
+        <div className="text-[12px] text-(--text-secondary)">{hint}</div>
       </div>
       {typeof count === 'number' && (
-        <div className="text-[22px] font-semibold text-[var(--text-primary)]">{count}</div>
+        <div className="text-[22px] font-semibold text-(--text-primary)">{count}</div>
       )}
-      <Icon name="ArrowRight" size={16} className="text-[var(--text-secondary)]" />
+      <Icon name="ArrowRight" size={16} className="text-(--text-secondary)" />
     </Link>
   );
 }

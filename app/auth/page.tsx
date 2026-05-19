@@ -97,18 +97,18 @@ export default function AuthPage() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-xs px-4"
       onClick={dismiss}
     >
       <div
-        className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-[var(--surface-border)] bg-white shadow-float"
+        className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-(--surface-border) bg-white shadow-float"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={dismiss}
           aria-label="Close"
-          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)] hover:bg-sys-gray-5 transition"
+          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-secondary) hover:bg-sys-gray-5 transition"
         >
           <Icon name="X" size={14} />
         </button>
@@ -117,10 +117,10 @@ export default function AuthPage() {
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-card">
             <Icon name="Coffee" weight="fill" size={32} className="text-[#6B4F3B]" />
           </div>
-          <h1 className="mt-5 text-center text-[22px] font-bold leading-tight text-[var(--text-primary)]">
+          <h1 className="mt-5 text-center text-[22px] font-bold leading-tight text-(--text-primary)">
             Work in Cafe
           </h1>
-          <p className="mt-1 text-center text-[13px] text-[var(--text-secondary)]">
+          <p className="mt-1 text-center text-[13px] text-(--text-secondary)">
             {magicSent
               ? 'Check your email for the sign-in link.'
               : 'Sign in to save places, post reviews, and check in.'}
@@ -135,10 +135,10 @@ export default function AuthPage() {
                   weight="fill"
                   className="mx-auto text-accent"
                 />
-                <div className="mt-2 text-[14px] font-semibold text-[var(--text-primary)]">
+                <div className="mt-2 text-[14px] font-semibold text-(--text-primary)">
                   Sent to {email}
                 </div>
-                <div className="mt-1 text-[12px] text-[var(--text-secondary)]">
+                <div className="mt-1 text-[12px] text-(--text-secondary)">
                   Click the link in your inbox to finish signing in. The link expires in 60 minutes.
                 </div>
               </div>
@@ -149,7 +149,7 @@ export default function AuthPage() {
                   setShowMagicLink(false);
                   setEmail('');
                 }}
-                className="mt-1 text-center text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+                className="mt-1 text-center text-[13px] text-(--text-secondary) hover:text-(--text-primary) transition"
               >
                 Use a different email
               </button>
@@ -161,7 +161,7 @@ export default function AuthPage() {
                   type="button"
                   onClick={() => signIn('apple')}
                   disabled={loading !== null}
-                  className="flex items-center justify-center gap-2 rounded-2xl bg-[var(--text-primary)] py-3 text-[14px] font-semibold text-white hover:opacity-90 disabled:opacity-60 transition"
+                  className="flex items-center justify-center gap-2 rounded-2xl bg-(--text-primary) py-3 text-[14px] font-semibold text-white hover:opacity-90 disabled:opacity-60 transition"
                 >
                   <Icon
                     name={loading === 'apple' ? 'CircleNotch' : 'AppleLogo'}
@@ -176,7 +176,7 @@ export default function AuthPage() {
                   type="button"
                   onClick={() => signIn('google')}
                   disabled={loading !== null}
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--surface-border)] bg-white py-3 text-[14px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60 transition"
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-(--surface-border) bg-white py-3 text-[14px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60 transition"
                 >
                   <Icon
                     name={loading === 'google' ? 'CircleNotch' : 'GoogleLogo'}
@@ -193,7 +193,7 @@ export default function AuthPage() {
                     type="button"
                     onClick={() => setShowMagicLink(true)}
                     disabled={loading !== null}
-                    className="flex items-center justify-center gap-2 rounded-2xl border border-[var(--surface-border)] bg-white py-3 text-[14px] font-medium text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60 transition"
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-(--surface-border) bg-white py-3 text-[14px] font-medium text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60 transition"
                   >
                     <Icon name="EnvelopeSimple" size={16} />
                     <span>Sign in with email instead</span>
@@ -202,8 +202,8 @@ export default function AuthPage() {
 
                 {ownerContext && showMagicLink && (
                   <form onSubmit={sendMagicLink} className="flex flex-col gap-2.5">
-                    <div className="flex items-center gap-2 rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-2.5 focus-within:ring-2 focus-within:ring-accent">
-                      <Icon name="EnvelopeSimple" size={16} className="text-[var(--text-secondary)]" />
+                    <div className="flex items-center gap-2 rounded-2xl border border-(--surface-border) bg-white px-3 py-2.5 focus-within:ring-2 focus-within:ring-accent">
+                      <Icon name="EnvelopeSimple" size={16} className="text-(--text-secondary)" />
                       <input
                         type="email"
                         autoComplete="email"
@@ -214,7 +214,7 @@ export default function AuthPage() {
                           if (error) setError(null);
                         }}
                         placeholder="you@yourplace.com"
-                        className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+                        className="flex-1 bg-transparent text-[14px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden"
                       />
                     </div>
                     <button
@@ -234,7 +234,7 @@ export default function AuthPage() {
                         setEmail('');
                         setError(null);
                       }}
-                      className="text-center text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+                      className="text-center text-[12px] text-(--text-secondary) hover:text-(--text-primary) transition"
                     >
                       Back to OAuth
                     </button>
@@ -250,13 +250,13 @@ export default function AuthPage() {
                 <button
                   type="button"
                   onClick={dismiss}
-                  className="mt-1 text-center text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+                  className="mt-1 text-center text-[13px] text-(--text-secondary) hover:text-(--text-primary) transition"
                 >
                   Continue as guest
                 </button>
               </div>
 
-              <div className="mt-5 text-center text-[10px] text-[var(--text-tertiary)]">
+              <div className="mt-5 text-center text-[10px] text-(--text-tertiary)">
                 By continuing you agree to our{' '}
                 <Link href="/legal/tos" className="underline">
                   Terms

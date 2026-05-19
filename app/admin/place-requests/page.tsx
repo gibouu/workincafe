@@ -79,7 +79,7 @@ export default async function PlaceRequestsPage() {
   const requests = await loadRequests();
 
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
+    <div className="min-h-dvh bg-(--map-bg)">
       <div className="mx-auto max-w-3xl px-5 py-6">
         <div className="flex items-center justify-between">
           <Link
@@ -89,13 +89,13 @@ export default async function PlaceRequestsPage() {
           >
             <Icon name="ArrowLeft" size={18} />
           </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">
+          <div className="text-[15px] font-semibold text-(--text-primary)">
             Place requests
           </div>
           <div className="w-9" />
         </div>
 
-        <h1 className="mt-6 text-[28px] font-bold text-[var(--text-primary)]">Pending</h1>
+        <h1 className="mt-6 text-[28px] font-bold text-(--text-primary)">Pending</h1>
         <PlaceRequestsQueue requests={requests} />
       </div>
     </div>

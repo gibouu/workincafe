@@ -24,7 +24,7 @@ export default async function ScanPage({
     .maybeSingle();
 
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
+    <div className="min-h-dvh bg-(--map-bg)">
       <div className="mx-auto max-w-md px-5 py-6">
         <div className="flex items-center justify-between">
           <Link
@@ -34,14 +34,14 @@ export default async function ScanPage({
           >
             <Icon name="ArrowLeft" size={18} />
           </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">Scan code</div>
+          <div className="text-[15px] font-semibold text-(--text-primary)">Scan code</div>
           <div className="w-9" />
         </div>
 
-        <h1 className="mt-6 text-[24px] font-bold text-[var(--text-primary)]">
+        <h1 className="mt-6 text-[24px] font-bold text-(--text-primary)">
           {place?.name ?? 'Scan'}
         </h1>
-        <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
+        <p className="mt-1 text-[13px] text-(--text-secondary)">
           Type or paste the customer&apos;s code. Each valid scan consumes one use and awards the
           customer one loyalty point.
         </p>

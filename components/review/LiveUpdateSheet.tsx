@@ -232,7 +232,7 @@ export function LiveUpdateSheet({
     <Drawer.Root open={open} onOpenChange={handleClose}>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/20 z-40" />
-        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 mx-auto flex h-[88dvh] max-w-md flex-col rounded-t-3xl bg-white shadow-float outline-none">
+        <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 mx-auto flex h-[88dvh] max-w-md flex-col rounded-t-3xl bg-white shadow-float outline-hidden">
           <Drawer.Title className="sr-only">Live review</Drawer.Title>
           <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-sys-gray-4" />
 
@@ -310,7 +310,7 @@ function FormBody(props: FormBodyProps) {
   const meta = categoryMeta(place.category);
   return (
     <>
-      <header className="border-b border-[var(--surface-border)] px-5 pb-3 pt-3">
+      <header className="border-b border-(--surface-border) px-5 pb-3 pt-3">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <div
@@ -320,10 +320,10 @@ function FormBody(props: FormBodyProps) {
               <Icon name={meta.icon} size={18} />
             </div>
             <div className="min-w-0">
-              <div className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">
+              <div className="text-[11px] uppercase tracking-wide text-(--text-secondary)">
                 Step {stepIndex + 1} of {STEPS.length} · {STEP_TITLES[step]}
               </div>
-              <div className="truncate text-[17px] font-semibold text-[var(--text-primary)]">
+              <div className="truncate text-[17px] font-semibold text-(--text-primary)">
                 {place.name}
               </div>
             </div>
@@ -332,7 +332,7 @@ function FormBody(props: FormBodyProps) {
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)]"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-secondary)"
           >
             <Icon name="X" size={14} />
           </button>
@@ -351,7 +351,7 @@ function FormBody(props: FormBodyProps) {
 
       <div className="flex-1 overflow-y-auto px-5 py-4">
         {signedIn === false && (
-          <div className="mb-4 flex items-start gap-2 rounded-2xl border border-[var(--surface-border)] bg-accent-tint p-3 text-[12px] text-[var(--text-primary)]">
+          <div className="mb-4 flex items-start gap-2 rounded-2xl border border-(--surface-border) bg-accent-tint p-3 text-[12px] text-(--text-primary)">
             <Icon name="Info" size={14} className="mt-0.5 shrink-0 text-accent" />
             <div>
               You&apos;re not signed in. Fill this out — we&apos;ll save your draft and ask you to
@@ -363,13 +363,13 @@ function FormBody(props: FormBodyProps) {
         {step === 'now' ? <StepNow {...props} /> : <StepOptional {...props} />}
       </div>
 
-      <div className="border-t border-[var(--surface-border)] p-4">
+      <div className="border-t border-(--surface-border) p-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={goBack}
             disabled={submitting}
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60"
             aria-label={stepIndex === 0 ? 'Cancel' : 'Back'}
           >
             <Icon name="ArrowLeft" size={20} />
@@ -413,7 +413,7 @@ function StepNow({
 }: FormBodyProps) {
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-[13px] text-[var(--text-secondary)]">
+      <p className="text-[13px] text-(--text-secondary)">
         Tap one in each row. Helps someone else decide — takes 30 seconds.
       </p>
 
@@ -458,15 +458,15 @@ function StepOptional({
 }: FormBodyProps) {
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-[13px] text-[var(--text-secondary)]">
+      <p className="text-[13px] text-(--text-secondary)">
         All optional — skip and submit if you&apos;re in a hurry.
       </p>
 
       <div>
-        <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+        <div className="text-[13px] font-semibold text-(--text-primary)">
           Quick measurements
         </div>
-        <div className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+        <div className="mt-1 text-[11px] text-(--text-tertiary)">
           We process audio locally and never upload it.
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -489,10 +489,10 @@ function StepOptional({
 
       {rotating && (
         <div>
-          <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+          <div className="text-[13px] font-semibold text-(--text-primary)">
             {rotating.prompt}
           </div>
-          <div className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+          <div className="mt-1 text-[11px] text-(--text-tertiary)">
             Helps fill missing place info.
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -504,7 +504,7 @@ function StepOptional({
                 className={`rounded-full border px-3 py-2 text-[13px] font-medium transition ${
                   rotatingAnswer === opt.value
                     ? 'border-transparent bg-accent text-white'
-                    : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
+                    : 'border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6'
                 }`}
               >
                 {opt.label}
@@ -535,15 +535,15 @@ function MeasurementButton({
       type="button"
       onClick={onClick}
       disabled={loading}
-      className="flex flex-col items-start rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-left transition hover:bg-sys-gray-6 disabled:opacity-60"
+      className="flex flex-col items-start rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-left transition hover:bg-sys-gray-6 disabled:opacity-60"
     >
       <Icon
         name={loading ? 'CircleNotch' : icon}
         size={18}
-        className={loading ? 'animate-spin text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}
+        className={loading ? 'animate-spin text-(--text-secondary)' : 'text-(--text-secondary)'}
       />
-      <div className="mt-0.5 text-[11px] text-[var(--text-secondary)]">{label}</div>
-      <div className="text-[13px] font-semibold text-[var(--text-primary)]">{value}</div>
+      <div className="mt-0.5 text-[11px] text-(--text-secondary)">{label}</div>
+      <div className="text-[13px] font-semibold text-(--text-primary)">{value}</div>
     </button>
   );
 }
@@ -551,7 +551,7 @@ function MeasurementButton({
 function Question({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="mb-2 text-[13px] font-semibold text-[var(--text-primary)]">{label}</div>
+      <div className="mb-2 text-[13px] font-semibold text-(--text-primary)">{label}</div>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
@@ -575,7 +575,7 @@ function Pill({
       className={`flex items-center gap-1.5 rounded-full border px-3 py-2 text-[13px] font-medium transition ${
         active
           ? 'border-transparent bg-accent text-white'
-          : 'border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6'
+          : 'border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6'
       }`}
     >
       <Icon name={icon} size={14} weight={active ? 'fill' : 'regular'} />

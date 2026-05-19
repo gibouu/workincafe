@@ -4,7 +4,7 @@ export default function PrivacyPage() {
   return (
     <article className="prose max-w-none">
       <h1 className="text-[28px] font-bold">Privacy Policy</h1>
-      <p className="text-[13px] text-[var(--text-secondary)]">
+      <p className="text-[13px] text-(--text-secondary)">
         Last updated — {new Date().toISOString().slice(0, 10)}
       </p>
 

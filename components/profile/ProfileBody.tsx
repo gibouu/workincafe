@@ -35,7 +35,7 @@ export function ProfileBody({
 
   if (!loaded) {
     return (
-      <div className="flex flex-1 items-center justify-center text-[13px] text-[var(--text-tertiary)]">
+      <div className="flex flex-1 items-center justify-center text-[13px] text-(--text-tertiary)">
         Loading…
       </div>
     );
@@ -46,13 +46,13 @@ export function ProfileBody({
       <div className="flex min-h-0 flex-1 flex-col">
         <Header title="Profile" compact={compact} onClose={onClose} />
         <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-secondary)">
             <Icon name="UserCircle" size={36} />
           </div>
-          <h2 className="mt-4 text-[18px] font-semibold text-[var(--text-primary)]">
+          <h2 className="mt-4 text-[18px] font-semibold text-(--text-primary)">
             Sign in to see your profile
           </h2>
-          <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
+          <p className="mt-1 text-[13px] text-(--text-secondary)">
             Saved places, your reviews, your loyalty points — all in one spot.
           </p>
           <Link
@@ -75,14 +75,14 @@ export function ProfileBody({
         }`}
       >
         <div className="flex flex-col items-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-sys-gray-5 text-[var(--text-secondary)]">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-sys-gray-5 text-(--text-secondary)">
             <Icon name="UserCircle" size={48} />
           </div>
-          <div className="mt-3 text-[18px] font-semibold text-[var(--text-primary)]">
+          <div className="mt-3 text-[18px] font-semibold text-(--text-primary)">
             {me.name ?? 'Traveller'}
           </div>
           {me.email && (
-            <div className="mt-1 text-[12px] text-[var(--text-secondary)]">{me.email}</div>
+            <div className="mt-1 text-[12px] text-(--text-secondary)">{me.email}</div>
           )}
         </div>
 
@@ -111,8 +111,8 @@ function Header({
     <header
       className={
         compact
-          ? 'shrink-0 border-b border-[var(--surface-border)] bg-white/95 backdrop-blur-ios'
-          : 'sticky top-0 z-10 border-b border-[var(--surface-border)] bg-white/90 backdrop-blur-ios'
+          ? 'shrink-0 border-b border-(--surface-border) bg-white/95 backdrop-blur-ios'
+          : 'sticky top-0 z-10 border-b border-(--surface-border) bg-white/90 backdrop-blur-ios'
       }
     >
       <div className={`mx-auto flex max-w-2xl items-center justify-between ${compact ? 'px-3 py-2' : 'px-4 py-3'}`}>

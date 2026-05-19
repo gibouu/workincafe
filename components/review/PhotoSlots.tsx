@@ -96,7 +96,7 @@ function PhotoSlotCard({
   const filled = Boolean(photo);
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)]">
+    <div className="relative overflow-hidden rounded-xl border border-(--surface-border) bg-(--map-bg)">
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
@@ -104,7 +104,7 @@ function PhotoSlotCard({
         className="flex w-full flex-col items-stretch text-left disabled:opacity-60"
       >
         {filled && previewUrl ? (
-          <div className="relative aspect-[4/3] w-full bg-black/5">
+          <div className="relative aspect-4/3 w-full bg-black/5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewUrl}
@@ -113,16 +113,16 @@ function PhotoSlotCard({
             />
           </div>
         ) : (
-          <div className="flex aspect-[4/3] w-full flex-col items-center justify-center px-3 text-center">
+          <div className="flex aspect-4/3 w-full flex-col items-center justify-center px-3 text-center">
             <Icon
               name={busy ? 'CircleNotch' : 'Camera'}
               size={22}
-              className={busy ? 'animate-spin text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}
+              className={busy ? 'animate-spin text-(--text-secondary)' : 'text-(--text-secondary)'}
             />
-            <div className="mt-1 text-[12px] font-semibold text-[var(--text-primary)]">
+            <div className="mt-1 text-[12px] font-semibold text-(--text-primary)">
               {meta.label}
             </div>
-            <div className="mt-0.5 text-[10px] leading-snug text-[var(--text-tertiary)]">
+            <div className="mt-0.5 text-[10px] leading-snug text-(--text-tertiary)">
               {meta.example}
             </div>
           </div>
@@ -150,7 +150,7 @@ function PhotoSlotCard({
         </span>
       )}
       {filled && (
-        <div className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+        <div className="px-2 py-1.5 text-[10px] font-medium uppercase tracking-wide text-(--text-tertiary)">
           {meta.label}
         </div>
       )}

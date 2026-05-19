@@ -79,7 +79,7 @@ export function AdminUserSearch({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search by email…"
-          className="flex-1 rounded-xl border border-[var(--surface-border)] bg-white px-4 py-2.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent"
+          className="flex-1 rounded-xl border border-(--surface-border) bg-white px-4 py-2.5 text-[14px] focus:outline-hidden focus:ring-2 focus:ring-accent"
         />
         <button
           type="submit"
@@ -97,7 +97,7 @@ export function AdminUserSearch({
       )}
 
       {results !== null && results.length === 0 && (
-        <div className="mt-3 rounded-2xl border border-[var(--surface-border)] bg-white p-4 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+        <div className="mt-3 rounded-2xl border border-(--surface-border) bg-white p-4 text-center text-[13px] text-(--text-secondary) shadow-card">
           No users found. They need to sign in via Google or Apple at least
           once before they show up here.
         </div>
@@ -111,16 +111,16 @@ export function AdminUserSearch({
             return (
               <li
                 key={r.id}
-                className="flex items-center gap-3 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card"
+                className="flex items-center gap-3 rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-secondary)">
                   <Icon name="UserCircle" size={22} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14px] font-semibold text-[var(--text-primary)]">
+                  <div className="truncate text-[14px] font-semibold text-(--text-primary)">
                     {r.name ?? r.email ?? '(no name)'}
                     {isSelf && (
-                      <span className="ml-2 rounded-full bg-sys-gray-6 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+                      <span className="ml-2 rounded-full bg-sys-gray-6 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-(--text-tertiary)">
                         You
                       </span>
                     )}
@@ -131,7 +131,7 @@ export function AdminUserSearch({
                     )}
                   </div>
                   {r.email && (
-                    <div className="truncate text-[12px] text-[var(--text-secondary)]">
+                    <div className="truncate text-[12px] text-(--text-secondary)">
                       {r.email}
                     </div>
                   )}

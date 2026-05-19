@@ -47,10 +47,10 @@ export function ScannerCard() {
   };
 
   return (
-    <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
+    <div className="rounded-2xl border border-(--surface-border) bg-white p-5 shadow-card">
       <form onSubmit={onSubmit}>
         <label className="block">
-          <div className="text-[12px] font-medium text-[var(--text-secondary)]">
+          <div className="text-[12px] font-medium text-(--text-secondary)">
             Customer code
           </div>
           <input
@@ -62,7 +62,7 @@ export function ScannerCard() {
             spellCheck={false}
             autoCorrect="off"
             autoCapitalize="characters"
-            className="mt-2 w-full rounded-xl border border-[var(--surface-border)] bg-white px-4 py-4 text-center text-[20px] font-mono tracking-widest text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-accent"
+            className="mt-2 w-full rounded-xl border border-(--surface-border) bg-white px-4 py-4 text-center text-[20px] font-mono tracking-widest text-(--text-primary) focus:outline-hidden focus:ring-2 focus:ring-accent"
           />
         </label>
         <button
@@ -96,7 +96,7 @@ export function ScannerCard() {
         </div>
       )}
 
-      <p className="mt-4 text-[11px] text-[var(--text-tertiary)]">
+      <p className="mt-4 text-[11px] text-(--text-tertiary)">
         Type or paste the customer&apos;s code. Camera scanning lands in a future update — for now,
         iOS Camera + paste works.
       </p>

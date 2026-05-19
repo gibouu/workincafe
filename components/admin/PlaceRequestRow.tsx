@@ -76,8 +76,8 @@ export function PlaceRequestRow({
 
   if (done) {
     return (
-      <li className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-        <div className="text-[13px] text-[var(--text-secondary)]">
+      <li className="rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card">
+        <div className="text-[13px] text-(--text-secondary)">
           {req.name} — {done}
         </div>
       </li>
@@ -109,7 +109,7 @@ export function PlaceRequestRow({
   };
 
   return (
-    <li className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
+    <li className="rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card">
       <div className="flex items-start gap-3">
         {leading}
         <div
@@ -119,14 +119,14 @@ export function PlaceRequestRow({
           <Icon name={meta.icon} size={22} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">
+          <div className="text-[15px] font-semibold text-(--text-primary)">
             {req.name}
           </div>
-          <div className="text-[12px] text-[var(--text-secondary)]">
+          <div className="text-[12px] text-(--text-secondary)">
             {meta.label}
             {req.address ? ` · ${req.address}` : ''} · submitted {timeAgo(req.created_at)}
           </div>
-          <div className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+          <div className="mt-1 text-[11px] text-(--text-tertiary)">
             {req.lat.toFixed(4)}, {req.lng.toFixed(4)}
             {req.submitter_email ? ` · by ${req.submitter_email}` : ''}
             {req.submitter_stats && req.submitter_stats.decided > 0 && (
@@ -134,7 +134,7 @@ export function PlaceRequestRow({
             )}
           </div>
           {req.notes && (
-            <div className="mt-2 whitespace-pre-wrap text-[13px] text-[var(--text-primary)]">
+            <div className="mt-2 whitespace-pre-wrap text-[13px] text-(--text-primary)">
               {req.notes}
             </div>
           )}
@@ -147,7 +147,7 @@ export function PlaceRequestRow({
       )}
       {showReject ? (
         <div className="mt-3 flex flex-col gap-2">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-(--text-secondary)">
             Reason
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -164,8 +164,8 @@ export function PlaceRequestRow({
                   disabled={pending !== null}
                   className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition disabled:opacity-60 ${
                     active
-                      ? 'bg-[var(--text-primary)] text-white'
-                      : 'bg-white text-[var(--text-secondary)] border border-[var(--surface-border)] hover:bg-sys-gray-6'
+                      ? 'bg-(--text-primary) text-white'
+                      : 'bg-white text-(--text-secondary) border border-(--surface-border) hover:bg-sys-gray-6'
                   }`}
                 >
                   {preset}
@@ -181,8 +181,8 @@ export function PlaceRequestRow({
               disabled={pending !== null}
               className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition disabled:opacity-60 ${
                 otherMode
-                  ? 'bg-[var(--text-primary)] text-white'
-                  : 'bg-white text-[var(--text-secondary)] border border-[var(--surface-border)] hover:bg-sys-gray-6'
+                  ? 'bg-(--text-primary) text-white'
+                  : 'bg-white text-(--text-secondary) border border-(--surface-border) hover:bg-sys-gray-6'
               }`}
             >
               Other
@@ -195,7 +195,7 @@ export function PlaceRequestRow({
               placeholder="Why? (shown to the submitter when notifications ship)"
               rows={2}
               autoFocus
-              className="w-full resize-none rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full resize-none rounded-xl border border-(--surface-border) bg-(--map-bg) px-3 py-2 text-[13px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden focus:ring-2 focus:ring-accent"
             />
           )}
           <div className="flex gap-2">
@@ -203,7 +203,7 @@ export function PlaceRequestRow({
               type="button"
               onClick={resetReject}
               disabled={pending !== null}
-              className="flex-1 rounded-xl border border-[var(--surface-border)] bg-white py-2 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60 transition"
+              className="flex-1 rounded-xl border border-(--surface-border) bg-white py-2 text-[13px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60 transition"
             >
               Cancel
             </button>

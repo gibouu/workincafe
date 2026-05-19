@@ -61,7 +61,7 @@ export default async function OwnerPlacePage({
   const meta = categoryMeta((place.category as PlaceCategory) ?? 'other');
 
   return (
-    <div className="min-h-dvh bg-[var(--map-bg)]">
+    <div className="min-h-dvh bg-(--map-bg)">
       <div className="mx-auto max-w-3xl px-5 py-6">
         <div className="flex items-center justify-between">
           <Link
@@ -71,7 +71,7 @@ export default async function OwnerPlacePage({
           >
             <Icon name="ArrowLeft" size={18} />
           </Link>
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">Manage place</div>
+          <div className="text-[15px] font-semibold text-(--text-primary)">Manage place</div>
           <div className="w-9" />
         </div>
 
@@ -83,8 +83,8 @@ export default async function OwnerPlacePage({
             <Icon name={meta.icon} size={20} />
           </div>
           <div>
-            <h1 className="text-[24px] font-bold text-[var(--text-primary)]">{place.name}</h1>
-            <p className="text-[12px] text-[var(--text-secondary)]">
+            <h1 className="text-[24px] font-bold text-(--text-primary)">{place.name}</h1>
+            <p className="text-[12px] text-(--text-secondary)">
               {place.address} · {place.neighborhood}
             </p>
           </div>
@@ -93,26 +93,26 @@ export default async function OwnerPlacePage({
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <Link
             href={`/owner/places/${place.id}/deals/new`}
-            className="flex items-center gap-3 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card hover:shadow-float transition"
+            className="flex items-center gap-3 rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card hover:shadow-float transition"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-tint text-accent">
               <Icon name="Plus" size={18} />
             </div>
             <div className="flex-1">
-              <div className="text-[14px] font-semibold text-[var(--text-primary)]">New deal</div>
-              <div className="text-[11px] text-[var(--text-secondary)]">Single use or pack</div>
+              <div className="text-[14px] font-semibold text-(--text-primary)">New deal</div>
+              <div className="text-[11px] text-(--text-secondary)">Single use or pack</div>
             </div>
           </Link>
           <Link
             href={`/owner/places/${place.id}/scan`}
-            className="flex items-center gap-3 rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card hover:shadow-float transition"
+            className="flex items-center gap-3 rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card hover:shadow-float transition"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-green-tint text-accent-green">
               <Icon name="QrCode" size={18} />
             </div>
             <div className="flex-1">
-              <div className="text-[14px] font-semibold text-[var(--text-primary)]">Scan code</div>
-              <div className="text-[11px] text-[var(--text-secondary)]">
+              <div className="text-[14px] font-semibold text-(--text-primary)">Scan code</div>
+              <div className="text-[11px] text-(--text-secondary)">
                 Validate a customer&apos;s ticket
               </div>
             </div>
@@ -123,11 +123,11 @@ export default async function OwnerPlacePage({
           <OwnerMenuManager placeId={place.id} />
         </div>
 
-        <h2 className="mt-8 text-[15px] font-semibold text-[var(--text-primary)]">
+        <h2 className="mt-8 text-[15px] font-semibold text-(--text-primary)">
           Deals ({deals.length})
         </h2>
         {deals.length === 0 ? (
-          <div className="mt-3 rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+          <div className="mt-3 rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary) shadow-card">
             No deals yet. Create one to start selling to remote workers.
           </div>
         ) : (
@@ -135,25 +135,25 @@ export default async function OwnerPlacePage({
             {deals.map((d) => (
               <li
                 key={d.id}
-                className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card"
+                className="rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card"
               >
                 <div className="flex items-start gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[14px] font-semibold text-[var(--text-primary)]">
+                      <span className="text-[14px] font-semibold text-(--text-primary)">
                         {d.title}
                       </span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
                           d.active
                             ? 'bg-accent-green-tint text-accent-green'
-                            : 'bg-sys-gray-6 text-[var(--text-tertiary)]'
+                            : 'bg-sys-gray-6 text-(--text-tertiary)'
                         }`}
                       >
                         {d.active ? 'Live' : 'Draft'}
                       </span>
                     </div>
-                    <div className="mt-1 text-[12px] text-[var(--text-secondary)]">
+                    <div className="mt-1 text-[12px] text-(--text-secondary)">
                       {d.kind === 'pack'
                         ? `Pack of ${d.pack_size} · ${formatCents(d.price_cents, d.currency)}`
                         : `Single use · ${formatCents(d.price_cents, d.currency)}`}
@@ -162,7 +162,7 @@ export default async function OwnerPlacePage({
                   </div>
                   <Link
                     href={`/owner/places/${place.id}/deals/${d.id}/edit`}
-                    className="shrink-0 rounded-xl border border-[var(--surface-border)] bg-white px-3 py-1.5 text-[12px] font-medium text-[var(--text-primary)] hover:bg-sys-gray-6"
+                    className="shrink-0 rounded-xl border border-(--surface-border) bg-white px-3 py-1.5 text-[12px] font-medium text-(--text-primary) hover:bg-sys-gray-6"
                   >
                     Edit
                   </Link>

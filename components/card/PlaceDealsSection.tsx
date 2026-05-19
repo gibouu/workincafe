@@ -20,8 +20,8 @@ export function PlaceDealsSection({ placeId }: { placeId: string }) {
   return (
     <div className="mt-6">
       <div className="mb-2 flex items-center justify-between">
-        <div className="text-[13px] font-semibold text-[var(--text-primary)]">Deals</div>
-        <span className="rounded-full bg-sys-gray-6 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+        <div className="text-[13px] font-semibold text-(--text-primary)">Deals</div>
+        <span className="rounded-full bg-sys-gray-6 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-(--text-tertiary)">
           Preview
         </span>
       </div>
@@ -29,7 +29,7 @@ export function PlaceDealsSection({ placeId }: { placeId: string }) {
         {demos.map((deal) => (
           <li
             key={deal.id}
-            className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card"
+            className="rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card"
           >
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-tint text-accent">
@@ -37,16 +37,16 @@ export function PlaceDealsSection({ placeId }: { placeId: string }) {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[14px] font-semibold text-[var(--text-primary)]">
+                  <span className="text-[14px] font-semibold text-(--text-primary)">
                     {deal.title}
                   </span>
                   {deal.kind === 'pack' && (
-                    <span className="rounded-full bg-sys-gray-6 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-secondary)]">
+                    <span className="rounded-full bg-sys-gray-6 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-(--text-secondary)">
                       Pack of {deal.pack_size}
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-[12px] text-[var(--text-secondary)]">{deal.description}</p>
+                <p className="mt-1 text-[12px] text-(--text-secondary)">{deal.description}</p>
                 <div className="mt-2 text-[15px] font-semibold text-accent">
                   {formatCents(deal.price_cents, deal.currency)}
                 </div>
@@ -62,7 +62,7 @@ export function PlaceDealsSection({ placeId }: { placeId: string }) {
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">
+      <p className="mt-2 text-[11px] text-(--text-tertiary)">
         Demo deals shown for preview. Real deals appear here once a partner café claims this place
         and publishes them.
       </p>
@@ -97,13 +97,13 @@ function PreviewExplainer({ onClose }: { onClose: () => void }) {
             <Icon name="Sparkle" size={18} />
           </div>
           <div className="flex-1">
-            <div className="text-[15px] font-semibold text-[var(--text-primary)]">Preview only</div>
-            <p className="mt-1 text-[13px] text-[var(--text-secondary)]">
+            <div className="text-[15px] font-semibold text-(--text-primary)">Preview only</div>
+            <p className="mt-1 text-[13px] text-(--text-secondary)">
               We&apos;re not signed up with this café yet, so this deal is just a preview of how
               they&apos;ll work. Pay in the app, get a QR, walk in, the café scans it. Buy a single
               coffee or a pack — your choice.
             </p>
-            <p className="mt-2 text-[12px] text-[var(--text-tertiary)]">
+            <p className="mt-2 text-[12px] text-(--text-tertiary)">
               Own a place? Tap “Own this place? Claim it” at the bottom of the card.
             </p>
           </div>

@@ -38,8 +38,8 @@ export function ClaimRow({ claim }: { claim: ClaimRecord }) {
 
   if (done) {
     return (
-      <li className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
-        <div className="text-[13px] text-[var(--text-secondary)]">
+      <li className="rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card">
+        <div className="text-[13px] text-(--text-secondary)">
           {claim.places?.name ?? 'Place'} — {done}
         </div>
       </li>
@@ -68,7 +68,7 @@ export function ClaimRow({ claim }: { claim: ClaimRecord }) {
   };
 
   return (
-    <li className="rounded-2xl border border-[var(--surface-border)] bg-white p-4 shadow-card">
+    <li className="rounded-2xl border border-(--surface-border) bg-white p-4 shadow-card">
       <div className="flex items-start gap-3">
         <div
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white shadow-bubble"
@@ -77,21 +77,21 @@ export function ClaimRow({ claim }: { claim: ClaimRecord }) {
           <Icon name={meta.icon} size={22} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[15px] font-semibold text-[var(--text-primary)]">
+          <div className="text-[15px] font-semibold text-(--text-primary)">
             {claim.places?.name ?? '(place not found)'}
           </div>
-          <div className="text-[12px] text-[var(--text-secondary)]">
+          <div className="text-[12px] text-(--text-secondary)">
             {claim.places?.address} · {claim.places?.neighborhood}
           </div>
-          <div className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+          <div className="mt-1 text-[11px] text-(--text-tertiary)">
             By {claim.claimant_name ?? '(no name)'} · {claim.claimant_email}
           </div>
-          <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-sys-gray-6 px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">
+          <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-sys-gray-6 px-2 py-0.5 text-[11px] font-medium text-(--text-secondary)">
             {PROOF_LABEL[claim.proof_type] ?? claim.proof_type}
             {claim.proof_path && ' · photo attached'}
           </div>
           {claim.proof_notes && (
-            <div className="mt-2 whitespace-pre-wrap text-[13px] text-[var(--text-primary)]">
+            <div className="mt-2 whitespace-pre-wrap text-[13px] text-(--text-primary)">
               {claim.proof_notes}
             </div>
           )}

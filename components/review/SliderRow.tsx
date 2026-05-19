@@ -56,18 +56,18 @@ export function SliderRow({
   return (
     <div className="py-3">
       <div className="flex items-center gap-2">
-        <Icon name={icon} size={18} className="text-[var(--text-secondary)]" />
-        <label htmlFor={id} className="text-[13px] font-medium text-[var(--text-primary)]">
+        <Icon name={icon} size={18} className="text-(--text-secondary)" />
+        <label htmlFor={id} className="text-[13px] font-medium text-(--text-primary)">
           {label}
         </label>
-        <div className="ml-auto text-[11px] tabular-nums text-[var(--text-secondary)]">
+        <div className="ml-auto text-[11px] tabular-nums text-(--text-secondary)">
           {touched ? `${value} / ${max}` : '—'}
         </div>
       </div>
 
       <div
         className={`mt-2 min-h-[18px] text-[12px] font-semibold transition-opacity ${
-          touched ? 'text-[var(--text-primary)] opacity-100' : 'text-[var(--text-tertiary)] opacity-70'
+          touched ? 'text-(--text-primary) opacity-100' : 'text-(--text-tertiary) opacity-70'
         }`}
         aria-live="polite"
         key={anchor?.at ?? -1}
@@ -80,7 +80,7 @@ export function SliderRow({
           {Array.from({ length: ticks }).map((_, i) => (
             <span
               key={i}
-              className="h-1 w-1 rounded-full bg-[var(--sys-gray-4,#D1D1D6)]"
+              className="h-1 w-1 rounded-full bg-(--sys-gray-4,#D1D1D6)"
             />
           ))}
         </div>
@@ -93,20 +93,20 @@ export function SliderRow({
           value={displayValue}
           onChange={(e) => onChange(Number(e.target.value))}
           aria-valuetext={anchor?.text ?? `${displayValue}`}
-          className="wic-slider relative z-10 h-6 w-full cursor-pointer appearance-none bg-transparent focus:outline-none"
+          className="wic-slider relative z-10 h-6 w-full cursor-pointer appearance-none bg-transparent focus:outline-hidden"
           style={trackStyle}
         />
       </div>
 
       {endLabels && (
-        <div className="mt-1 flex justify-between text-[10px] text-[var(--text-tertiary)]">
+        <div className="mt-1 flex justify-between text-[10px] text-(--text-tertiary)">
           <span>{endLabels.low}</span>
           <span>{endLabels.high}</span>
         </div>
       )}
 
       {hint && (
-        <p className="mt-2 text-[11px] text-[var(--text-tertiary)]">{hint}</p>
+        <p className="mt-2 text-[11px] text-(--text-tertiary)">{hint}</p>
       )}
     </div>
   );

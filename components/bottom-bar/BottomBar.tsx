@@ -56,7 +56,7 @@ export function BottomBar() {
         cardOpen ? 'hidden md:flex' : 'flex'
       }`}
     >
-      <div className="pointer-events-auto flex h-16 items-center gap-1 rounded-[32px] border border-[var(--surface-border)] bg-[var(--surface)] px-2 backdrop-blur-ios shadow-float">
+      <div className="pointer-events-auto flex h-16 items-center gap-1 rounded-[32px] border border-(--surface-border) bg-(--surface) px-2 backdrop-blur-ios shadow-float">
         <Slot
           icon="UserCircle"
           label="Profile"
@@ -99,14 +99,14 @@ function Slot({
       type="button"
       onClick={onClick}
       className={`relative flex h-full min-w-[88px] flex-col items-center justify-center gap-0.5 rounded-[28px] px-3 transition hover:bg-white/50 ${
-        active ? 'text-accent' : muted ? 'text-[var(--text-secondary)]' : 'text-[var(--text-primary)]'
+        active ? 'text-accent' : muted ? 'text-(--text-secondary)' : 'text-(--text-primary)'
       }`}
     >
       <Icon name={icon} size={24} weight={active ? 'fill' : 'regular'} />
       <span className="text-[11px] font-medium leading-none">{label}</span>
       {active && <span className="absolute bottom-1 h-0.5 w-5 rounded-full bg-accent" />}
       {soon && (
-        <span className="absolute -top-1 -right-1 rounded-full bg-sys-gray-5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+        <span className="absolute -top-1 -right-1 rounded-full bg-sys-gray-5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-(--text-secondary)">
           Soon
         </span>
       )}

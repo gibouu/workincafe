@@ -157,12 +157,12 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
 
   if (submitted) {
     return (
-      <div className="flex min-h-dvh flex-col items-center justify-center bg-[var(--map-bg)] px-6 text-center">
+      <div className="flex min-h-dvh flex-col items-center justify-center bg-(--map-bg) px-6 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent-green-tint">
           <Icon name="CheckCircle" weight="fill" size={44} className="text-accent-green" />
         </div>
-        <h1 className="mt-5 text-[28px] font-bold text-[var(--text-primary)]">Submitted</h1>
-        <p className="mt-2 max-w-xs text-[14px] text-[var(--text-secondary)]">
+        <h1 className="mt-5 text-[28px] font-bold text-(--text-primary)">Submitted</h1>
+        <p className="mt-2 max-w-xs text-[14px] text-(--text-secondary)">
           We&apos;ll review your claim and email <strong>{email}</strong> with the result.
         </p>
         <Link
@@ -176,8 +176,8 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex min-h-dvh flex-col bg-[var(--map-bg)] pb-28">
-      <header className="sticky top-0 z-10 border-b border-[var(--surface-border)] bg-white/90 backdrop-blur-ios">
+    <form onSubmit={onSubmit} className="flex min-h-dvh flex-col bg-(--map-bg) pb-28">
+      <header className="sticky top-0 z-10 border-b border-(--surface-border) bg-white/90 backdrop-blur-ios">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
           <Link
             href="/"
@@ -187,10 +187,10 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
             <Icon name="X" size={18} />
           </Link>
           <div className="flex flex-col items-center text-center">
-            <div className="text-[11px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+            <div className="text-[11px] font-medium uppercase tracking-wide text-(--text-tertiary)">
               Step {stepIndex + 1} of {STEPS.length}
             </div>
-            <div className="text-[14px] font-semibold text-[var(--text-primary)]">{step.title}</div>
+            <div className="text-[14px] font-semibold text-(--text-primary)">{step.title}</div>
           </div>
           <div className="w-9" />
         </div>
@@ -215,10 +215,10 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
             <Icon name={meta.icon} size={18} />
           </div>
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-semibold text-[var(--text-primary)]">
+            <div className="truncate text-[15px] font-semibold text-(--text-primary)">
               {place.name}
             </div>
-            <div className="truncate text-[11px] text-[var(--text-secondary)]">
+            <div className="truncate text-[11px] text-(--text-secondary)">
               {place.address} · {place.neighborhood}
             </div>
           </div>
@@ -226,7 +226,7 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
 
         {step.id === 'place' && (
           <Section title="Is this your place?" subtitle="If something looks wrong, contact us before submitting.">
-            <p className="text-[13px] text-[var(--text-secondary)]">
+            <p className="text-[13px] text-(--text-secondary)">
               You&apos;re claiming <strong>{place.name}</strong> at {place.address}, {place.neighborhood}.
             </p>
           </Section>
@@ -250,17 +250,17 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
         {step.id === 'email' && (
           <Section title="Where should we email you?">
             <label className="block">
-              <div className="text-[12px] font-medium text-[var(--text-secondary)]">Email</div>
+              <div className="text-[12px] font-medium text-(--text-secondary)">Email</div>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@cafe.com"
-                className="mt-1 w-full rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent"
+                className="mt-1 w-full rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[14px] focus:outline-hidden focus:ring-2 focus:ring-accent"
               />
             </label>
             <label className="mt-3 block">
-              <div className="text-[12px] font-medium text-[var(--text-secondary)]">
+              <div className="text-[12px] font-medium text-(--text-secondary)">
                 Your name (optional)
               </div>
               <input
@@ -268,7 +268,7 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="First Last"
-                className="mt-1 w-full rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent"
+                className="mt-1 w-full rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[14px] focus:outline-hidden focus:ring-2 focus:ring-accent"
               />
             </label>
           </Section>
@@ -288,15 +288,15 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
                       className={`flex w-full items-center gap-3 rounded-xl border px-3 py-3 text-left transition ${
                         active
                           ? 'border-accent bg-accent-tint'
-                          : 'border-[var(--surface-border)] bg-white hover:bg-sys-gray-6'
+                          : 'border-(--surface-border) bg-white hover:bg-sys-gray-6'
                       }`}
                     >
                       <Icon
                         name={opt.icon}
                         size={18}
-                        className={active ? 'text-accent' : 'text-[var(--text-secondary)]'}
+                        className={active ? 'text-accent' : 'text-(--text-secondary)'}
                       />
-                      <span className="text-[14px] text-[var(--text-primary)]">{opt.label}</span>
+                      <span className="text-[14px] text-(--text-primary)">{opt.label}</span>
                     </button>
                   );
                 })}
@@ -320,9 +320,9 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
                 onChange={(e) => setProofNotes(e.target.value.slice(0, 500))}
                 placeholder="Anything else we should know?"
                 rows={3}
-                className="w-full resize-none rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full resize-none rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[14px] focus:outline-hidden focus:ring-2 focus:ring-accent"
               />
-              <div className="mt-1 text-right text-[10px] text-[var(--text-tertiary)]">
+              <div className="mt-1 text-right text-[10px] text-(--text-tertiary)">
                 {proofNotes.length}/500
               </div>
             </Section>
@@ -348,14 +348,14 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--surface-border)] bg-white/95 p-4 backdrop-blur-ios">
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-(--surface-border) bg-white/95 p-4 backdrop-blur-ios">
         <div className="mx-auto flex max-w-2xl items-center gap-3">
           {!isFirst && (
             <button
               type="button"
               onClick={goBack}
               disabled={submitting}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60"
               aria-label="Back"
             >
               <Icon name="ArrowLeft" size={20} />
@@ -368,7 +368,7 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
               </div>
             )}
             {blockedReason && (
-              <div className="mb-2 text-center text-[11px] text-[var(--text-tertiary)]">
+              <div className="mb-2 text-center text-[11px] text-(--text-tertiary)">
                 {blockedReason}
               </div>
             )}
@@ -400,8 +400,8 @@ export function ClaimWizard({ place, defaultEmail }: ClaimWizardProps) {
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-3">
-      <dt className="text-[var(--text-tertiary)]">{label}</dt>
-      <dd className="text-right font-medium text-[var(--text-primary)]">{value}</dd>
+      <dt className="text-(--text-tertiary)">{label}</dt>
+      <dd className="text-right font-medium text-(--text-primary)">{value}</dd>
     </div>
   );
 }
@@ -416,14 +416,14 @@ function ProofPhotoSlot({
   onClear: () => void;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)]">
+    <div className="relative overflow-hidden rounded-xl border border-(--surface-border) bg-(--map-bg)">
       {photo ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={URL.createObjectURL(photo.blob)}
             alt="Proof"
-            className="aspect-[4/3] w-full object-cover"
+            className="aspect-4/3 w-full object-cover"
           />
           <button
             type="button"
@@ -435,12 +435,12 @@ function ProofPhotoSlot({
           </button>
         </>
       ) : (
-        <label className="flex aspect-[4/3] cursor-pointer flex-col items-center justify-center px-4 text-center">
-          <Icon name="Camera" size={28} className="text-[var(--text-secondary)]" />
-          <div className="mt-2 text-[13px] font-semibold text-[var(--text-primary)]">
+        <label className="flex aspect-4/3 cursor-pointer flex-col items-center justify-center px-4 text-center">
+          <Icon name="Camera" size={28} className="text-(--text-secondary)" />
+          <div className="mt-2 text-[13px] font-semibold text-(--text-primary)">
             Add a photo
           </div>
-          <div className="mt-1 text-[11px] text-[var(--text-tertiary)]">
+          <div className="mt-1 text-[11px] text-(--text-tertiary)">
             Storefront with a handwritten note works best.
           </div>
           <input
@@ -470,16 +470,16 @@ function ProofPdfSlot({
   onClear: () => void;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-[var(--surface-border)] bg-white">
+    <div className="relative overflow-hidden rounded-xl border border-(--surface-border) bg-white">
       {pdf ? (
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-center gap-3">
-            <Icon name="FileText" size={22} className="shrink-0 text-[var(--text-secondary)]" />
+            <Icon name="FileText" size={22} className="shrink-0 text-(--text-secondary)" />
             <div className="min-w-0">
-              <div className="truncate text-[13px] font-semibold text-[var(--text-primary)]">
+              <div className="truncate text-[13px] font-semibold text-(--text-primary)">
                 {pdf.name}
               </div>
-              <div className="text-[11px] text-[var(--text-tertiary)]">
+              <div className="text-[11px] text-(--text-tertiary)">
                 {(pdf.bytes / 1024 / 1024).toFixed(1)} MB
               </div>
             </div>
@@ -488,19 +488,19 @@ function ProofPdfSlot({
             type="button"
             onClick={onClear}
             aria-label="Remove document"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)] hover:bg-sys-gray-5"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-secondary) hover:bg-sys-gray-5"
           >
             <Icon name="X" size={12} />
           </button>
         </div>
       ) : (
         <label className="flex cursor-pointer items-center gap-3 px-4 py-3">
-          <Icon name="FileText" size={22} className="text-[var(--text-secondary)]" />
+          <Icon name="FileText" size={22} className="text-(--text-secondary)" />
           <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+            <div className="text-[13px] font-semibold text-(--text-primary)">
               Attach a PDF
             </div>
-            <div className="text-[11px] text-[var(--text-tertiary)]">
+            <div className="text-[11px] text-(--text-tertiary)">
               Business doc, lease, utility bill — up to 3 MB.
             </div>
           </div>

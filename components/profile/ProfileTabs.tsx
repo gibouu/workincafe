@@ -68,11 +68,11 @@ export function ProfileTabs() {
       <div className="mt-4">
         {tab === 'places' && (
           favorites === null ? (
-            <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+            <div className="rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary) shadow-card">
               Loading…
             </div>
           ) : favorites.length === 0 ? (
-            <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+            <div className="rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary) shadow-card">
               No saved places yet. Tap the heart on any place to save it here.
             </div>
           ) : (
@@ -83,7 +83,7 @@ export function ProfileTabs() {
                   <li key={p.id}>
                     <Link
                       href={`/place/${p.id}`}
-                      className="flex items-center gap-3 rounded-2xl border border-[var(--surface-border)] bg-white p-3 shadow-card hover:bg-sys-gray-6 transition"
+                      className="flex items-center gap-3 rounded-2xl border border-(--surface-border) bg-white p-3 shadow-card hover:bg-sys-gray-6 transition"
                     >
                       <div
                         className="flex h-10 w-10 items-center justify-center rounded-full text-white shadow-bubble"
@@ -92,10 +92,10 @@ export function ProfileTabs() {
                         <Icon name={meta.icon} size={18} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-[14px] font-semibold text-[var(--text-primary)]">
+                        <div className="truncate text-[14px] font-semibold text-(--text-primary)">
                           {p.name}
                         </div>
-                        <div className="truncate text-[12px] text-[var(--text-secondary)]">
+                        <div className="truncate text-[12px] text-(--text-secondary)">
                           {[p.address, p.neighborhood].filter(Boolean).join(' · ')}
                         </div>
                       </div>
@@ -109,7 +109,7 @@ export function ProfileTabs() {
         )}
 
         {tab === 'reviews' && (
-          <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)] shadow-card">
+          <div className="rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary) shadow-card">
             No reviews yet. Drop by a place and leave the first one.
           </div>
         )}
@@ -117,15 +117,15 @@ export function ProfileTabs() {
         {tab === 'stats' && (
           <div className="space-y-3">
             <LoyaltyCard />
-            <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
+            <div className="rounded-2xl border border-(--surface-border) bg-white p-5 shadow-card">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">
+                  <div className="text-[11px] uppercase tracking-wide text-(--text-secondary)">
                     Trust score
                   </div>
-                  <div className="mt-1 text-[34px] font-bold text-[var(--text-primary)]">10</div>
+                  <div className="mt-1 text-[34px] font-bold text-(--text-primary)">10</div>
                 </div>
-                <div className="flex items-center gap-2 rounded-full bg-sys-gray-6 px-3 py-1.5 text-[12px] text-[var(--text-secondary)]">
+                <div className="flex items-center gap-2 rounded-full bg-sys-gray-6 px-3 py-1.5 text-[12px] text-(--text-secondary)">
                   <Icon name="Medal" size={14} />
                   <span>Newcomer</span>
                 </div>
@@ -136,7 +136,7 @@ export function ProfileTabs() {
                   style={{ width: '10%' }}
                 />
               </div>
-              <div className="mt-2 text-[11px] text-[var(--text-tertiary)]">
+              <div className="mt-2 text-[11px] text-(--text-tertiary)">
                 Reach 90 for the Veteran badge (top 10% per city).
               </div>
 
@@ -170,8 +170,8 @@ function TabButton({
       onClick={onClick}
       className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-[13px] font-medium transition ${
         active
-          ? 'bg-white text-[var(--text-primary)] shadow-sm'
-          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+          ? 'bg-white text-(--text-primary) shadow-xs'
+          : 'text-(--text-secondary) hover:text-(--text-primary)'
       }`}
     >
       <Icon name={icon} size={14} weight={active ? 'fill' : 'regular'} />
@@ -183,8 +183,8 @@ function TabButton({
 function Mini({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-sys-gray-6 p-3 text-center">
-      <div className="text-[17px] font-semibold text-[var(--text-primary)]">{value}</div>
-      <div className="text-[10px] text-[var(--text-secondary)]">{label}</div>
+      <div className="text-[17px] font-semibold text-(--text-primary)">{value}</div>
+      <div className="text-[10px] text-(--text-secondary)">{label}</div>
     </div>
   );
 }

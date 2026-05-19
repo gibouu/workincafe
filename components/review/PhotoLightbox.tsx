@@ -68,7 +68,7 @@ export function PhotoLightbox({ photos, initialIndex, open, onOpenChange }: Phot
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/90"
       role="dialog"
       aria-modal="true"
       aria-label={`${slotLabel} photo, ${index + 1} of ${photos.length}`}

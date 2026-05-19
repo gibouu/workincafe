@@ -72,11 +72,11 @@ export function GeolocateBlockedBanner({
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-end justify-center bg-black/30 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-80 flex items-end justify-center bg-black/30 backdrop-blur-xs sm:items-center"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-3xl border border-[var(--surface-border)] bg-white p-6 shadow-float sm:rounded-3xl"
+        className="w-full max-w-md rounded-t-3xl border border-(--surface-border) bg-white p-6 shadow-float sm:rounded-3xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -90,7 +90,7 @@ export function GeolocateBlockedBanner({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)] hover:bg-sys-gray-5 transition"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-secondary) hover:bg-sys-gray-5 transition"
           >
             <Icon name="X" size={14} />
           </button>
@@ -98,7 +98,7 @@ export function GeolocateBlockedBanner({
 
         <h2
           id="geolocate-blocked-title"
-          className="mt-4 text-[20px] font-bold leading-tight text-[var(--text-primary)]"
+          className="mt-4 text-[20px] font-bold leading-tight text-(--text-primary)"
         >
           Location is blocked for this site
         </h2>
@@ -108,16 +108,16 @@ export function GeolocateBlockedBanner({
             exact path beats a 4-step list. See #104. */}
         {isAppleSafari ? (
           <>
-            <p className="mt-1 text-[14px] leading-snug text-[var(--text-secondary)]">
+            <p className="mt-1 text-[14px] leading-snug text-(--text-secondary)">
               Safari has cached your earlier choice. We can&rsquo;t ask
               again until you re-enable location for this site.
             </p>
-            <div className="mt-4 rounded-2xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-3">
-              <p className="text-[13px] text-[var(--text-secondary)]">Open</p>
-              <p className="mt-1 font-mono text-[13px] font-semibold text-[var(--text-primary)]">
+            <div className="mt-4 rounded-2xl border border-(--surface-border) bg-(--map-bg) px-3 py-3">
+              <p className="text-[13px] text-(--text-secondary)">Open</p>
+              <p className="mt-1 font-mono text-[13px] font-semibold text-(--text-primary)">
                 {settingsPath}
               </p>
-              <p className="mt-2 text-[13px] text-[var(--text-secondary)]">
+              <p className="mt-2 text-[13px] text-(--text-secondary)">
                 set this site to <span className="font-mono font-semibold">Allow</span>, then come
                 back and tap the find-me button again.
               </p>
@@ -125,7 +125,7 @@ export function GeolocateBlockedBanner({
           </>
         ) : (
           <>
-            <p className="mt-1 text-[14px] leading-snug text-[var(--text-secondary)]">
+            <p className="mt-1 text-[14px] leading-snug text-(--text-secondary)">
               Your browser is rejecting the location request before it can reach us.
               Re-enable it in your browser to use the find-me button.
             </p>
@@ -133,7 +133,7 @@ export function GeolocateBlockedBanner({
               {stepsFor(platform).map((s, i) => (
                 <li
                   key={i}
-                  className="flex items-start gap-3 rounded-2xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2.5 text-[14px] text-[var(--text-primary)]"
+                  className="flex items-start gap-3 rounded-2xl border border-(--surface-border) bg-(--map-bg) px-3 py-2.5 text-[14px] text-(--text-primary)"
                 >
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-white">
                     {i + 1}
@@ -155,7 +155,7 @@ export function GeolocateBlockedBanner({
           </>
         )}
 
-        <p className="mt-4 text-[12px] text-[var(--text-tertiary)]">
+        <p className="mt-4 text-[12px] text-(--text-tertiary)">
           Until then the map will use the rough city-level guess from your
           IP, which is usually wrong on mobile networks.
         </p>
@@ -163,7 +163,7 @@ export function GeolocateBlockedBanner({
         <button
           type="button"
           onClick={onClose}
-          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-[var(--surface-border)] bg-white px-3 py-3 text-[14px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6"
+          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-(--surface-border) bg-white px-3 py-3 text-[14px] font-semibold text-(--text-primary) hover:bg-sys-gray-6"
         >
           {isAppleSafari ? 'I’ll do it now' : 'Got it'}
         </button>

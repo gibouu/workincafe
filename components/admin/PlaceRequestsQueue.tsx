@@ -85,7 +85,7 @@ export function PlaceRequestsQueue({ requests }: { requests: PlaceRequestRecord[
 
   if (items.length === 0) {
     return (
-      <p className="mt-1 text-[14px] text-[var(--text-secondary)]">
+      <p className="mt-1 text-[14px] text-(--text-secondary)">
         {note ?? 'Nothing pending. New submissions from the Add-a-place wizard land here.'}
       </p>
     );
@@ -93,12 +93,12 @@ export function PlaceRequestsQueue({ requests }: { requests: PlaceRequestRecord[
 
   return (
     <div>
-      <div className="mt-1 flex flex-wrap items-center gap-3 text-[14px] text-[var(--text-secondary)]">
+      <div className="mt-1 flex flex-wrap items-center gap-3 text-[14px] text-(--text-secondary)">
         <span>{items.length} pending</span>
         <button
           type="button"
           onClick={toggleAll}
-          className="rounded-full border border-[var(--surface-border)] bg-white px-3 py-1 text-[12px] font-medium text-[var(--text-secondary)] hover:bg-sys-gray-6 transition"
+          className="rounded-full border border-(--surface-border) bg-white px-3 py-1 text-[12px] font-medium text-(--text-secondary) hover:bg-sys-gray-6 transition"
         >
           {allSelected ? 'Clear selection' : `Select all (max ${MAX_BATCH})`}
         </button>
@@ -117,7 +117,7 @@ export function PlaceRequestsQueue({ requests }: { requests: PlaceRequestRecord[
                 checked={selected.has(r.id)}
                 onChange={() => toggle(r.id)}
                 aria-label={`Select ${r.name}`}
-                className="mt-1 h-4 w-4 shrink-0 accent-[var(--text-primary)]"
+                className="mt-1 h-4 w-4 shrink-0 accent-(--text-primary)"
               />
             }
           />
@@ -125,12 +125,12 @@ export function PlaceRequestsQueue({ requests }: { requests: PlaceRequestRecord[
       </ul>
 
       {selectedIds.length > 0 && (
-        <div className="sticky bottom-3 mt-4 rounded-2xl border border-[var(--surface-border)] bg-white/95 p-3 shadow-float backdrop-blur-ios">
+        <div className="sticky bottom-3 mt-4 rounded-2xl border border-(--surface-border) bg-white/95 p-3 shadow-float backdrop-blur-ios">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+            <div className="text-[13px] font-semibold text-(--text-primary)">
               {selectedIds.length} selected
               {selectedIds.length >= MAX_BATCH && (
-                <span className="ml-1 text-[11px] font-normal text-[var(--text-tertiary)]">
+                <span className="ml-1 text-[11px] font-normal text-(--text-tertiary)">
                   (cap {MAX_BATCH})
                 </span>
               )}
@@ -159,7 +159,7 @@ export function PlaceRequestsQueue({ requests }: { requests: PlaceRequestRecord[
 
           {rejectMode && (
             <div className="mt-3 flex flex-col gap-2">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-(--text-secondary)">
                 Reason for all {selectedIds.length}
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -176,8 +176,8 @@ export function PlaceRequestsQueue({ requests }: { requests: PlaceRequestRecord[
                       disabled={busy}
                       className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition disabled:opacity-60 ${
                         active
-                          ? 'bg-[var(--text-primary)] text-white'
-                          : 'bg-white text-[var(--text-secondary)] border border-[var(--surface-border)] hover:bg-sys-gray-6'
+                          ? 'bg-(--text-primary) text-white'
+                          : 'bg-white text-(--text-secondary) border border-(--surface-border) hover:bg-sys-gray-6'
                       }`}
                     >
                       {preset}
@@ -193,8 +193,8 @@ export function PlaceRequestsQueue({ requests }: { requests: PlaceRequestRecord[
                   disabled={busy}
                   className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition disabled:opacity-60 ${
                     otherMode
-                      ? 'bg-[var(--text-primary)] text-white'
-                      : 'bg-white text-[var(--text-secondary)] border border-[var(--surface-border)] hover:bg-sys-gray-6'
+                      ? 'bg-(--text-primary) text-white'
+                      : 'bg-white text-(--text-secondary) border border-(--surface-border) hover:bg-sys-gray-6'
                   }`}
                 >
                   Other
@@ -207,7 +207,7 @@ export function PlaceRequestsQueue({ requests }: { requests: PlaceRequestRecord[
                   placeholder="Why? (applies to every selected request)"
                   rows={2}
                   autoFocus
-                  className="w-full resize-none rounded-xl border border-[var(--surface-border)] bg-[var(--map-bg)] px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full resize-none rounded-xl border border-(--surface-border) bg-(--map-bg) px-3 py-2 text-[13px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden focus:ring-2 focus:ring-accent"
                 />
               )}
               <div className="flex gap-2">
@@ -215,7 +215,7 @@ export function PlaceRequestsQueue({ requests }: { requests: PlaceRequestRecord[
                   type="button"
                   onClick={resetBulkUi}
                   disabled={busy}
-                  className="flex-1 rounded-xl border border-[var(--surface-border)] bg-white py-2 text-[13px] font-semibold text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60 transition"
+                  className="flex-1 rounded-xl border border-(--surface-border) bg-white py-2 text-[13px] font-semibold text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60 transition"
                 >
                   Cancel
                 </button>

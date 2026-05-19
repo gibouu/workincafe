@@ -88,7 +88,7 @@ export function SearchBar({
         type="button"
         aria-label="Search"
         onClick={() => setExpanded(true)}
-        className="pointer-events-auto flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface)] backdrop-blur-ios shadow-float text-[var(--text-primary)] hover:bg-white transition"
+        className="pointer-events-auto flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-(--surface-border) bg-(--surface) backdrop-blur-ios shadow-float text-(--text-primary) hover:bg-white transition"
       >
         <Icon name="MagnifyingGlass" size={22} />
       </button>
@@ -98,16 +98,16 @@ export function SearchBar({
   return (
     <div
       ref={containerRef}
-      className="pointer-events-auto flex w-full max-w-sm flex-col overflow-hidden rounded-3xl border border-[var(--surface-border)] bg-[var(--surface)] backdrop-blur-ios shadow-float"
+      className="pointer-events-auto flex w-full max-w-sm flex-col overflow-hidden rounded-3xl border border-(--surface-border) bg-(--surface) backdrop-blur-ios shadow-float"
     >
       <div className="flex items-center gap-2 px-4 py-3">
-        <Icon name="MagnifyingGlass" size={20} className="text-[var(--text-secondary)]" />
+        <Icon name="MagnifyingGlass" size={20} className="text-(--text-secondary)" />
         <input
           ref={inputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Find a cafe…"
-          className="flex-1 bg-transparent text-[15px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+          className="flex-1 bg-transparent text-[15px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden"
         />
         <button
           type="button"
@@ -116,16 +116,16 @@ export function SearchBar({
             setQuery('');
           }}
           aria-label="Close search"
-          className="flex h-7 w-7 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)] hover:bg-sys-gray-5 transition"
+          className="flex h-7 w-7 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-secondary) hover:bg-sys-gray-5 transition"
         >
           <Icon name="X" size={14} />
         </button>
       </div>
 
       {query.trim() && (
-        <ul className="max-h-[50vh] overflow-y-auto border-t border-[var(--surface-border)] bg-white">
+        <ul className="max-h-[50vh] overflow-y-auto border-t border-(--surface-border) bg-white">
           {results.length === 0 ? (
-            <li className="px-4 py-6 text-center text-[13px] text-[var(--text-secondary)]">
+            <li className="px-4 py-6 text-center text-[13px] text-(--text-secondary)">
               No matches. Try another name.
             </li>
           ) : (
@@ -145,14 +145,14 @@ export function SearchBar({
                       <Icon name={meta.icon} size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[14px] font-semibold text-[var(--text-primary)]">
+                      <div className="truncate text-[14px] font-semibold text-(--text-primary)">
                         {p.name}
                       </div>
-                      <div className="truncate text-[12px] text-[var(--text-secondary)]">
+                      <div className="truncate text-[12px] text-(--text-secondary)">
                         {p.address} · {p.neighborhood}
                       </div>
                     </div>
-                    <Icon name="ArrowRight" size={14} className="text-[var(--text-secondary)]" />
+                    <Icon name="ArrowRight" size={14} className="text-(--text-secondary)" />
                   </button>
                 </li>
               );

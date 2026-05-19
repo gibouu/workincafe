@@ -142,20 +142,20 @@ export function AllReviewsSheet({
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-[60] bg-black/30" />
-        <Drawer.Content className="fixed inset-x-0 bottom-0 z-[70] mx-auto flex h-[96dvh] max-w-2xl flex-col rounded-t-3xl bg-[var(--map-bg)] shadow-float outline-none">
+        <Drawer.Overlay className="fixed inset-0 z-60 bg-black/30" />
+        <Drawer.Content className="fixed inset-x-0 bottom-0 z-70 mx-auto flex h-[96dvh] max-w-2xl flex-col rounded-t-3xl bg-(--map-bg) shadow-float outline-hidden">
           <Drawer.Title className="sr-only">All reviews — {place.name}</Drawer.Title>
           <div className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-sys-gray-4" />
 
           <div className="flex items-start justify-between gap-3 px-5 pt-3">
             <div className="min-w-0">
-              <div className="text-[11px] uppercase tracking-wide text-[var(--text-secondary)]">
+              <div className="text-[11px] uppercase tracking-wide text-(--text-secondary)">
                 Reviews
               </div>
-              <div className="truncate text-[17px] font-semibold text-[var(--text-primary)]">
+              <div className="truncate text-[17px] font-semibold text-(--text-primary)">
                 {place.name}
               </div>
-              <div className="text-[11px] text-[var(--text-tertiary)]">
+              <div className="text-[11px] text-(--text-tertiary)">
                 {filtered.length} of {sourceList.length} shown
               </div>
             </div>
@@ -163,7 +163,7 @@ export function AllReviewsSheet({
               type="button"
               onClick={() => onOpenChange(false)}
               aria-label="Close"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sys-gray-6 text-[var(--text-secondary)] hover:bg-sys-gray-5 transition"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sys-gray-6 text-(--text-secondary) hover:bg-sys-gray-5 transition"
             >
               <Icon name="X" size={14} />
             </button>
@@ -181,8 +181,8 @@ export function AllReviewsSheet({
                     aria-pressed={active}
                     className={`flex-1 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition ${
                       active
-                        ? 'bg-white text-[var(--text-primary)] shadow-card'
-                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                        ? 'bg-white text-(--text-primary) shadow-card'
+                        : 'text-(--text-secondary) hover:text-(--text-primary)'
                     }`}
                   >
                     {seg.label}
@@ -190,13 +190,13 @@ export function AllReviewsSheet({
                 );
               })}
             </div>
-            <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 border border-[var(--surface-border)]">
-              <Icon name="MagnifyingGlass" size={16} className="text-[var(--text-secondary)]" />
+            <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 border border-(--surface-border)">
+              <Icon name="MagnifyingGlass" size={16} className="text-(--text-secondary)" />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search reviews"
-                className="flex-1 bg-transparent text-[14px] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none"
+                className="flex-1 bg-transparent text-[14px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden"
               />
               {query && (
                 <button
@@ -219,8 +219,8 @@ export function AllReviewsSheet({
                     onClick={() => setSort(opt.value)}
                     className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition ${
                       active
-                        ? 'bg-[var(--text-primary)] text-white'
-                        : 'bg-white text-[var(--text-secondary)] border border-[var(--surface-border)] hover:bg-sys-gray-6'
+                        ? 'bg-(--text-primary) text-white'
+                        : 'bg-white text-(--text-secondary) border border-(--surface-border) hover:bg-sys-gray-6'
                     }`}
                   >
                     {opt.label}
@@ -235,7 +235,7 @@ export function AllReviewsSheet({
                   className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-medium transition ${
                     onlyWithPhotos
                       ? 'bg-accent text-white'
-                      : 'bg-white text-[var(--text-secondary)] border border-[var(--surface-border)] hover:bg-sys-gray-6'
+                      : 'bg-white text-(--text-secondary) border border-(--surface-border) hover:bg-sys-gray-6'
                   }`}
                 >
                   <Icon name="Camera" size={12} weight={onlyWithPhotos ? 'fill' : 'regular'} />
@@ -247,21 +247,21 @@ export function AllReviewsSheet({
 
           <div className="mt-4 min-h-0 flex-1 overflow-y-auto px-5 pb-6">
             {segment === 'imported' && (importedLoading || imported === null) ? (
-              <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)]">
+              <div className="rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary)">
                 Loading imported reviews…
               </div>
             ) : segment === 'imported' && sourceList.length === 0 ? (
-              <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)]">
+              <div className="rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary)">
                 No imported reviews for this place.
               </div>
             ) : filtered.length === 0 ? (
-              <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-6 text-center text-[13px] text-[var(--text-secondary)]">
+              <div className="rounded-2xl border border-(--surface-border) bg-white p-6 text-center text-[13px] text-(--text-secondary)">
                 No reviews match your search.
               </div>
             ) : (
               <>
                 {segment === 'imported' && (
-                  <p className="mb-3 rounded-xl bg-sys-gray-6 px-3 py-2 text-[11px] leading-relaxed text-[var(--text-secondary)]">
+                  <p className="mb-3 rounded-xl bg-sys-gray-6 px-3 py-2 text-[11px] leading-relaxed text-(--text-secondary)">
                     Imported from third-party sources to give early signal. They
                     carry less weight than verified visitor reviews.
                   </p>

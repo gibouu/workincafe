@@ -154,27 +154,27 @@ export function FriendProfileWizard({
       className={
         compact
           ? 'flex h-full min-h-0 w-full flex-1 flex-col bg-white'
-          : 'flex min-h-dvh flex-col bg-[var(--map-bg)] pb-28'
+          : 'flex min-h-dvh flex-col bg-(--map-bg) pb-28'
       }
     >
       <header
         className={
           compact
-            ? 'shrink-0 border-b border-[var(--surface-border)] bg-white/95 backdrop-blur-ios'
-            : 'sticky top-0 z-10 border-b border-[var(--surface-border)] bg-white/90 backdrop-blur-ios'
+            ? 'shrink-0 border-b border-(--surface-border) bg-white/95 backdrop-blur-ios'
+            : 'sticky top-0 z-10 border-b border-(--surface-border) bg-white/90 backdrop-blur-ios'
         }
       >
         <div className={`mx-auto flex max-w-2xl items-center justify-between ${compact ? 'px-3 py-2' : 'px-4 py-3'}`}>
           <div className={compact ? 'w-8' : 'w-9'} />
           <div className="flex flex-col items-center text-center">
             <div
-              className={`font-medium uppercase tracking-wide text-[var(--text-tertiary)] ${
+              className={`font-medium uppercase tracking-wide text-(--text-tertiary) ${
                 compact ? 'text-[10px]' : 'text-[11px]'
               }`}
             >
               Step {stepIndex + 1} of {STEPS.length}
             </div>
-            <div className={`font-semibold text-[var(--text-primary)] ${compact ? 'text-[13px]' : 'text-[14px]'}`}>
+            <div className={`font-semibold text-(--text-primary) ${compact ? 'text-[13px]' : 'text-[14px]'}`}>
               {step.title}
             </div>
           </div>
@@ -221,7 +221,7 @@ export function FriendProfileWizard({
                     className={`flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition ${
                       active
                         ? 'border-accent bg-accent-tint'
-                        : 'border-[var(--surface-border)] bg-white hover:bg-sys-gray-6'
+                        : 'border-(--surface-border) bg-white hover:bg-sys-gray-6'
                     }`}
                     aria-pressed={active}
                   >
@@ -229,14 +229,14 @@ export function FriendProfileWizard({
                       name={active ? 'CheckCircle' : 'Circle'}
                       weight={active ? 'fill' : 'regular'}
                       size={20}
-                      className={active ? 'text-accent' : 'text-[var(--text-tertiary)]'}
+                      className={active ? 'text-accent' : 'text-(--text-tertiary)'}
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <Icon name={opt.icon} size={16} className="text-[var(--text-secondary)]" />
-                        <span className="text-[14px] font-semibold text-[var(--text-primary)]">{opt.label}</span>
+                        <Icon name={opt.icon} size={16} className="text-(--text-secondary)" />
+                        <span className="text-[14px] font-semibold text-(--text-primary)">{opt.label}</span>
                       </div>
-                      <div className="mt-0.5 text-[12px] text-[var(--text-secondary)]">{opt.hint}</div>
+                      <div className="mt-0.5 text-[12px] text-(--text-secondary)">{opt.hint}</div>
                     </div>
                   </button>
                 );
@@ -311,9 +311,9 @@ export function FriendProfileWizard({
               onChange={(e) => setBio(e.target.value.slice(0, 280))}
               rows={4}
               placeholder="e.g. Building a startup, looking for someone to bounce ideas with."
-              className="w-full resize-none rounded-xl border border-[var(--surface-border)] bg-white px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full resize-none rounded-xl border border-(--surface-border) bg-white px-3 py-2 text-[14px] focus:outline-hidden focus:ring-2 focus:ring-accent"
             />
-            <div className="mt-1 text-right text-[10px] text-[var(--text-tertiary)]">
+            <div className="mt-1 text-right text-[10px] text-(--text-tertiary)">
               {bio.length}/280
             </div>
           </Section>
@@ -323,8 +323,8 @@ export function FriendProfileWizard({
       <div
         className={
           compact
-            ? 'shrink-0 border-t border-[var(--surface-border)] bg-white/95 px-4 py-3 backdrop-blur-ios'
-            : 'fixed bottom-0 left-0 right-0 z-20 border-t border-[var(--surface-border)] bg-white/95 p-4 backdrop-blur-ios'
+            ? 'shrink-0 border-t border-(--surface-border) bg-white/95 px-4 py-3 backdrop-blur-ios'
+            : 'fixed bottom-0 left-0 right-0 z-20 border-t border-(--surface-border) bg-white/95 p-4 backdrop-blur-ios'
         }
       >
         <div className={`mx-auto flex max-w-2xl items-center ${compact ? 'gap-2' : 'gap-3'}`}>
@@ -333,7 +333,7 @@ export function FriendProfileWizard({
               type="button"
               onClick={goBack}
               disabled={submitting}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[var(--surface-border)] bg-white text-[var(--text-primary)] hover:bg-sys-gray-6 disabled:opacity-60"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-(--surface-border) bg-white text-(--text-primary) hover:bg-sys-gray-6 disabled:opacity-60"
               aria-label="Back"
             >
               <Icon name="ArrowLeft" size={20} />

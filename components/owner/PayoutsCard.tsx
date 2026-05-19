@@ -70,15 +70,15 @@ export function PayoutsCard({ country }: { country?: string }) {
 
   if (stripeAvailable === false) {
     return (
-      <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
-        <div className="flex items-center gap-2 text-[14px] font-semibold text-[var(--text-primary)]">
-          <Icon name="CreditCard" size={16} className="text-[var(--text-secondary)]" />
+      <div className="rounded-2xl border border-(--surface-border) bg-white p-5 shadow-card">
+        <div className="flex items-center gap-2 text-[14px] font-semibold text-(--text-primary)">
+          <Icon name="CreditCard" size={16} className="text-(--text-secondary)" />
           <span>Payouts</span>
-          <span className="ml-auto rounded-full bg-sys-gray-6 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[var(--text-tertiary)]">
+          <span className="ml-auto rounded-full bg-sys-gray-6 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-(--text-tertiary)">
             Demo mode
           </span>
         </div>
-        <p className="mt-2 text-[12px] text-[var(--text-secondary)]">
+        <p className="mt-2 text-[12px] text-(--text-secondary)">
           Stripe payouts aren&apos;t configured on this environment yet. Purchases run on a demo
           path — no real money moves. The operator wires Stripe keys when ready, then this card
           will let you connect a payout account.
@@ -89,7 +89,7 @@ export function PayoutsCard({ country }: { country?: string }) {
 
   if (stripeAvailable === null) {
     return (
-      <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card text-[12px] text-[var(--text-tertiary)]">
+      <div className="rounded-2xl border border-(--surface-border) bg-white p-5 shadow-card text-[12px] text-(--text-tertiary)">
         Loading payouts…
       </div>
     );
@@ -100,17 +100,17 @@ export function PayoutsCard({ country }: { country?: string }) {
   const partial = Boolean(account && !ready && account.details_submitted);
 
   return (
-    <div className="rounded-2xl border border-[var(--surface-border)] bg-white p-5 shadow-card">
+    <div className="rounded-2xl border border-(--surface-border) bg-white p-5 shadow-card">
       <div className="flex items-center gap-2">
-        <Icon name="CreditCard" size={16} className="text-[var(--text-secondary)]" />
-        <span className="text-[14px] font-semibold text-[var(--text-primary)]">Payouts</span>
+        <Icon name="CreditCard" size={16} className="text-(--text-secondary)" />
+        <span className="text-[14px] font-semibold text-(--text-primary)">Payouts</span>
         <span
           className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${
             ready
               ? 'bg-accent-green-tint text-accent-green'
               : partial
                 ? 'bg-accent-amber-tint text-accent-amber'
-                : 'bg-sys-gray-6 text-[var(--text-tertiary)]'
+                : 'bg-sys-gray-6 text-(--text-tertiary)'
           }`}
         >
           {ready ? 'Stripe ready' : partial ? 'Stripe pending' : 'Not connected'}
@@ -118,18 +118,18 @@ export function PayoutsCard({ country }: { country?: string }) {
       </div>
 
       {ready && (
-        <p className="mt-2 text-[12px] text-[var(--text-secondary)]">
+        <p className="mt-2 text-[12px] text-(--text-secondary)">
           You&apos;re set up. Customer purchases route through Stripe Connect — your bank gets paid
           out on Stripe&apos;s default schedule.
         </p>
       )}
       {partial && (
-        <p className="mt-2 text-[12px] text-[var(--text-secondary)]">
+        <p className="mt-2 text-[12px] text-(--text-secondary)">
           Stripe needs a bit more info. Pick up where you left off.
         </p>
       )}
       {!account && (
-        <p className="mt-2 text-[12px] text-[var(--text-secondary)]">
+        <p className="mt-2 text-[12px] text-(--text-secondary)">
           Connect a Stripe account so customer purchases land in your bank. Express onboarding
           takes about 2 minutes (legal name, address, ID, bank account).
         </p>
