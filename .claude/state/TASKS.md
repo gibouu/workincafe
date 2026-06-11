@@ -57,7 +57,7 @@ One H2 section per task.
 - Tracker only. Items graduate to their own issues.
 
 ## #194 — Six-city focus (purge + cleanup + perf)
-status: IN_PROGRESS
+status: DONE
 opened: 2026-06-11
 steps:
   - [x] full JSON backup (places/refs/reviews) to backups/
@@ -69,8 +69,8 @@ steps:
   - [x] marker bubble memoization (MapContainer)
   - [x] places_in_bbox RPC migration written + applied to prod
   - [x] lint/typecheck/build green; 6-city API smoke test passed
-  - [ ] commit, PR, self-review, merge
-  - [ ] close #168 (contradicts 6-city scope) + #53 (moot: zero non-system reviews)
+  - [x] commit, PR #195, self-review, squash-merged to main (cac9633)
+  - [x] close #168 (contradicts 6-city scope) + #53 (moot: zero non-system reviews)
 notes:
   - npm install was stale (Tailwind v4 migration #189) — build needed reinstall
   - London/NYC/Tokyo/Seoul have 0 baseline ratings — follow-up: generalize seed:baseline
