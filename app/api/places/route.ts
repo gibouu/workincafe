@@ -35,6 +35,45 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
   const [w, s, e, n] = bbox;
+
+  // Fast path (#194): one round trip through the places_in_bbox RPC —
+  // spatial GIST index + ratings join server-side. Falls back to the
+  // legacy two-query path while the migration isn't applied yet.
+  const { data: rpcRows, error: rpcError } = await supabase.rpc('places_in_bbox', {
+    w,
+    s,
+    e,
+    n,
+    max_rows: MAX_SLIM,
+  });
+  if (!rpcError) {
+    interface RpcRow extends SlimPlaceRow {
+      study_spot_rating: number | null;
+      user_rating_count: number | null;
+    }
+    const out = ((rpcRows ?? []) as RpcRow[]).map((p) => {
+      const hasUserReviews = (p.user_rating_count ?? 0) > 0;
+      return {
+        id: p.id,
+        name: p.name,
+        address: p.address ?? '',
+        neighborhood: p.neighborhood ?? '',
+        category: p.category,
+        lat: p.lat,
+        lng: p.lng,
+        brand: p.brand,
+        rating: p.study_spot_rating ?? 0,
+        has_user_reviews: hasUserReviews,
+        is_validated: hasUserReviews || Boolean(p.user_validated_at),
+        membership_required: p.membership_required ?? null,
+      };
+    });
+    return NextResponse.json(
+      { places: out, total: out.length, slim: true },
+      { headers: { 'cache-control': 'public, s-maxage=60, stale-while-revalidate=300' } },
+    );
+  }
+
   const { data, error } = await supabase
     .from('places')
     .select(

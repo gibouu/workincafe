@@ -1,4 +1,6 @@
 # Progress Log
+[2026-06-11 13:10] six-city focus (#194): purged DB 74,724 -> 40,064 places (six bboxes: Paris/GTA/London/NYC/Tokyo/Seoul; full JSON backup in backups/). Fixed place_source_refs: all 76,999 rows had place_id NULL — backfilled 39,873 via hash join, deleted 37,126 orphans, seeder now writes place_id. Relabeled 1,963 'Centre-Val de Loire' rows inside Paris bbox -> 'Paris'. Trimmed SEED_CITIES 33 -> 6, mode 'cafe-only' -> 'work-core' (now incl. libraries + office=coworking). Default filter chips cafe -> cafe+library+coworking. New places_in_bbox RPC (applied to prod via pooler :6543) replaces 2-query viewport path; legacy .in() with 1000 ids silently returned 0 ratings on dense viewports — RPC fixes. Why: focus launch on six cities, cut dead weight.
+
 Newest first. One line per entry.
 [2026-05-17 10:39] Edit: .claude/state/PROGRESS.md
 [2026-05-17 10:40] admin: #167 final slice → PR #182; /admin/activity feed (API-side union over reviewed_*/resolved_* cols, no migration). Closes #167 (all 4 items shipped). Why: monitoring without an audit-table migration.

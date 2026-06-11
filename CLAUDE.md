@@ -16,7 +16,7 @@ When you discover a load-bearing rule, add it to `docs/conventions.md` instead o
 
 ## Project: Work in Cafe
 
-Map-first PWA at `workin.cafe` for finding places to work or study — cafés, bakeries, libraries, coworking, hotel lobbies, restaurants. Next.js 16 App Router + MapLibre GL JS (OpenFreeMap vector tiles) + Supabase + PostGIS, Phosphor Icons, `vaul` drawers. Two launch cities: Paris + Toronto. The canonical design + decisions document is **`workin-cafe-build-spec.md`** — treat it as the source of truth for what ships in MVP and what's deferred.
+Map-first PWA at `workin.cafe` for finding places to work or study — cafés, bakeries, libraries, coworking, hotel lobbies, restaurants. Next.js 16 App Router + MapLibre GL JS (OpenFreeMap vector tiles) + Supabase + PostGIS, Phosphor Icons, `vaul` drawers. Six cities (#194): Paris, Toronto (GTA), London, New York, Tokyo, Seoul — Paris/Toronto carry full-category data, the rest are work-core (cafés + libraries + coworking). The default map view shows the work-core categories; bakery/restaurant/hotel are opt-in filter chips. The canonical design + decisions document is **`workin-cafe-build-spec.md`** — treat it as the source of truth for what ships in MVP and what's deferred.
 
 ## Commands
 
@@ -26,7 +26,7 @@ npm run build       # production build (CI runs this)
 npm run lint        # ESLint flat config
 npm run typecheck   # tsc --noEmit
 npm run seed:paris  # run OSM Overpass seed for Paris (requires Supabase env + applied migrations)
-npx tsx scripts/seed-osm.ts toronto   # Toronto seed (no npm alias yet)
+npm run seed:toronto   # same per city: seed:nyc / seed:london / seed:tokyo / seed:seoul
 ```
 
 CI (`.github/workflows/ci.yml`) runs `npm ci && npm run lint && npm run typecheck && npm run build` on every PR. The map uses public OpenFreeMap tiles, so no map-related secrets are needed at build time.

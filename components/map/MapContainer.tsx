@@ -124,9 +124,18 @@ function escapeHtml(s: string): string {
   );
 }
 
+// Bubble HTML only depends on (category, brand, size) — not on the
+// individual place — so cache the serialized markup. Without this,
+// renderToStaticMarkup(<Icon />) runs per marker on every moveend
+// rebuild, which is the main CPU cost while panning (#194).
+const bubbleCache = new Map<string, string>();
+
 function renderPlaceBubble(place: DemoPlace, size = 24): string {
   const meta = categoryMeta(place.category);
   const brand = brandLogoFor(place.name);
+  const cacheKey = `${place.category}|${brand?.initials ?? ''}|${brand?.bg ?? ''}|${size}`;
+  const cached = bubbleCache.get(cacheKey);
+  if (cached) return cached;
   const bg = brand?.bg ?? meta.color;
   const fg = brand?.fg ?? '#fff';
 
@@ -143,7 +152,7 @@ function renderPlaceBubble(place: DemoPlace, size = 24): string {
         <Icon name={meta.icon} size={iconSize} weight="regular" className="text-white" />,
       );
 
-  return `
+  const html = `
     <div style="
       width:${size}px;height:${size}px;border-radius:9999px;
       background:${bg};
@@ -156,6 +165,8 @@ function renderPlaceBubble(place: DemoPlace, size = 24): string {
     onmouseout="this.style.transform='scale(1)'"
     >${innerMarkup}</div>
   `;
+  bubbleCache.set(cacheKey, html);
+  return html;
 }
 
 function renderClusterBubble(count: number): string {

@@ -40,11 +40,12 @@ export interface FilterState {
   activeCount: () => number;
 }
 
-// Default narrows the map to coffee shops on first open. The store is
-// not persisted, so every reload re-applies this baseline. Selecting
-// other chips widens the view; reviewed-but-non-cafe places bypass the
-// category check via `has_user_reviews` (see #77).
-const DEFAULT_CATEGORIES: PlaceCategory[] = ['cafe'];
+// Default narrows the map to the work-core categories on first open —
+// cafés, libraries, coworking (#194). The store is not persisted, so
+// every reload re-applies this baseline. Selecting other chips widens
+// the view (bakery/restaurant/hotel stay opt-in); reviewed-but-non-core
+// places bypass the category check via `has_user_reviews` (see #77).
+const DEFAULT_CATEGORIES: PlaceCategory[] = ['cafe', 'library', 'coworking'];
 
 function isDefaultCategorySet(s: Set<PlaceCategory>): boolean {
   if (s.size !== DEFAULT_CATEGORIES.length) return false;
@@ -98,10 +99,10 @@ export const useFilters = create<FilterState>((set, get) => ({
   activeCount: () => {
     const s = get();
     let n = 0;
-    // The cafe-only default isn't an "active" filter — it's the
-    // baseline the rest of the app is built around. Anything different
-    // from that (zero categories, or any non-cafe category, or extras
-    // alongside cafe) does count as active.
+    // The work-core default (cafe/library/coworking) isn't an "active"
+    // filter — it's the baseline the rest of the app is built around.
+    // Anything different from that (zero categories, fewer chips, or
+    // extras like bakery/restaurant/hotel) does count as active.
     if (!isDefaultCategorySet(s.categories)) n++;
     if (s.openNow) n++;
     if (s.outlets) n++;
