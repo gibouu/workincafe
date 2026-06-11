@@ -43,6 +43,12 @@ yarn-error.log*
 /supabase/.branches
 /supabase/.temp
 
+# local DB snapshots (operator-side, never committed)
+/backups/
+
+# clawpatch static-analysis artifacts (local tooling, never committed)
+/.clawpatch/
+
 # tools
 .idea
 .vscode

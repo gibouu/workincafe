@@ -3,7 +3,7 @@
  *
  * Usage:
  *   npx tsx scripts/seed-osm.ts paris            # one city by key
- *   npx tsx scripts/seed-osm.ts --all-new        # all cafe-only cities
+ *   npx tsx scripts/seed-osm.ts --all-new        # all work-core cities
  *   npx tsx scripts/seed-osm.ts --all            # every configured city
  *
  * Prereqs:
@@ -131,12 +131,14 @@ async function seedCity(city: SeedCity) {
       const amenity = tags.amenity;
       const shop = tags.shop;
       const tourism = tags.tourism;
-      // Resolve in priority order: amenity → shop → tourism → 'other'.
+      // Resolve in priority order: amenity → shop → office → tourism → 'other'.
+      // office=coworking is the canonical OSM tag for coworking spaces (#194);
       // tourism=hotel|hostel|guest_house|motel all collapse to our 'hotel'
       // category since the use case is identical (lobby work spot).
       let category =
         (amenity && AMENITY_MAP[amenity]) ||
         (shop && SHOP_MAP[shop]) ||
+        (tags.office === 'coworking' ? 'coworking' : '') ||
         (tourism && /^(hotel|hostel|guest_house|motel)$/.test(tourism) ? 'hotel' : 'other');
       // Split `amenity=fast_food` by brand: fast-casual chains (Chipotle,
       // Pret, Cojean, Exki…) become `restaurant`; everything else becomes
@@ -222,12 +224,19 @@ async function seedCity(city: SeedCity) {
 
   for (let i = 0; i < unique.length; i += 500) {
     const batch = unique.slice(i, i + 500);
-    const { error: placesError } = await supabase
+    const { data: upserted, error: placesError } = await supabase
       .from('places')
-      .upsert(batch, { onConflict: 'normalized_name_hash' });
+      .upsert(batch, { onConflict: 'normalized_name_hash' })
+      .select('id, normalized_name_hash');
     if (placesError) throw placesError;
 
+    // Link refs to their place row — place_id powers the FK cascade, so
+    // deleting a place takes its source refs with it (#194).
+    const idByHash = new Map(
+      (upserted ?? []).map((p) => [p.normalized_name_hash as string, p.id as string]),
+    );
     const refs = batch.map((p) => ({
+      place_id: idByHash.get(p.normalized_name_hash) ?? null,
       source: 'osm',
       external_id: `${p.osm_tags.osm_type}/${p.osm_tags.osm_id}`,
       normalized_name_hash: p.normalized_name_hash,
@@ -247,7 +256,7 @@ async function seedCity(city: SeedCity) {
 function resolveCities(arg: string | undefined): SeedCity[] {
   if (!arg) return [];
   if (arg === '--all') return SEED_CITIES;
-  if (arg === '--all-new') return SEED_CITIES.filter((c) => c.mode === 'cafe-only');
+  if (arg === '--all-new') return SEED_CITIES.filter((c) => c.mode === 'work-core');
   // --country=FR — filter to all cities in the given ISO 3166-1 alpha-2.
   // Used by `npm run seed:fr` for the France-wide region expansion (#128).
   if (arg.startsWith('--country=')) {

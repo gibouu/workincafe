@@ -1,6 +1,6 @@
 # Work in Café
 
-Map-first PWA at **[workin.cafe](https://workin.cafe)** for finding places to work or study — cafés, bakeries, libraries, coworking, hotel lobbies, restaurants. Two launch cities: **Paris** + **Toronto**.
+Map-first PWA at **[workin.cafe](https://workin.cafe)** for finding places to work or study — cafés, bakeries, libraries, coworking, hotel lobbies, restaurants. Six cities: **Paris**, **Toronto (GTA)**, **London**, **New York**, **Tokyo**, **Seoul**.
 
 Built with Next.js 16 (App Router) + MapLibre GL JS (OpenFreeMap vector tiles) + Supabase + PostGIS, Phosphor Icons, and `vaul` drawers. Apple-native aesthetic: translucent surfaces, SF Pro stack, no user-uploaded photos in MVP.
 

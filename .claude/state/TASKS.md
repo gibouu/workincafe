@@ -55,3 +55,22 @@ One H2 section per task.
 
 ## #6 — Admin parking lot (TRIAGE)
 - Tracker only. Items graduate to their own issues.
+
+## #194 — Six-city focus (purge + cleanup + perf)
+status: IN_PROGRESS
+opened: 2026-06-11
+steps:
+  - [x] full JSON backup (places/refs/reviews) to backups/
+  - [x] purge 34,660 places outside six bboxes; relabel 1,963 CVL->Paris
+  - [x] fix place_source_refs: backfill place_id (39,873), delete 37,126 orphans
+  - [x] trim SEED_CITIES to 6; work-core mode incl. library + office=coworking
+  - [x] seeder writes place_id on refs
+  - [x] default chips cafe+library+coworking
+  - [x] marker bubble memoization (MapContainer)
+  - [x] places_in_bbox RPC migration written + applied to prod
+  - [x] lint/typecheck/build green; 6-city API smoke test passed
+  - [ ] commit, PR, self-review, merge
+  - [ ] close #168 (contradicts 6-city scope) + #53 (moot: zero non-system reviews)
+notes:
+  - npm install was stale (Tailwind v4 migration #189) — build needed reinstall
+  - London/NYC/Tokyo/Seoul have 0 baseline ratings — follow-up: generalize seed:baseline
