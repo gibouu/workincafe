@@ -1,4 +1,5 @@
 # Progress Log
+[2026-06-11 14:05] hotfix (#194): places_in_bbox returned 0 rows for bboxes wider than 180 deg (geography envelope wraps short way) -> empty map at world/continent zoom. Rewrote filter to lat/lng BETWEEN + new places_lng_lat_idx; 9ms plan; applied to prod. Why: geography semantics broke wide viewports.
 [2026-06-11 13:10] six-city focus (#194): purged DB 74,724 -> 40,064 places (six bboxes: Paris/GTA/London/NYC/Tokyo/Seoul; full JSON backup in backups/). Fixed place_source_refs: all 76,999 rows had place_id NULL — backfilled 39,873 via hash join, deleted 37,126 orphans, seeder now writes place_id. Relabeled 1,963 'Centre-Val de Loire' rows inside Paris bbox -> 'Paris'. Trimmed SEED_CITIES 33 -> 6, mode 'cafe-only' -> 'work-core' (now incl. libraries + office=coworking). Default filter chips cafe -> cafe+library+coworking. New places_in_bbox RPC (applied to prod via pooler :6543) replaces 2-query viewport path; legacy .in() with 1000 ids silently returned 0 ratings on dense viewports — RPC fixes. Why: focus launch on six cities, cut dead weight.
 
 Newest first. One line per entry.
