@@ -597,9 +597,10 @@ export default function MapPage() {
           onClick={handleOpenAddPlace}
           aria-label="Add a place"
           title="Add a place"
-          className="pointer-events-auto absolute bottom-[96px] left-4 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-(--surface-border) bg-(--surface) text-(--text-primary) shadow-float backdrop-blur-ios hover:bg-white"
+          className="pointer-events-auto absolute bottom-[96px] left-4 z-30 flex h-10 items-center gap-1.5 rounded-full border border-(--surface-border) bg-(--surface) px-3.5 text-[13px] font-semibold text-(--text-primary) shadow-float backdrop-blur-ios hover:bg-white"
         >
-          <Icon name="Plus" size={16} weight="bold" />
+          <Icon name="Plus" size={14} weight="bold" />
+          Add a place
         </button>
 
         <AttributionPill />
