@@ -74,3 +74,11 @@ steps:
 notes:
   - npm install was stale (Tailwind v4 migration #189) — build needed reinstall
   - London/NYC/Tokyo/Seoul have 0 baseline ratings — follow-up: generalize seed:baseline
+
+## #183 — Test harness + admin API tests
+status: DONE
+opened: 2026-06-11
+steps:
+  - [x] Vitest harness, npm test in CI (PR #202)
+  - [x] 77 tests: auth gates x15 routes, bulk caps, decide helpers, reviews filter, activity
+  - [x] mutation-verified
