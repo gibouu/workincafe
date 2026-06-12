@@ -40,6 +40,8 @@
     "hooks/**/*.tsx",
     "types/**/*.ts",
     "scripts/**/*.ts",
+    "tests/**/*.ts",
+    "vitest.config.ts",
     "middleware.ts",
     "proxy.ts",
     ".next/types/**/*.ts",
