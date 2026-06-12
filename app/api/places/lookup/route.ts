@@ -486,28 +486,54 @@ const PHOTON_TAGS = [
   'amenity:library',
   'amenity:coworking_space',
   'amenity:ice_cream',
+  'amenity:internet_cafe',
+  'amenity:bar',
+  'amenity:pub',
+  'amenity:biergarten',
+  // office=coworking is the canonical OSM coworking tag;
+  // amenity=coworking_space is the rare legacy one (#194).
+  'office:coworking',
   'shop:bakery',
   'shop:coffee',
+  'shop:tea',
+  'shop:pastry',
   'tourism:hotel',
+  'tourism:hostel',
+  'tourism:guest_house',
 ];
 
 async function photonAutocomplete(
   q: string,
   bbox: [number, number, number, number] | null,
 ): Promise<NextResponse> {
-  const url = new URL('https://photon.komoot.io/api/');
-  url.searchParams.set('q', q);
-  url.searchParams.set('limit', '8');
-  url.searchParams.set('lang', 'en');
-  if (bbox) url.searchParams.set('bbox', bbox.join(','));
-  for (const tag of PHOTON_TAGS) url.searchParams.append('osm_tag', tag);
-  const resp = await fetch(url.toString());
-  if (!resp.ok) {
-    return NextResponse.json({ error: 'photon failed', status: resp.status }, { status: 502 });
+  const fetchPredictions = async (withTags: boolean): Promise<AutocompletePrediction[] | null> => {
+    const url = new URL('https://photon.komoot.io/api/');
+    url.searchParams.set('q', q);
+    url.searchParams.set('limit', '8');
+    url.searchParams.set('lang', 'en');
+    if (bbox) url.searchParams.set('bbox', bbox.join(','));
+    if (withTags) for (const tag of PHOTON_TAGS) url.searchParams.append('osm_tag', tag);
+    const resp = await fetch(url.toString());
+    if (!resp.ok) return null;
+    const data = (await resp.json()) as { features?: PhotonFeature[] };
+    return (data.features ?? []).map(featureToPrediction);
+  };
+
+  const filtered = await fetchPredictions(true);
+  if (filtered === null) {
+    return NextResponse.json({ error: 'photon failed' }, { status: 502 });
   }
-  const data = (await resp.json()) as { features?: PhotonFeature[] };
-  const predictions: AutocompletePrediction[] = (data.features ?? []).map(featureToPrediction);
-  return NextResponse.json({ predictions });
+  if (filtered.length > 0) return NextResponse.json({ predictions: filtered });
+
+  // Tag-filtered search came up empty. Retry unfiltered: a named OSM POI
+  // with a tag outside our venue list (or an oddly-tagged node) beats an
+  // empty dropdown — this is the main reason name search "never finds it"
+  // while address search does (#200).
+  const unfiltered = await fetchPredictions(false);
+  if (unfiltered === null) {
+    return NextResponse.json({ error: 'photon failed' }, { status: 502 });
+  }
+  return NextResponse.json({ predictions: unfiltered });
 }
 
 // Address-mode autocomplete: same Photon endpoint, no `osm_tag` filter so
