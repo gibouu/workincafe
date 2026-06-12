@@ -486,6 +486,22 @@ export function AddPlaceWizard({
     else setStep(STEPS[stepIndex - 1]);
   };
 
+  // Fresh GPS fix (falls back to the cached position) so the server can
+  // geo-verify "submitter is physically at the place" — the gate that
+  // upgrades a submission from the pending queue to instant publish (#200).
+  const getSubmitterPosition = () =>
+    new Promise<{ lat: number; lng: number } | null>((resolve) => {
+      if (typeof navigator === 'undefined' || !navigator.geolocation) {
+        resolve(readCachedPosition());
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => resolve(readCachedPosition()),
+        { enableHighAccuracy: true, timeout: 4000, maximumAge: 60_000 },
+      );
+    });
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit || submitLat === null || submitLng === null || submitting) return;
@@ -511,7 +527,8 @@ export function AddPlaceWizard({
     } catch {
       // demo storage failures are non-fatal
     }
-    void fetch('/api/places/request', {
+    const position = await getSubmitterPosition();
+    const resp = await fetch('/api/places/request', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -521,9 +538,28 @@ export function AddPlaceWizard({
         lng: record.lng,
         category: record.category,
         notes: record.notes || undefined,
+        verified_lat: position?.lat,
+        verified_lng: position?.lng,
       }),
     }).catch(() => null);
+
+    if (resp?.status === 401) {
+      // Draft persists in localStorage; the wizard rehydrates after OAuth.
+      setSubmitting(false);
+      showToast('Sign in to add a place');
+      router.push('/auth?next=/places/new');
+      return;
+    }
+
+    const result = resp?.ok
+      ? ((await resp.json().catch(() => null)) as { published?: boolean; placeId?: string } | null)
+      : null;
     clearDraft();
+    if (result?.published && result.placeId) {
+      showToast(`${record.name} is live — add the first review`);
+      router.push(`/review/new/${encodeURIComponent(result.placeId)}`);
+      return;
+    }
     showToast(`${record.name} submitted for review`);
     router.push('/');
   };
