@@ -12,12 +12,18 @@
  *
  * Usage:
  *   npm run seed:baseline -- --dry-run
- *   npm run seed:baseline -- --city=toronto
- *   npm run seed:baseline                 # both cities
+ *   npm run seed:baseline -- --city=toronto   # any SEED_CITIES key
+ *   npm run seed:baseline                     # all cities
+ *
+ * --city resolves through SEED_CITIES and filters by bbox, not by the
+ * `city` label — labels are fragmented (suburbs, "Toronto (GTA)", the
+ * relabeled Paris rows), so spatial filtering is the only reliable
+ * scope. Same approach as the #194 purge.
  */
 
 import { createClient } from '@supabase/supabase-js';
 import { categoryBaseline, quantize } from '../lib/places/category-rating';
+import { SEED_CITIES, getSeedCity } from './seed-cities';
 
 const SYS_USER_ID = '00000000-0000-0000-0000-0000000005ed';
 
@@ -32,10 +38,12 @@ for (const a of args) {
 }
 const DRY_RUN = argMap.get('dry-run') === 'true';
 const CITY_ARG = argMap.get('city')?.toLowerCase();
-if (CITY_ARG && CITY_ARG !== 'paris' && CITY_ARG !== 'toronto') {
-  fail(`unsupported --city value "${CITY_ARG}". Use "paris" or "toronto".`);
+const SEED_CITY = CITY_ARG ? getSeedCity(CITY_ARG) : null;
+if (CITY_ARG && !SEED_CITY) {
+  fail(
+    `unsupported --city value "${CITY_ARG}". Use one of: ${SEED_CITIES.map((c) => c.key).join(', ')}.`,
+  );
 }
-const CITY = CITY_ARG === 'paris' ? 'Paris' : CITY_ARG === 'toronto' ? 'Toronto' : null;
 
 const SUPABASE_URL = requireEnv('NEXT_PUBLIC_SUPABASE_URL');
 const SERVICE_KEY = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
@@ -63,7 +71,10 @@ async function main() {
       .in('category', ['cafe', 'bakery', 'library', 'coworking', 'hotel'])
       .order('id')
       .range(from, from + PAGE - 1);
-    if (CITY) q = q.eq('city', CITY);
+    if (SEED_CITY) {
+      const [s, w, n, e] = SEED_CITY.bbox;
+      q = q.gte('lat', s).lte('lat', n).gte('lng', w).lte('lng', e);
+    }
     const { data, error } = await q;
     if (error) fail(`select places: ${error.message}`);
     const rows = (data ?? []) as PlaceRow[];
@@ -71,7 +82,7 @@ async function main() {
     if (rows.length < PAGE) break;
     from += PAGE;
   }
-  console.log(`[baseline] places fetched: ${all.length}${CITY ? ` (city=${CITY})` : ''}`);
+  console.log(`[baseline] places fetched: ${all.length}${SEED_CITY ? ` (city=${SEED_CITY.key})` : ''}`);
 
   // Find which already have any review.
   const ids = all.map((r) => r.id);
