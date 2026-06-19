@@ -46,19 +46,9 @@ export async function POST(
     return NextResponse.json({ error: 'claim already decided' }, { status: 409 });
   }
 
-  const { error: updErr } = await admin
-    .from('place_claims')
-    .update({
-      status: body.decision,
-      reviewed_by: user.id,
-      reviewed_at: new Date().toISOString(),
-      rejection_reason: body.decision === 'rejected' ? body.rejection_reason ?? null : null,
-    })
-    .eq('id', claimId);
-  if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
-
   if (body.decision === 'approved') {
-    // Insert place_owners row (idempotent — partial unique on active rows)
+    // Grant ownership before recording approval so a grant failure leaves the
+    // claim retryable instead of approved without an owner row.
     const { error: ownErr } = await admin
       .from('place_owners')
       .insert({
@@ -71,6 +61,18 @@ export async function POST(
       return NextResponse.json({ error: ownErr.message }, { status: 500 });
     }
   }
+
+  const { error: updErr } = await admin
+    .from('place_claims')
+    .update({
+      status: body.decision,
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+      rejection_reason: body.decision === 'rejected' ? body.rejection_reason ?? null : null,
+    })
+    .eq('id', claimId)
+    .eq('status', 'pending');
+  if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
 
   // Best-effort email notification — failures don't block the admin response.
   // See #22.
