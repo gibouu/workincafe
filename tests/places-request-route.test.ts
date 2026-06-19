@@ -1,11 +1,11 @@
 /**
- * POST /api/places/request — add-a-place v2 (#200): any-city submissions,
- * instant publish when the submitter is geo-verified at the place,
- * pending-queue fallback otherwise. Admin oversight is post-hoc.
+ * POST /api/places/request — add-a-place submissions enter the pending
+ * queue. Client-supplied geolocation is not trusted as an authorization
+ * signal for service-role instant publishing.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
-import { createMockClient, callsFor, actorOf, type MockClient } from './helpers/mock-supabase';
+import { createMockClient, actorOf, type MockClient } from './helpers/mock-supabase';
 
 const mocks = vi.hoisted(() => ({
   getRequestActor: vi.fn(),
@@ -63,57 +63,41 @@ describe('POST /api/places/request', () => {
     expect(res.status).toBe(400);
   });
 
-  it('geo-verified at the place: publishes instantly with resolved city/country', async () => {
+  it('client-supplied verified coordinates do not bypass the pending queue', async () => {
     authorize();
-    const admin = createMockClient({
-      tables: {
-        places: { data: { id: 'place-1' }, error: null },
-        place_requests: { data: { id: 'audit-1' }, error: null },
-        place_source_refs: { data: null, error: null },
-      },
-    });
-    mocks.createAdminClient.mockReturnValue(admin);
+    mocks.insertWithDemoFlag.mockResolvedValue({ data: { id: 'req-client-geo' }, error: null });
+
+    const { POST } = await load();
+    const res = await POST(post({
+      ...PLACE,
+      verified_lat: PLACE.lat,
+      verified_lng: PLACE.lng,
+    }));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ published: false, id: 'req-client-geo' });
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('nearby client-provided geolocation still enters the pending queue', async () => {
+    authorize();
+    mocks.insertWithDemoFlag.mockResolvedValue({ data: { id: 'req-nearby' }, error: null });
 
     const { POST } = await load();
     const res = await POST(post({ ...PLACE, category: 'cafe', ...NEARBY }));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ published: true, placeId: 'place-1' });
-
-    const [upsert] = callsFor(admin, 'places', 'upsert');
-    expect(upsert.args[0]).toMatchObject({
-      name: 'Café Nouveau',
-      city: 'Paris',
-      country: 'FR',
-      category: 'cafe',
-    });
-    expect(upsert.args[1]).toMatchObject({ ignoreDuplicates: true });
-
-    const [audit] = callsFor(admin, 'place_requests', 'insert');
-    expect(audit.args[0]).toMatchObject({ status: 'approved', name: 'Café Nouveau' });
-
-    const [ref] = callsFor(admin, 'place_source_refs', 'upsert');
-    expect(ref.args[0]).toMatchObject({ place_id: 'place-1', source: 'user_submitted' });
-
-    expect(mocks.insertWithDemoFlag).not.toHaveBeenCalled();
+    expect(await res.json()).toEqual({ published: false, id: 'req-nearby' });
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
-  it('duplicate place: resolves the existing row instead of forking', async () => {
+  it('still accepts duplicate-looking requests through the pending queue', async () => {
     authorize();
-    const admin = createMockClient({
-      tables: {
-        places: [
-          { data: null, error: null }, // upsert hit ignoreDuplicates → no row
-          { data: { id: 'existing-9' }, error: null }, // select by hash
-        ],
-        place_requests: { data: { id: 'audit-2' }, error: null },
-        place_source_refs: { data: null, error: null },
-      },
-    });
-    mocks.createAdminClient.mockReturnValue(admin);
+    mocks.insertWithDemoFlag.mockResolvedValue({ data: { id: 'req-duplicate' }, error: null });
 
     const { POST } = await load();
     const res = await POST(post({ ...PLACE, ...NEARBY }));
-    expect(await res.json()).toEqual({ published: true, placeId: 'existing-9' });
+    expect(await res.json()).toEqual({ published: false, id: 'req-duplicate' });
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
   it('too far from the place: falls back to the pending queue', async () => {
@@ -133,16 +117,12 @@ describe('POST /api/places/request', () => {
     expect(await res.json()).toEqual({ published: false, id: 'req-2' });
   });
 
-  it('instant path failure degrades to the pending queue, not an error', async () => {
+  it('pending queue insert failures are returned as server errors', async () => {
     authorize();
-    const admin = createMockClient({
-      tables: { places: { data: null, error: { message: 'rls denied' } } },
-    });
-    mocks.createAdminClient.mockReturnValue(admin);
-    mocks.insertWithDemoFlag.mockResolvedValue({ data: { id: 'req-3' }, error: null });
+    mocks.insertWithDemoFlag.mockResolvedValue({ data: null, error: { message: 'insert denied' } });
     const { POST } = await load();
     const res = await POST(post({ ...PLACE, ...NEARBY }));
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ published: false, id: 'req-3' });
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: 'insert denied' });
   });
 });
