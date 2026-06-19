@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor } from '@/lib/auth/request-actor';
 import {
   loyaltyProgressFor,
-  deductFreebieCost,
   FREEBIE_POINT_COST,
 } from '@/lib/loyalty/points';
 import { pickFreebiePlace } from '@/lib/loyalty/freebie';
@@ -50,40 +49,24 @@ export async function POST(request: NextRequest) {
   // platform-issued freebie, marked via payment_method='freebie'.
   const qrCode = generateRedemptionCode();
   const admin = createAdminClient();
-  const { data: purchase, error: pErr } = await admin
-    .from('deal_purchases')
-    .insert({
-      deal_id: null,
-      place_id: pick.id,
-      user_id: user.id,
-      qr_code: qrCode,
-      uses_total: 1,
-      uses_remaining: 1,
-      amount_paid_cents: 0,
-      currency: 'EUR',
-      payment_method: 'freebie',
-      ...(isDemo ? { is_demo: true } : {}),
-    })
-    .select('id, qr_code')
-    .maybeSingle();
+  const { data, error } = await admin.rpc('claim_freebie_purchase', {
+    p_user_id: user.id,
+    p_place_id: pick.id,
+    p_qr_code: qrCode,
+    p_is_demo: isDemo,
+  });
 
-  if (pErr) {
-    // deal_id is NOT NULL in the schema. If your DB rejects null deal_id, we
-    // fall back to a different shape — the caller can retry once the schema
-    // is updated. For now, return the error to surface it.
-    return NextResponse.json({ error: pErr.message }, { status: 500 });
+  if (error) {
+    const message = error.message ?? 'freebie claim failed';
+    const status = /freebie not unlocked/i.test(message) ? 409 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 
-  await deductFreebieCost(admin, {
-    user_id: user.id,
-    place_id: pick.id,
-    purchase_id: purchase!.id,
-    is_demo: isDemo,
-  });
+  const purchase = Array.isArray(data) ? data[0] : data;
 
   return NextResponse.json({
     place: { id: pick.id, name: pick.name },
-    qr_code: purchase!.qr_code,
+    qr_code: (purchase as { qr_code: string }).qr_code,
     points_spent: FREEBIE_POINT_COST,
   });
 }
