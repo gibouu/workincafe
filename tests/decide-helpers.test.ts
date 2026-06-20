@@ -45,28 +45,22 @@ describe('applyPlaceRequestDecision', () => {
     expect(r).toEqual({ ok: false, status: 409, error: 'request already decided' });
   });
 
-  it('approve inside a seed bbox: inserts the place with resolved city/country', async () => {
+  it('approve inside a seed bbox: calls the atomic approval RPC with resolved city/country', async () => {
     const admin = createMockClient({
       tables: {
-        place_requests: [
-          { data: pendingRequest(), error: null }, // select
-          { data: null, error: null }, // status update
-        ],
-        places: { data: null, error: null },
+        place_requests: { data: pendingRequest(), error: null },
       },
     });
     const r = await applyPlaceRequestDecision(asAdmin(admin), REQ_ID, 'approved', undefined, REVIEWER);
     expect(r).toEqual({ ok: true });
 
-    const [insert] = callsFor(admin, 'places', 'insert');
-    expect(insert.args[0]).toMatchObject({
-      name: 'Café Test',
-      city: 'Paris',
-      country: 'FR',
-      category: 'cafe',
+    expect(callsFor(admin, 'places', 'insert')).toHaveLength(0);
+    expect(admin.rpc).toHaveBeenCalledWith('approve_place_request', {
+      p_request_id: REQ_ID,
+      p_reviewer_id: REVIEWER,
+      p_city: 'Paris',
+      p_country: 'FR',
     });
-    const [update] = callsFor(admin, 'place_requests', 'update');
-    expect(update.args[0]).toMatchObject({ status: 'approved', reviewed_by: REVIEWER });
   });
 
   it('approve outside all seed bboxes: falls back to Photon reverse geocode', async () => {
@@ -81,17 +75,15 @@ describe('applyPlaceRequestDecision', () => {
     );
     const admin = createMockClient({
       tables: {
-        place_requests: [
-          { data: pendingRequest({ lat: 25.77, lng: -80.19 }), error: null },
-          { data: null, error: null },
-        ],
-        places: { data: null, error: null },
+        place_requests: { data: pendingRequest({ lat: 25.77, lng: -80.19 }), error: null },
       },
     });
     const r = await applyPlaceRequestDecision(asAdmin(admin), REQ_ID, 'approved', undefined, REVIEWER);
     expect(r).toEqual({ ok: true });
-    const [insert] = callsFor(admin, 'places', 'insert');
-    expect(insert.args[0]).toMatchObject({ city: 'Miami', country: 'US' });
+    expect(admin.rpc).toHaveBeenCalledWith('approve_place_request', expect.objectContaining({
+      p_city: 'Miami',
+      p_country: 'US',
+    }));
   });
 
   it('reject: no place insert, trimmed rejection_reason stored', async () => {
@@ -99,7 +91,7 @@ describe('applyPlaceRequestDecision', () => {
       tables: {
         place_requests: [
           { data: pendingRequest(), error: null },
-          { data: null, error: null },
+          { data: { id: REQ_ID }, error: null },
         ],
       },
     });
@@ -108,6 +100,39 @@ describe('applyPlaceRequestDecision', () => {
     expect(callsFor(admin, 'places', 'insert')).toHaveLength(0);
     const [update] = callsFor(admin, 'place_requests', 'update');
     expect(update.args[0]).toMatchObject({ status: 'rejected', rejection_reason: 'too vague' });
+    expect(callsFor(admin, 'place_requests', 'eq').map((c) => c.args)).toContainEqual(['status', 'pending']);
+  });
+
+  it('approve returns 409 when the atomic RPC reports a concurrent decision', async () => {
+    const admin = createMockClient({
+      tables: {
+        place_requests: { data: pendingRequest(), error: null },
+      },
+    });
+    admin.rpc.mockResolvedValue({
+      data: null,
+      error: { message: 'request already decided' },
+    });
+
+    const r = await applyPlaceRequestDecision(asAdmin(admin), REQ_ID, 'approved', undefined, REVIEWER);
+
+    expect(r).toEqual({ ok: false, status: 409, error: 'request already decided' });
+    expect(callsFor(admin, 'places', 'insert')).toHaveLength(0);
+  });
+
+  it('reject returns 409 when a concurrent admin already claimed the request', async () => {
+    const admin = createMockClient({
+      tables: {
+        place_requests: [
+          { data: pendingRequest(), error: null },
+          { data: null, error: null },
+        ],
+      },
+    });
+
+    const r = await applyPlaceRequestDecision(asAdmin(admin), REQ_ID, 'rejected', undefined, REVIEWER);
+
+    expect(r).toEqual({ ok: false, status: 409, error: 'request already decided' });
   });
 });
 
