@@ -43,6 +43,7 @@ export async function POST(
   const rows = photos.map((p) => ({
     review_id: reviewId,
     slot: p.slot,
+    path: p.cloudinary_public_id,
     cloudinary_public_id: p.cloudinary_public_id,
     cloudinary_version: p.cloudinary_version ?? null,
     width: typeof p.width === 'number' ? p.width : null,
