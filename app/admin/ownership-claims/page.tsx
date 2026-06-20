@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { Icon } from '@/components/icons/Icon';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
 import { ClaimRow } from '@/components/admin/ClaimRow';
 
 interface ClaimRecord {
@@ -23,7 +25,21 @@ interface ClaimRecord {
 
 async function loadClaims(): Promise<ClaimRecord[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  if (!isEmailAllowlisted(user.email)) return [];
+
+  const { data: me } = await supabase
+    .from('users')
+    .select('is_admin')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (!me?.is_admin) return [];
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from('place_claims')
     .select(
       'id, place_id, claimant_email, claimant_name, proof_type, proof_path, proof_notes, status, created_at, places(name, address, neighborhood, category)',
