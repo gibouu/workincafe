@@ -74,31 +74,16 @@ async function main() {
   const ids = wouldDrop.map((r) => r.id);
   const protectedIds = new Set<string>();
   const ID_CHUNK = 200;
-  for (const table of ['reviews', 'check_ins', 'live_updates']) {
-    let missing = false;
-    for (let i = 0; i < ids.length && !missing; i += ID_CHUNK) {
+  for (const table of ['reviews', 'checkins', 'live_updates']) {
+    for (let i = 0; i < ids.length; i += ID_CHUNK) {
       const slice = ids.slice(i, i + ID_CHUNK);
       const { data, error } = await sb.from(table).select('place_id').in('place_id', slice);
       if (error) {
-        const code = (error as { code?: string }).code ?? '';
         const message = (error as { message?: string }).message ?? '';
-        // Soft-handle a missing table — early-stage envs may not have every
-        // dependent table yet; we just don't protect against it.
-        if (
-          code === '42P01' ||
-          code === 'PGRST205' ||
-          /relation .* does not exist/i.test(message) ||
-          /Could not find the table/i.test(message) ||
-          /schema cache/i.test(message)
-        ) {
-          missing = true;
-          break;
-        }
         fail(`select ${table}: ${message || JSON.stringify(error)}`);
       }
       for (const r of data ?? []) protectedIds.add((r as { place_id: string }).place_id);
     }
-    if (missing) console.log(`[prune] skipping protection lookup for missing table: ${table}`);
   }
 
   const targets = wouldDrop.filter((r) => !protectedIds.has(r.id));
