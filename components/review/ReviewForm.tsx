@@ -682,7 +682,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ folder, public_id: slot }),
         });
-        if (!signResp.ok) return;
+        if (!signResp.ok) throw new Error('Photo upload could not be authorized');
         const sig = (await signResp.json()) as {
           signature: string;
           timestamp: number;
@@ -704,7 +704,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
           `https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`,
           { method: 'POST', body: fd },
         );
-        if (!upResp.ok) return;
+        if (!upResp.ok) throw new Error('Photo upload failed');
         const result = (await upResp.json()) as {
           public_id: string;
           version: number;
@@ -723,11 +723,15 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       }),
     );
     if (uploaded.length === 0) return;
-    await fetch(`/api/reviews/${reviewId}/photos`, {
+    const persistResp = await fetch(`/api/reviews/${reviewId}/photos`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ photos: uploaded }),
-    }).catch(() => null);
+    });
+    if (!persistResp.ok) {
+      const body = (await persistResp.json().catch(() => ({}))) as { error?: string };
+      throw new Error(body.error ?? 'Photo upload could not be saved');
+    }
   };
 
   const onSubmit = async (e: React.FormEvent) => {
