@@ -680,7 +680,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
         const signResp = await fetch('/api/cloudinary/sign', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ folder, public_id: slot }),
+          body: JSON.stringify({ folder }),
         });
         if (!signResp.ok) throw new Error('Photo upload could not be authorized');
         const sig = (await signResp.json()) as {
@@ -689,6 +689,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
           api_key: string;
           cloud_name: string;
           folder: string;
+          overwrite?: boolean;
           public_id?: string;
         };
 
@@ -698,6 +699,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
         fd.append('timestamp', String(sig.timestamp));
         fd.append('signature', sig.signature);
         fd.append('folder', sig.folder);
+        if (typeof sig.overwrite === 'boolean') fd.append('overwrite', String(sig.overwrite));
         if (sig.public_id) fd.append('public_id', sig.public_id);
 
         const upResp = await fetch(
