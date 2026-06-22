@@ -19,16 +19,18 @@ export interface LoyaltyProgress {
 
 export async function loyaltyProgressFor(db: any, userId: string): Promise<LoyaltyProgress> {
   // Balance via the SQL function we shipped in 006.
-  const { data: balRows } = await db.rpc('user_point_balance', { uid: userId });
+  const { data: balRows, error: balanceErr } = await db.rpc('user_point_balance', { uid: userId });
+  if (balanceErr) throw balanceErr;
   const balance =
     typeof balRows === 'number' ? balRows : Number(balRows?.[0] ?? 0) || 0;
 
   // Distinct places redeemed at: distinct (place_id) on deal_purchases that
   // have at least one deal_use.
-  const { data: rows } = await db
+  const { data: rows, error: purchasesErr } = await db
     .from('deal_purchases')
     .select('place_id, deal_uses!inner(id)')
     .eq('user_id', userId);
+  if (purchasesErr) throw purchasesErr;
   const distinct = new Set<string>();
   for (const row of (rows ?? []) as { place_id: string }[]) {
     distinct.add(row.place_id);
