@@ -42,23 +42,10 @@ describe('POST /api/place-claims/[id]/decision', () => {
     });
     mocks.getRequestActor.mockResolvedValue(actorOf(authDb, ADMIN));
 
-    const admin = createMockClient({
-      tables: {
-        place_claims: {
-          data: {
-            id: CLAIM_ID,
-            place_id: PLACE_ID,
-            claimant_user_id: CLAIMANT_ID,
-            claimant_email: null,
-            status: 'pending',
-          },
-          error: null,
-        },
-        place_owners: {
-          data: null,
-          error: { message: 'foreign key violation' },
-        },
-      },
+    const admin = createMockClient();
+    admin.rpc.mockResolvedValue({
+      data: null,
+      error: { message: 'foreign key violation' },
     });
     mocks.createAdminClient.mockReturnValue(admin);
 
@@ -68,7 +55,37 @@ describe('POST /api/place-claims/[id]/decision', () => {
     });
 
     expect(res.status).toBe(500);
-    expect(callsFor(admin, 'place_owners', 'insert')).toHaveLength(1);
+    expect(admin.rpc).toHaveBeenCalledWith('decide_place_claim', {
+      p_claim_id: CLAIM_ID,
+      p_decision: 'approved',
+      p_reviewer_id: ADMIN.id,
+      p_rejection_reason: null,
+    });
+    expect(callsFor(admin, 'place_owners', 'insert')).toHaveLength(0);
     expect(callsFor(admin, 'place_claims', 'update')).toHaveLength(0);
+  });
+
+  it('returns 409 for stale decisions without sending email or granting ownership', async () => {
+    const authDb = createMockClient({
+      tables: { users: { data: { is_admin: true }, error: null } },
+    });
+    mocks.getRequestActor.mockResolvedValue(actorOf(authDb, ADMIN));
+
+    const admin = createMockClient();
+    admin.rpc.mockResolvedValue({
+      data: null,
+      error: { message: 'claim already decided' },
+    });
+    mocks.createAdminClient.mockReturnValue(admin);
+
+    const { POST } = await import('@/app/api/place-claims/[id]/decision/route');
+    const res = await POST(post({ decision: 'approved' }), {
+      params: Promise.resolve({ id: CLAIM_ID }),
+    });
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: 'claim already decided' });
+    expect(callsFor(admin, 'place_owners', 'insert')).toHaveLength(0);
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
   });
 });
