@@ -49,15 +49,22 @@ export async function POST(request: NextRequest) {
   const processed: string[] = [];
   const skipped: { id: string; reason: string }[] = [];
   for (const id of ids) {
-    const r = await applyPlaceRequestDecision(
-      admin,
-      id,
-      body.decision,
-      body.rejection_reason,
-      user.id,
-    );
-    if (r.ok) processed.push(id);
-    else skipped.push({ id, reason: r.error });
+    try {
+      const r = await applyPlaceRequestDecision(
+        admin,
+        id,
+        body.decision,
+        body.rejection_reason,
+        user.id,
+      );
+      if (r.ok) processed.push(id);
+      else skipped.push({ id, reason: r.error });
+    } catch (err) {
+      skipped.push({
+        id,
+        reason: err instanceof Error ? err.message : 'unexpected decision failure',
+      });
+    }
   }
 
   return NextResponse.json({
