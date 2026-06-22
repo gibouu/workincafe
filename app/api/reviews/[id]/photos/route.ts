@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor } from '@/lib/auth/request-actor';
+import { PHOTO_SLOTS } from '@/lib/review/photos';
 
-const ALLOWED_SLOTS = new Set(['menu', 'inside', 'outside', 'special']);
+const ALLOWED_SLOTS = new Set<string>(PHOTO_SLOTS);
 const PUBLIC_ID_RE = /^reviews\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+$/;
 const VERSION_RE = /^v?\d{1,16}$/;
 const MAX_BYTES = 3 * 1024 * 1024;
