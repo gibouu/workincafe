@@ -21,6 +21,7 @@ export type TemperatureLevel = 'cold' | 'comfortable' | 'warm' | 'hot';
 export type OutletsLevel = 'many' | 'some' | 'none';
 export type PlaceSource = 'apple' | 'google' | 'osm' | 'curated' | 'foursquare' | 'user_submitted';
 export type RequestStatus = 'pending' | 'approved' | 'rejected';
+export type ReviewSource = 'user' | 'foursquare' | 'yelp' | 'google' | 'system';
 export type FlagReason = 'spam' | 'offensive' | 'untrue' | 'irrelevant' | 'other';
 
 export type Json = string | number | boolean | null | { [k: string]: Json } | Json[];
@@ -136,6 +137,8 @@ type ReviewRow = {
   day_of_week: number | null;
   upvotes_count: number;
   is_hidden: boolean;
+  source: ReviewSource;
+  source_weight: number;
   is_demo: boolean;
   created_at: string;
   updated_at: string;
