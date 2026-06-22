@@ -19,11 +19,12 @@ export default async function ClaimPage({
   // #114. See #138.
   if (!place) {
     const supabase = await createClient();
-    const { data: row } = await supabase
+    const { data: row, error } = await supabase
       .from('places')
       .select('id, name, address, neighborhood, country, category, lat, lng, brand, hours_json')
       .eq('id', id)
       .maybeSingle();
+    if (error) throw error;
     if (row) {
       const r = row as {
         id: string;
