@@ -639,6 +639,12 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
     coffee_no_art: isCafe && didOrder === 'yes' && coffeeNoArt,
     coffee_no_mug: isCafe && didOrder === 'yes' && coffeeNoMug,
   });
+  const buildPendingPayload = () => {
+    const { verified_lat: _verifiedLat, verified_lng: _verifiedLng, ...payload } = buildPayload();
+    void _verifiedLat;
+    void _verifiedLng;
+    return payload;
+  };
 
   const canSubmit = overall > 0 && comment.length <= 280 && geo.kind === 'ok' && !submitting;
 
@@ -1380,7 +1386,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
                     // Persist the draft and route through /auth — the existing
                     // consumePending replay path picks it up after the user
                     // returns and submits transparently.
-                    savePending('review', place.id, buildPayload());
+                    savePending('review', place.id, buildPendingPayload());
                     const nextPath = `/review/new/${place.id}`;
                     window.location.assign(buildAuthRedirect(nextPath, 'review'));
                   }}
