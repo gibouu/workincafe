@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { callsFor, createMockClient, actorOf } from './helpers/mock-supabase';
+import { PHOTO_SLOTS } from '@/lib/review/photos';
 
 const mocks = vi.hoisted(() => ({
   getRequestActor: vi.fn(),
@@ -63,5 +64,43 @@ describe('POST /api/reviews/[id]/photos', () => {
         cloudinary_public_id: `reviews/${REVIEW_ID}/inside`,
       }),
     ]);
+  });
+
+  it('accepts every shared review photo slot, including coffee', async () => {
+    const db = createMockClient({
+      tables: {
+        review_photos: { data: null, error: null },
+      },
+    });
+    mocks.getRequestActor.mockResolvedValue(actorOf(db, user));
+
+    const { POST } = await load();
+    const res = await POST(
+      post({
+        photos: PHOTO_SLOTS.map((slot) => ({
+          slot,
+          cloudinary_public_id: `reviews/${REVIEW_ID}/${slot}`,
+          cloudinary_version: '123',
+          width: 100,
+          height: 120,
+          bytes: 1000,
+        })),
+      }),
+      { params: Promise.resolve({ id: REVIEW_ID }) },
+    );
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, inserted: PHOTO_SLOTS.length });
+    const rows = callsFor(db, 'review_photos', 'upsert')[0]?.args[0];
+    expect(rows).toEqual(
+      PHOTO_SLOTS.map((slot) =>
+        expect.objectContaining({
+          review_id: REVIEW_ID,
+          slot,
+          path: `reviews/${REVIEW_ID}/${slot}`,
+          cloudinary_public_id: `reviews/${REVIEW_ID}/${slot}`,
+        }),
+      ),
+    );
   });
 });
