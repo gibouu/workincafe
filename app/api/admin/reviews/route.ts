@@ -90,10 +90,15 @@ export async function GET(request: NextRequest) {
 
   const emailByUser = new Map<string, string>();
   if (userIds.length > 0) {
-    const { data: authResp } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    const wanted = new Set(userIds);
-    for (const u of (authResp?.users ?? []) as { id: string; email: string | null }[]) {
-      if (wanted.has(u.id) && u.email) emailByUser.set(u.id, u.email);
+    for (const id of userIds) {
+      const { data, error: userErr } = await admin.auth.admin.getUserById(id);
+      if (userErr) {
+        return NextResponse.json(
+          { error: `lookup review user ${id}: ${userErr.message}` },
+          { status: 500 },
+        );
+      }
+      if (data.user?.email) emailByUser.set(id, data.user.email);
     }
   }
 
