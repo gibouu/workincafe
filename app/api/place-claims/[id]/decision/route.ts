@@ -84,7 +84,11 @@ export async function POST(
             placeName,
             reason: body.rejection_reason ?? null,
           });
-    void sendEmail({ to: claim.claimant_email, ...message });
+    try {
+      await sendEmail({ to: claim.claimant_email, ...message });
+    } catch (error) {
+      console.error('claim decision email failed', error);
+    }
   }
 
   return NextResponse.json({ ok: true });
