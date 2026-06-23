@@ -81,4 +81,36 @@ describe('POST /api/deal-uses', () => {
     expect(mocks.awardPointForUse).not.toHaveBeenCalled();
     expect(callsFor(admin, 'point_events', 'insert')).toHaveLength(0);
   });
+
+  it('rejects non-string redemption notes before redeeming', async () => {
+    const db = createMockClient({
+      tables: {
+        deal_purchases: {
+          data: {
+            id: PURCHASE_ID,
+            deal_id: DEAL_ID,
+            place_id: PLACE_ID,
+            user_id: CUSTOMER_ID,
+            uses_remaining: 2,
+            uses_total: 2,
+            expires_at: null,
+            deals: { title: 'Coffee Pack' },
+          },
+          error: null,
+        },
+      },
+    });
+    mocks.getRequestActor.mockResolvedValue(actorOf(db, OWNER));
+    mocks.isOwnerOf.mockResolvedValue(true);
+
+    const admin = createMockClient();
+    mocks.createAdminClient.mockReturnValue(admin);
+
+    const { POST } = await import('@/app/api/deal-uses/route');
+    const res = await POST(post({ qr_code: 'abc-123', notes: { text: 'redeemed' } }));
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'notes must be a string' });
+    expect(admin.rpc).not.toHaveBeenCalled();
+  });
 });
