@@ -9,6 +9,7 @@ import { useToasts } from '@/lib/store/toasts';
 import { savePending, buildAuthRedirect } from '@/lib/auth/pending-submit';
 import { runSpeedtest } from '@/lib/measurement/speedtest';
 import { runDecibelTest } from '@/lib/measurement/decibel';
+import { isLiveUpdateSubmitSuccess } from '@/lib/live-updates/submission-status';
 
 type Noise = 'quiet' | 'moderate' | 'loud';
 type Seating = 'plenty' | 'some' | 'full';
@@ -220,6 +221,11 @@ export function LiveUpdateSheet({
         return;
       }
       // 404/503 (table/column missing) → still treat as success in demo mode.
+      if (!isLiveUpdateSubmitSuccess(resp)) {
+        showToast('Could not share update', { tone: 'error' });
+        setSubmitting(false);
+        return;
+      }
       showToast(`Update shared for ${place.name}`);
       handleClose(false);
     } catch {
