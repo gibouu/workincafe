@@ -84,10 +84,7 @@ export async function PUT(request: NextRequest) {
   const { error } = await db.from('friend_profiles').upsert(payload, { onConflict: 'user_id' });
   if (error) {
     if (isMissingTable(error)) {
-      // Migration 007 not applied yet — soft success so the client UX still
-      // celebrates submission. The data isn't persisted; client should warn
-      // when ready (today: silent, mirrors the demo-mode contract elsewhere).
-      return NextResponse.json({ ok: true, deferred: true }, { status: 200 });
+      return NextResponse.json({ error: 'friend profiles unavailable' }, { status: 503 });
     }
     return NextResponse.json({ error: (error as { message?: string }).message ?? 'failed' }, { status: 500 });
   }
