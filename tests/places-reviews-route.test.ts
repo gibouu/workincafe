@@ -78,6 +78,14 @@ describe('GET /api/places/[id]/reviews', () => {
     expect(await res.json()).toEqual({ reviews: [] });
   });
 
+  it('surfaces non-missing-table database errors instead of returning an empty list', async () => {
+    withClient({ reviews: { data: null, error: { code: '57014', message: 'statement timeout' } } });
+    const { GET } = await import('@/app/api/places/[id]/reviews/route');
+    const res = await GET(get('http://test.local/api/places/x/reviews'), CTX);
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: 'statement timeout' });
+  });
+
   it('resolves non-UUID demo ids through place_source_refs', async () => {
     const client = withClient({
       place_source_refs: { data: { place_id: PLACE_ID }, error: null },
