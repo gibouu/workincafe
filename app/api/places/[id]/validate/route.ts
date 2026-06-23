@@ -68,7 +68,8 @@ export async function POST(
       user_validated_at: new Date().toISOString(),
       validated_by: user.id,
     })
-    .eq('id', resolvedId);
+    .eq('id', resolvedId)
+    .is('user_validated_at', null);
   if (updateErr) {
     const code = (updateErr as { code?: string }).code ?? '';
     const message = (updateErr as { message?: string }).message ?? '';
