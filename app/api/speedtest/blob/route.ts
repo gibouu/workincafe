@@ -8,7 +8,12 @@ export const runtime = 'edge';
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const mb = Math.max(1, Math.min(20, Number(searchParams.get('size') ?? 5)));
+  const rawSize = searchParams.get('size');
+  const requestedMb = rawSize === null ? 5 : Number(rawSize);
+  if (!Number.isFinite(requestedMb) || requestedMb < 1) {
+    return NextResponse.json({ error: 'size must be a number from 1 to 20' }, { status: 400 });
+  }
+  const mb = Math.min(20, requestedMb);
   const bytes = mb * 1024 * 1024;
 
   // Stream the bytes in 64KB chunks to avoid allocating ~5MB at once.
