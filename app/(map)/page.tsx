@@ -31,6 +31,7 @@ import { AttributionPill } from '@/components/map/AttributionPill';
 import { LiveUpdateSheet } from '@/components/review/LiveUpdateSheet';
 import { WelcomeOverlay } from '@/components/onboarding/WelcomeOverlay';
 import { Icon } from '@/components/icons/Icon';
+import { isLiveUpdateSubmitSuccess } from '@/lib/live-updates/submission-status';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useLiveUpdatePrompt } from '@/hooks/useLiveUpdatePrompt';
 import { useFilters } from '@/lib/store/filters';
@@ -190,7 +191,7 @@ export default function MapPage() {
         body: JSON.stringify(env.payload),
       })
         .then((r) => {
-          if (r.ok || r.status === 503 || r.status === 404) {
+          if (isLiveUpdateSubmitSuccess(r)) {
             showToast('Update shared');
           } else {
             showToast('Could not share update', { tone: 'error' });
