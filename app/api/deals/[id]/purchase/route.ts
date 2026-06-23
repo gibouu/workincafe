@@ -19,12 +19,15 @@ export async function POST(
 
   const { data: deal, error: dealErr } = await db
     .from('deals')
-    .select('id, place_id, kind, pack_size, price_cents, currency, active, ends_at, purchase_limit_per_user')
+    .select('id, place_id, kind, pack_size, price_cents, currency, active, starts_at, ends_at, purchase_limit_per_user')
     .eq('id', dealId)
     .maybeSingle();
   if (dealErr) return NextResponse.json({ error: dealErr.message }, { status: 500 });
   if (!deal) return NextResponse.json({ error: 'deal not found' }, { status: 404 });
   if (!deal.active) return NextResponse.json({ error: 'deal not active' }, { status: 409 });
+  if (deal.starts_at && new Date(deal.starts_at) > new Date()) {
+    return NextResponse.json({ error: 'deal not started' }, { status: 409 });
+  }
   if (deal.ends_at && new Date(deal.ends_at) < new Date()) {
     return NextResponse.json({ error: 'deal expired' }, { status: 409 });
   }
