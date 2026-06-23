@@ -82,7 +82,7 @@ export function DealForm({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!resp.ok && resp.status !== 503) {
+      if (!resp.ok) {
         const body = await resp.json().catch(() => ({}));
         throw new Error(body.error ?? `request failed (${resp.status})`);
       }
