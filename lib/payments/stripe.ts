@@ -14,7 +14,7 @@ export function stripe(): Stripe {
   const key = stripeSecretKey();
   if (!key) throw new Error('STRIPE_SECRET_KEY is not set');
   cached = new Stripe(key, {
-    apiVersion: '2026-04-22.dahlia',
+    apiVersion: '2026-05-27.dahlia',
     appInfo: {
       name: 'Work in Cafe',
       version: '0.1.0',
