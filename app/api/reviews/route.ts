@@ -65,7 +65,6 @@ export async function POST(request: NextRequest) {
   if (typeof body.verified_lat !== 'number' || typeof body.verified_lng !== 'number') {
     return NextResponse.json({ error: 'verified_lat/verified_lng required' }, { status: 400 });
   }
-
   const ratingFields: [string, unknown][] = [
     ['overall_rating', body.overall_rating],
     ['overall_suggested', body.overall_suggested ?? null],
@@ -100,11 +99,11 @@ export async function POST(request: NextRequest) {
   if (pErr) return NextResponse.json({ error: pErr.message }, { status: 500 });
   if (!place) return NextResponse.json({ error: 'place not found' }, { status: 404 });
 
-  const geoVerified = isWithin(
+  const isNearPlace = isWithin(
     { lat: body.verified_lat, lng: body.verified_lng },
     { lat: place.lat, lng: place.lng },
   );
-  if (!geoVerified) {
+  if (!isNearPlace) {
     return NextResponse.json(
       { error: `too far from the place (must be within ${GEO_VERIFY_METERS}m)` },
       { status: 400 },
@@ -150,9 +149,9 @@ export async function POST(request: NextRequest) {
       outside_temp_c: body.outside_temp_c ?? null,
       outside_condition: body.outside_condition ?? null,
       comment: body.comment?.slice(0, 280) ?? null,
-      geo_verified: true,
-      verified_lat: body.verified_lat,
-      verified_lng: body.verified_lng,
+      geo_verified: false,
+      verified_lat: null,
+      verified_lng: null,
       coffee_quality_rating: body.coffee_quality_rating ?? null,
       coffee_art_rating: body.coffee_art_rating ?? null,
       coffee_mug_rating: body.coffee_mug_rating ?? null,

@@ -32,24 +32,21 @@ export async function POST(
 
   const admin = createAdminClient();
 
-  // Safety: never let the last admin demote themselves out of existence.
-  if (!body.promote) {
-    const { count } = await admin
-      .from('users')
-      .select('id', { head: true, count: 'exact' })
-      .eq('is_admin', true);
-    if ((count ?? 0) <= 1 && targetId === user.id) {
-      return NextResponse.json(
-        { error: "you're the only admin — promote someone else first" },
-        { status: 409 },
-      );
+  const { error } = await admin.rpc('set_user_admin_status', {
+    p_target_id: targetId,
+    p_promote: body.promote,
+    p_actor_id: user.id,
+  });
+  if (error) {
+    const message = error.message ?? 'admin status update failed';
+    if (/only admin|last admin|promote someone else/i.test(message)) {
+      return NextResponse.json({ error: message }, { status: 409 });
     }
+    if (/user not found/i.test(message)) {
+      return NextResponse.json({ error: 'user not found' }, { status: 404 });
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 
-  const { error } = await admin
-    .from('users')
-    .update({ is_admin: body.promote })
-    .eq('id', targetId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
