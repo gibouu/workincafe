@@ -136,7 +136,7 @@ export function FriendProfileWizard({
         window.location.assign('/auth?next=' + encodeURIComponent(window.location.pathname));
         return;
       }
-      if (!resp.ok && resp.status !== 503) {
+      if (!resp.ok) {
         const body = await resp.json().catch(() => ({}));
         throw new Error(body.error ?? `request failed (${resp.status})`);
       }
