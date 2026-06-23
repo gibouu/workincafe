@@ -43,9 +43,13 @@ export async function POST(request: NextRequest) {
   if (existing?.stripe_account_id) {
     accountId = existing.stripe_account_id;
   } else {
-    const account = await createConnectAccount({ email: user.email, country });
+    const account = await createConnectAccount({
+      email: user.email,
+      country,
+      idempotencyKey: `stripe-connect-account:${user.id}`,
+    });
     accountId = account.account_id;
-    await admin.from('stripe_accounts').upsert(
+    const { error: persistErr } = await admin.from('stripe_accounts').upsert(
       {
         user_id: user.id,
         stripe_account_id: accountId,
@@ -57,6 +61,12 @@ export async function POST(request: NextRequest) {
       },
       { onConflict: 'user_id' },
     );
+    if (persistErr) {
+      return NextResponse.json(
+        { error: persistErr.message ?? 'stripe account persistence failed' },
+        { status: 500 },
+      );
+    }
   }
 
   const url = await createOnboardingLink({
