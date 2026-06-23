@@ -35,9 +35,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'code expired' }, { status: 410 });
   }
 
-  const admin = createAdminClient();
-
+  if (body?.notes !== undefined && typeof body.notes !== 'string') {
+    return NextResponse.json({ error: 'notes must be a string' }, { status: 400 });
+  }
   const notes = body?.notes?.slice(0, 200) ?? null;
+
+  const admin = createAdminClient();
   const { data: redemptionRows, error: redeemErr } = await admin.rpc(
     'redeem_deal_purchase',
     {
