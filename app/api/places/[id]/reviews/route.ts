@@ -64,9 +64,10 @@ export async function GET(
 
   if (error) {
     const code = (error as { code?: string }).code ?? '';
+    const message = (error as { message?: string }).message ?? '';
     // Demo-mode contract: missing tables → empty array, not an error
     if (code === '42P01') return NextResponse.json({ reviews: [] });
-    return NextResponse.json({ reviews: [] });
+    return NextResponse.json({ error: message || 'reviews lookup failed' }, { status: 500 });
   }
   return NextResponse.json({ reviews: data ?? [] }, { status: 200 });
 }
