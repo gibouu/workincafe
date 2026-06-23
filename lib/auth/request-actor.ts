@@ -166,7 +166,14 @@ export async function resolvePlaceIdForActor(db: any, placeId: string, isDemo: b
     inserted = await db.from('places').insert(payload).select('id').maybeSingle();
   }
 
-  if (inserted.error || !inserted.data?.id) return placeId;
+  if (inserted.error || !inserted.data?.id) {
+    const retry = await db
+      .from('places')
+      .select('id')
+      .eq('normalized_name_hash', normalizedNameHash)
+      .maybeSingle();
+    return retry.data?.id ?? placeId;
+  }
 
   const sourceRef = {
     place_id: inserted.data.id,

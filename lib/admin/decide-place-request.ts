@@ -90,19 +90,26 @@ export async function applyPlaceRequestDecision(
 
   if (decision === 'approved') {
     const { city, country } = await resolveCityCountry(req.lat, req.lng);
-    const { error: placeErr } = await admin.from('places').insert({
-      name: req.name,
-      address: req.address ?? null,
-      city,
-      country,
-      lat: req.lat,
-      lng: req.lng,
-      category: req.category_suggestion ?? 'other',
+    const { error: approveErr } = await admin.rpc('approve_place_request', {
+      p_request_id: requestId,
+      p_reviewer_id: reviewerId,
+      p_city: city,
+      p_country: country,
     });
-    if (placeErr) return { ok: false, status: 500, error: placeErr.message };
+    if (approveErr) {
+      const message = approveErr.message ?? 'approval failed';
+      if (/request not found/i.test(message)) {
+        return { ok: false, status: 404, error: 'request not found' };
+      }
+      if (/request already decided/i.test(message)) {
+        return { ok: false, status: 409, error: 'request already decided' };
+      }
+      return { ok: false, status: 500, error: message };
+    }
+    return { ok: true };
   }
 
-  const { error: updErr } = await admin
+  const { data: updated, error: updErr } = await admin
     .from('place_requests')
     .update({
       status: decision,
@@ -110,8 +117,12 @@ export async function applyPlaceRequestDecision(
       reviewed_at: new Date().toISOString(),
       rejection_reason: decision === 'rejected' ? rejectionReason?.trim() || null : null,
     })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .eq('status', 'pending')
+    .select('id')
+    .maybeSingle();
   if (updErr) return { ok: false, status: 500, error: updErr.message };
+  if (!updated) return { ok: false, status: 409, error: 'request already decided' };
 
   return { ok: true };
 }

@@ -13,6 +13,14 @@ interface Body {
   rejection_reason?: string;
 }
 
+interface DecidedClaim {
+  id: string;
+  place_id: string;
+  claimant_user_id: string;
+  claimant_email: string | null;
+  status: 'approved' | 'rejected';
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -35,42 +43,25 @@ export async function POST(
 
   const admin = createAdminClient();
 
-  const { data: claim, error: claimErr } = await admin
-    .from('place_claims')
-    .select('id, place_id, claimant_user_id, claimant_email, status')
-    .eq('id', claimId)
-    .maybeSingle();
-  if (claimErr) return NextResponse.json({ error: claimErr.message }, { status: 500 });
-  if (!claim) return NextResponse.json({ error: 'claim not found' }, { status: 404 });
-  if (claim.status !== 'pending') {
-    return NextResponse.json({ error: 'claim already decided' }, { status: 409 });
-  }
-
-  const { error: updErr } = await admin
-    .from('place_claims')
-    .update({
-      status: body.decision,
-      reviewed_by: user.id,
-      reviewed_at: new Date().toISOString(),
-      rejection_reason: body.decision === 'rejected' ? body.rejection_reason ?? null : null,
-    })
-    .eq('id', claimId);
-  if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
-
-  if (body.decision === 'approved') {
-    // Insert place_owners row (idempotent — partial unique on active rows)
-    const { error: ownErr } = await admin
-      .from('place_owners')
-      .insert({
-        place_id: claim.place_id,
-        user_id: claim.claimant_user_id,
-        granted_by: user.id,
-      });
-    // Tolerate "already an owner" (unique index violation)
-    if (ownErr && !/duplicate key|unique/i.test(ownErr.message)) {
-      return NextResponse.json({ error: ownErr.message }, { status: 500 });
+  const { data, error: decisionErr } = await admin.rpc('decide_place_claim', {
+    p_claim_id: claimId,
+    p_decision: body.decision,
+    p_reviewer_id: user.id,
+    p_rejection_reason: body.decision === 'rejected' ? body.rejection_reason ?? null : null,
+  });
+  if (decisionErr) {
+    const message = decisionErr.message ?? 'claim decision failed';
+    if (/already decided/i.test(message)) {
+      return NextResponse.json({ error: 'claim already decided' }, { status: 409 });
     }
+    if (/not found/i.test(message)) {
+      return NextResponse.json({ error: 'claim not found' }, { status: 404 });
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
+
+  const claim = (Array.isArray(data) ? data[0] : data) as DecidedClaim | null;
+  if (!claim) return NextResponse.json({ error: 'claim not found' }, { status: 404 });
 
   // Best-effort email notification — failures don't block the admin response.
   // See #22.
@@ -93,7 +84,11 @@ export async function POST(
             placeName,
             reason: body.rejection_reason ?? null,
           });
-    void sendEmail({ to: claim.claimant_email, ...message });
+    try {
+      await sendEmail({ to: claim.claimant_email, ...message });
+    } catch (error) {
+      console.error('claim decision email failed', error);
+    }
   }
 
   return NextResponse.json({ ok: true });

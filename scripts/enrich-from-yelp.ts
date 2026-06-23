@@ -69,11 +69,12 @@ async function main() {
   const sb = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
   // Skip places that already have a yelp-source review.
-  const { data: enrichedRows } = await sb
+  const { data: enrichedRows, error: enrichedErr } = await sb
     .from('reviews')
     .select('place_id')
     .eq('source', 'yelp')
     .eq('user_id', SYS_USER_ID);
+  if (enrichedErr) fail(`select existing yelp reviews: ${enrichedErr.message}`);
   const enriched = new Set<string>((enrichedRows ?? []).map((r) => (r as { place_id: string }).place_id));
   console.log(`[yelp] already enriched: ${enriched.size}`);
 
@@ -138,11 +139,10 @@ async function main() {
             }
             if (Object.keys(placePatch).length > 0) {
               const { error: updErr } = await sb.from('places').update(placePatch).eq('id', p.id);
-              if (!updErr) {
-                if (placePatch.hours_json) hoursBackfilled++;
-                if (placePatch.phone) phoneBackfilled++;
-                if (placePatch.address) addressBackfilled++;
-              }
+              if (updErr) fail(`update yelp place fields for ${p.id}: ${updErr.message}`);
+              if (placePatch.hours_json) hoursBackfilled++;
+              if (placePatch.phone) phoneBackfilled++;
+              if (placePatch.address) addressBackfilled++;
             }
 
             // Synthetic review: only insert if Yelp gave us a rating.
@@ -156,7 +156,8 @@ async function main() {
                 source: 'yelp',
                 source_weight: 0.5,
               });
-              if (!insErr) reviewsInserted++;
+              if (insErr) fail(`insert yelp review for ${p.id}: ${insErr.message}`);
+              reviewsInserted++;
             }
 
           }

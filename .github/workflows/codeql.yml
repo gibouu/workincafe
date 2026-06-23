@@ -6,8 +6,20 @@ name: CodeQL
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "backups/**"
+      - ".claude/**"
+      - ".clawpatch/**"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "backups/**"
+      - ".claude/**"
+      - ".clawpatch/**"
   schedule:
     # Sunday 06:00 UTC — picks up new advisories that landed during the
     # week without us having pushed a commit.

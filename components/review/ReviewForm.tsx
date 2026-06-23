@@ -639,6 +639,12 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
     coffee_no_art: isCafe && didOrder === 'yes' && coffeeNoArt,
     coffee_no_mug: isCafe && didOrder === 'yes' && coffeeNoMug,
   });
+  const buildPendingPayload = () => {
+    const { verified_lat: _verifiedLat, verified_lng: _verifiedLng, ...payload } = buildPayload();
+    void _verifiedLat;
+    void _verifiedLng;
+    return payload;
+  };
 
   const canSubmit = overall > 0 && comment.length <= 280 && geo.kind === 'ok' && !submitting;
 
@@ -680,15 +686,16 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
         const signResp = await fetch('/api/cloudinary/sign', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ folder, public_id: slot }),
+          body: JSON.stringify({ folder }),
         });
-        if (!signResp.ok) return;
+        if (!signResp.ok) throw new Error('Photo upload could not be authorized');
         const sig = (await signResp.json()) as {
           signature: string;
           timestamp: number;
           api_key: string;
           cloud_name: string;
           folder: string;
+          overwrite?: boolean;
           public_id?: string;
         };
 
@@ -698,13 +705,14 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
         fd.append('timestamp', String(sig.timestamp));
         fd.append('signature', sig.signature);
         fd.append('folder', sig.folder);
+        if (typeof sig.overwrite === 'boolean') fd.append('overwrite', String(sig.overwrite));
         if (sig.public_id) fd.append('public_id', sig.public_id);
 
         const upResp = await fetch(
           `https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`,
           { method: 'POST', body: fd },
         );
-        if (!upResp.ok) return;
+        if (!upResp.ok) throw new Error('Photo upload failed');
         const result = (await upResp.json()) as {
           public_id: string;
           version: number;
@@ -723,11 +731,15 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
       }),
     );
     if (uploaded.length === 0) return;
-    await fetch(`/api/reviews/${reviewId}/photos`, {
+    const persistResp = await fetch(`/api/reviews/${reviewId}/photos`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ photos: uploaded }),
-    }).catch(() => null);
+    });
+    if (!persistResp.ok) {
+      const body = (await persistResp.json().catch(() => ({}))) as { error?: string };
+      throw new Error(body.error ?? 'Photo upload could not be saved');
+    }
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -1374,7 +1386,7 @@ export function ReviewForm({ place, compact = false, onClose }: ReviewFormProps)
                     // Persist the draft and route through /auth — the existing
                     // consumePending replay path picks it up after the user
                     // returns and submits transparently.
-                    savePending('review', place.id, buildPayload());
+                    savePending('review', place.id, buildPendingPayload());
                     const nextPath = `/review/new/${place.id}`;
                     window.location.assign(buildAuthRedirect(nextPath, 'review'));
                   }}

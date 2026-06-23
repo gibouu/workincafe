@@ -13,5 +13,6 @@ export function haversineMeters(
   const lat2 = toRad(b.lat);
   const s =
     Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(s));
+  const clamped = Math.min(1, Math.max(0, s));
+  return 2 * R * Math.asin(Math.sqrt(clamped));
 }

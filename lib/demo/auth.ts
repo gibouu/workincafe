@@ -12,17 +12,18 @@ export type DemoSession = {
 };
 
 const encoder = new TextEncoder();
+const LOCAL_DEMO_AUTH_SECRET = 'workincafe-local-demo-auth-secret';
 
 export function isDemoAuthEnabled() {
-  return process.env.DEMO_AUTH_ENABLED === 'true' || process.env.NODE_ENV !== 'production';
+  if (process.env.NODE_ENV !== 'production') return true;
+  return process.env.DEMO_AUTH_ENABLED === 'true' && Boolean(process.env.DEMO_AUTH_SECRET);
 }
 
 function demoSecret() {
-  return (
-    process.env.DEMO_AUTH_SECRET ??
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    'workincafe-local-demo-auth-secret'
-  );
+  const configured = process.env.DEMO_AUTH_SECRET;
+  if (configured) return configured;
+  if (process.env.NODE_ENV !== 'production') return LOCAL_DEMO_AUTH_SECRET;
+  throw new Error('DEMO_AUTH_SECRET is required when demo auth is enabled in production');
 }
 
 export async function signDemoSession(session: DemoSession) {

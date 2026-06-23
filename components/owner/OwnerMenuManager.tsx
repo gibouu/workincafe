@@ -25,13 +25,6 @@ function thumbUrl(m: MenuRow): string {
   return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${version}${m.cloudinary_public_id}`;
 }
 
-function randomSuffix(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
-  }
-  return Math.random().toString(36).slice(2, 14);
-}
-
 export function OwnerMenuManager({ placeId }: { placeId: string }) {
   const [menus, setMenus] = useState<MenuRow[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -72,11 +65,10 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
         ? { blob: file, width: 0, height: 0, bytes: file.size }
         : await preparePhoto(file);
       const folder = `owner-menus/${placeId}`;
-      const publicId = randomSuffix();
       const signResp = await fetch('/api/cloudinary/sign', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ folder, public_id: publicId }),
+        body: JSON.stringify({ folder }),
       });
       if (!signResp.ok) {
         const body = (await signResp.json().catch(() => ({}))) as { error?: string };
@@ -88,6 +80,7 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
         api_key: string;
         cloud_name: string;
         folder: string;
+        overwrite?: boolean;
         public_id?: string;
       };
 
@@ -97,6 +90,7 @@ export function OwnerMenuManager({ placeId }: { placeId: string }) {
       fd.append('timestamp', String(sig.timestamp));
       fd.append('signature', sig.signature);
       fd.append('folder', sig.folder);
+      if (typeof sig.overwrite === 'boolean') fd.append('overwrite', String(sig.overwrite));
       if (sig.public_id) fd.append('public_id', sig.public_id);
 
       const upResp = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloud_name}/image/upload`, {

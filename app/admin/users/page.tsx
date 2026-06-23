@@ -14,33 +14,41 @@ interface AdminRow {
 async function loadAdmins(currentUserId: string | null): Promise<{
   admins: AdminRow[];
   selfId: string | null;
+  error: string | null;
 }> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { admins: [], selfId: null };
-  if (!isEmailAllowlisted(user.email)) return { admins: [], selfId: user.id };
+  if (!user) return { admins: [], selfId: null, error: null };
+  if (!isEmailAllowlisted(user.email)) return { admins: [], selfId: user.id, error: null };
 
   const { data: me } = await supabase
     .from('users')
     .select('is_admin')
     .eq('id', user.id)
     .maybeSingle();
-  if (!me?.is_admin) return { admins: [], selfId: user.id };
+  if (!me?.is_admin) return { admins: [], selfId: user.id, error: null };
 
   // Use the SECURITY DEFINER admin_users_with_emails() function (migration
   // 026) instead of the auth admin SDK — the SDK silently dropped emails
   // for OAuth-only accounts, leaving the panel showing only display names.
   const admin = createAdminClient();
-  const { data: rows } = await admin.rpc('admin_users_with_emails');
+  const { data: rows, error: adminErr } = await admin.rpc('admin_users_with_emails');
+  if (adminErr) {
+    return {
+      admins: [],
+      selfId: currentUserId,
+      error: adminErr.message ?? 'Admin roster could not be loaded.',
+    };
+  }
 
   const admins: AdminRow[] = ((rows ?? []) as AdminRow[]).map((r) => ({
     id: r.id,
     display_name: r.display_name ?? null,
     email: r.email ?? null,
   }));
-  return { admins, selfId: currentUserId };
+  return { admins, selfId: currentUserId, error: null };
 }
 
 export default async function AdminUsersPage() {
@@ -48,7 +56,7 @@ export default async function AdminUsersPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { admins, selfId } = await loadAdmins(user?.id ?? null);
+  const { admins, selfId, error: adminLoadError } = await loadAdmins(user?.id ?? null);
 
   return (
     <div className="min-h-dvh bg-(--map-bg)">
@@ -76,7 +84,12 @@ export default async function AdminUsersPage() {
         <h2 className="mt-6 text-[13px] font-semibold uppercase tracking-wide text-(--text-secondary)">
           Current admins
         </h2>
-        {admins.length === 0 ? (
+        {adminLoadError ? (
+          <div className="mt-2 rounded-2xl border border-red-200 bg-red-50 p-5 text-[13px] text-red-700 shadow-card">
+            <div className="font-semibold">Unable to load admins</div>
+            <div className="mt-1">{adminLoadError}</div>
+          </div>
+        ) : admins.length === 0 ? (
           <div className="mt-2 rounded-2xl border border-(--surface-border) bg-white p-5 text-center text-[13px] text-(--text-secondary) shadow-card">
             No admins yet. The first user to sign in becomes admin
             automatically (per migration 009).

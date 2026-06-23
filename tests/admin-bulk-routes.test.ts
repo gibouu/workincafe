@@ -102,6 +102,28 @@ describe('POST /api/admin/place-requests/bulk', () => {
       skippedCount: 1,
     });
   });
+
+  it('skips a thrown per-item decision and continues processing later ids', async () => {
+    mocks.applyPlaceRequestDecision
+      .mockResolvedValueOnce({ ok: true })
+      .mockRejectedValueOnce(new Error('reverse geocode unavailable'))
+      .mockResolvedValueOnce({ ok: true });
+
+    const { POST } = await load();
+    const res = await POST(post({ ids: ['a', 'b', 'c'], decision: 'approved' }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(mocks.applyPlaceRequestDecision).toHaveBeenCalledTimes(3);
+    expect(body).toMatchObject({
+      ok: true,
+      decision: 'approved',
+      processed: ['a', 'c'],
+      skipped: [{ id: 'b', reason: 'reverse geocode unavailable' }],
+      processedCount: 2,
+      skippedCount: 1,
+    });
+  });
 });
 
 describe('POST /api/admin/flagged-reviews/bulk', () => {

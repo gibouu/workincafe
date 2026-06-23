@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor, isOwnerOf } from '@/lib/auth/request-actor';
-import { awardPointForUse } from '@/lib/loyalty/points';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 interface Body {
@@ -38,53 +37,33 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient();
 
-  // Atomic decrement — guards against double-scan races
-  const { data: updated, error: uErr } = await admin
-    .from('deal_purchases')
-    .update({ uses_remaining: ticket.uses_remaining - 1 })
-    .eq('id', ticket.id)
-    .gt('uses_remaining', 0)
-    .select('uses_remaining, uses_total')
-    .maybeSingle();
-  if (uErr) return NextResponse.json({ error: uErr.message }, { status: 500 });
-  if (!updated) {
+  const notes = body?.notes?.slice(0, 200) ?? null;
+  const { data: redemptionRows, error: redeemErr } = await admin.rpc(
+    'redeem_deal_purchase',
+    {
+      p_purchase_id: ticket.id,
+      p_scanned_by: user.id,
+      p_notes: notes,
+      p_is_demo: isDemo,
+    },
+  );
+  if (redeemErr) {
+    if (/no uses remaining/i.test(redeemErr.message ?? '')) {
+      return NextResponse.json({ error: 'no uses remaining' }, { status: 410 });
+    }
+    return NextResponse.json({ error: redeemErr.message }, { status: 500 });
+  }
+  const redemption = Array.isArray(redemptionRows)
+    ? redemptionRows[0]
+    : redemptionRows;
+  if (!redemption) {
     return NextResponse.json({ error: 'no uses remaining' }, { status: 410 });
   }
 
-  // Insert the use record
-  const { data: useRow, error: useErr } = await admin
-    .from('deal_uses')
-    .insert({
-      purchase_id: ticket.id,
-      scanned_by: user.id,
-      notes: body?.notes?.slice(0, 200) ?? null,
-      ...(isDemo ? { is_demo: true } : {}),
-    })
-    .select('id')
-    .maybeSingle();
-  if (useErr) {
-    // Best-effort rollback (uses_remaining was already decremented)
-    await admin
-      .from('deal_purchases')
-      .update({ uses_remaining: updated.uses_remaining + 1 })
-      .eq('id', ticket.id);
-    return NextResponse.json({ error: useErr.message }, { status: 500 });
-  }
-
-  // Award point — server-issued only
-  await awardPointForUse(admin, {
-    user_id: ticket.user_id,
-    use_id: useRow!.id,
-    purchase_id: ticket.id,
-    place_id: ticket.place_id,
-    deal_id: ticket.deal_id,
-    is_demo: isDemo,
-  });
-
   return NextResponse.json({
     ok: true,
-    uses_remaining: updated.uses_remaining,
-    uses_total: updated.uses_total,
+    uses_remaining: redemption.uses_remaining,
+    uses_total: redemption.uses_total,
     deal_title: (ticket as unknown as { deals: { title: string } | null }).deals?.title ?? 'Deal',
   });
 }
