@@ -78,13 +78,7 @@ describe('POST /api/deal-uses', () => {
     });
     expect(callsFor(admin, 'deal_purchases', 'update')).toHaveLength(0);
     expect(callsFor(admin, 'deal_uses', 'insert')).toHaveLength(0);
-    expect(mocks.awardPointForUse).toHaveBeenCalledWith(admin, {
-      user_id: CUSTOMER_ID,
-      use_id: 'use-1',
-      purchase_id: PURCHASE_ID,
-      place_id: PLACE_ID,
-      deal_id: DEAL_ID,
-      is_demo: false,
-    });
+    expect(mocks.awardPointForUse).not.toHaveBeenCalled();
+    expect(callsFor(admin, 'point_events', 'insert')).toHaveLength(0);
   });
 });

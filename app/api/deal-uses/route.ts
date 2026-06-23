@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor, isOwnerOf } from '@/lib/auth/request-actor';
-import { awardPointForUse } from '@/lib/loyalty/points';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 interface Body {
@@ -60,16 +59,6 @@ export async function POST(request: NextRequest) {
   if (!redemption) {
     return NextResponse.json({ error: 'no uses remaining' }, { status: 410 });
   }
-
-  // Award point — server-issued only
-  await awardPointForUse(admin, {
-    user_id: ticket.user_id,
-    use_id: redemption.use_id,
-    purchase_id: ticket.id,
-    place_id: ticket.place_id,
-    deal_id: ticket.deal_id,
-    is_demo: isDemo,
-  });
 
   return NextResponse.json({
     ok: true,

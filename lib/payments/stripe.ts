@@ -36,17 +36,21 @@ export interface ConnectAccountSummary {
 export async function createConnectAccount(args: {
   email: string;
   country?: string; // ISO-2, e.g. 'FR' or 'CA'
+  idempotencyKey?: string;
 }): Promise<ConnectAccountSummary> {
-  const account = await stripe().accounts.create({
-    type: 'express',
-    email: args.email,
-    country: args.country,
-    capabilities: {
-      card_payments: { requested: true },
-      transfers: { requested: true },
+  const account = await stripe().accounts.create(
+    {
+      type: 'express',
+      email: args.email,
+      country: args.country,
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+      business_profile: { product_description: 'Work-spot deals via Work in Cafe' },
     },
-    business_profile: { product_description: 'Work-spot deals via Work in Cafe' },
-  });
+    args.idempotencyKey ? { idempotencyKey: args.idempotencyKey } : undefined,
+  );
   return summarize(account);
 }
 
