@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 export const runtime = 'edge';
-export const revalidate = 1800; // 30 minutes
 
 interface OpenMeteoResponse {
   current?: {
