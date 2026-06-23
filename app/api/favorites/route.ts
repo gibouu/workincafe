@@ -38,18 +38,19 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const { db, user } = await getRequestActor(request);
+  const { db, user, isDemo } = await getRequestActor(request);
   if (!user) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
   const placeId = searchParams.get('place_id');
   if (!placeId) return NextResponse.json({ error: 'place_id required' }, { status: 400 });
+  const resolvedPlaceId = await resolvePlaceIdForActor(db, placeId, isDemo);
 
   const { error } = await db
     .from('favorites')
     .delete()
     .eq('user_id', user.id)
-    .eq('place_id', placeId);
+    .eq('place_id', resolvedPlaceId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
