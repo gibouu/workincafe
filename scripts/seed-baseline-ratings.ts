@@ -39,7 +39,7 @@ for (const a of args) {
 const DRY_RUN = argMap.get('dry-run') === 'true';
 const CITY_ARG = argMap.get('city')?.toLowerCase();
 const SEED_CITY = CITY_ARG ? getSeedCity(CITY_ARG) : null;
-if (CITY_ARG && !SEED_CITY) {
+if (CITY_ARG !== undefined && !SEED_CITY) {
   fail(
     `unsupported --city value "${CITY_ARG}". Use one of: ${SEED_CITIES.map((c) => c.key).join(', ')}.`,
   );
