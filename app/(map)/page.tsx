@@ -38,6 +38,7 @@ import { useFilters } from '@/lib/store/filters';
 import { useLayout } from '@/lib/store/layout';
 import { WORLD_CENTER } from '@/lib/demo/cities';
 import { isKnownChain } from '@/lib/brand-logos';
+import { loadPlaceTarget, placeTargetIdFromSearch } from './place-target';
 import type { DemoPlace } from '@/lib/demo/paris-places';
 import type { SidebarAnchor } from '@/components/layout/PlaceSidebar';
 
@@ -227,6 +228,7 @@ export default function MapPage() {
   // the bbox changes and we re-query.
   const [mapPlaces, setMapPlaces] = useState<SlimPlace[]>([]);
   const lastBboxRef = useRef<[number, number, number, number] | null>(null);
+  const openedTargetIdRef = useRef<string | null>(null);
 
   // Skip the /api/places fetch when the viewport spans more than ~city-
   // metro size. At world / continent zoom there's no point shipping every
@@ -444,7 +446,7 @@ export default function MapPage() {
       .catch(() => null);
   }, []);
 
-  const handleSelectPlace = (place: DemoPlace) => {
+  const handleSelectPlace = useCallback((place: DemoPlace) => {
     setSelectedPlace(place);
     setPanel('place');
     mapRef.current?.panTo(place.lat, place.lng);
@@ -457,7 +459,24 @@ export default function MapPage() {
         })
         .catch(() => null);
     }
-  };
+  }, [setPanel]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const targetId = placeTargetIdFromSearch(window.location.search);
+    if (!targetId || openedTargetIdRef.current === targetId) return;
+
+    let cancelled = false;
+    void loadPlaceTarget(targetId, sourcePlaces).then((place) => {
+      if (cancelled || !place || openedTargetIdRef.current === targetId) return;
+      openedTargetIdRef.current = targetId;
+      handleSelectPlace(place);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [handleSelectPlace, sourcePlaces]);
 
   const handleOpenAddPlace = () => {
     const c = mapRef.current?.getCenter() ?? null;
