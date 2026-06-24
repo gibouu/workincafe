@@ -26,11 +26,15 @@ export function FlagReviewSheet({
 }) {
   const [reason, setReason] = useState<FlagReason | null>(null);
   const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const showToast = useToasts((s) => s.show);
 
   const reset = () => {
     setReason(null);
     setNotes('');
+    setIsSubmitting(false);
+    setSubmitError(null);
   };
 
   const handleClose = (next: boolean) => {
@@ -38,11 +42,31 @@ export function FlagReviewSheet({
     onOpenChange(next);
   };
 
-  const onSubmit = () => {
-    if (!reason || !reviewId) return;
-    // Demo only — real POST to /api/reviews/[id]/flag lands in Phase 5.
-    showToast('Thanks — we\u2019ll review this flag', { tone: 'info' });
-    handleClose(false);
+  const onSubmit = async () => {
+    if (!reason || !reviewId || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const resp = await fetch(`/api/reviews/${reviewId}/flag`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reason, notes }),
+      });
+
+      if (!resp.ok) {
+        const body = (await resp.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? 'Flag could not be submitted');
+      }
+
+      showToast('Thanks — we\u2019ll review this flag', { tone: 'info' });
+      handleClose(false);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Flag could not be submitted');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -78,7 +102,11 @@ export function FlagReviewSheet({
                 <button
                   key={r.value}
                   type="button"
-                  onClick={() => setReason(r.value)}
+                  disabled={isSubmitting}
+                  onClick={() => {
+                    setReason(r.value);
+                    setSubmitError(null);
+                  }}
                   className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${
                     reason === r.value
                       ? 'border-accent bg-accent-tint'
@@ -113,21 +141,30 @@ export function FlagReviewSheet({
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value.slice(0, 280))}
+                disabled={isSubmitting}
                 placeholder="Anything a moderator should know"
                 rows={3}
                 className="mt-1 w-full resize-none rounded-xl border border-(--surface-border) bg-(--map-bg) px-3 py-2 text-[14px] text-(--text-primary) placeholder:text-(--text-tertiary) focus:outline-hidden focus:ring-2 focus:ring-accent"
               />
             </label>
+            {submitError && (
+              <div
+                role="alert"
+                className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[13px] font-medium text-red-700"
+              >
+                {submitError}
+              </div>
+            )}
           </div>
 
           <div className="border-t border-(--surface-border) p-4">
             <button
               type="button"
-              disabled={!reason}
+              disabled={!reason || isSubmitting}
               onClick={onSubmit}
               className="w-full rounded-2xl bg-accent py-3.5 text-[15px] font-semibold text-white hover:opacity-90 disabled:bg-sys-gray-4 disabled:cursor-not-allowed transition"
             >
-              Submit flag
+              {isSubmitting ? 'Submitting...' : 'Submit flag'}
             </button>
           </div>
         </Drawer.Content>
