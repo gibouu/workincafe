@@ -6,6 +6,7 @@ import {
   isDemoAuthEnabled,
   signDemoSession,
 } from '@/lib/demo/auth';
+import { findAuthUserByEmail } from '@/lib/auth/admin-users';
 
 const DEFAULT_DEMO_EMAIL = 'demo@workin.cafe';
 const DEFAULT_DEMO_NAME = 'Demo Tester';
@@ -16,23 +17,12 @@ function safeNext(value: unknown) {
   return value;
 }
 
-async function findUserByEmail(admin: ReturnType<typeof createAdminClient>, email: string) {
-  for (let page = 1; page <= 5; page += 1) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 100 });
-    if (error) throw error;
-    const user = data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-    if (user) return user;
-    if (data.users.length < 100) break;
-  }
-  return null;
-}
-
 async function ensureDemoUser() {
   const admin = createAdminClient();
   const email = process.env.DEMO_AUTH_EMAIL ?? DEFAULT_DEMO_EMAIL;
   const name = process.env.DEMO_AUTH_NAME ?? DEFAULT_DEMO_NAME;
 
-  let user = await findUserByEmail(admin, email);
+  let user = await findAuthUserByEmail(admin, email);
 
   if (!user) {
     const { data, error } = await admin.auth.admin.createUser({
@@ -50,7 +40,7 @@ async function ensureDemoUser() {
     });
 
     if (error) throw error;
-    user = data.user;
+    user = data.user ? { id: data.user.id, email: data.user.email ?? null } : null;
   }
 
   if (!user) throw new Error('Unable to create demo user');

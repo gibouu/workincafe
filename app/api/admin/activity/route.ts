@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor } from '@/lib/auth/request-actor';
 import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getAuthEmailsByUserId } from '@/lib/auth/admin-users';
 
 /**
  * Admin recent-activity feed (#167, final slice). A read-only union over
@@ -114,15 +115,10 @@ export async function GET(request: NextRequest) {
   const actorIds = Array.from(
     new Set(slice.map((e) => e.actor_id).filter((x): x is string => !!x)),
   );
-  if (actorIds.length > 0) {
-    const { data: authResp } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    const wanted = new Set(actorIds);
-    const emailById = new Map<string, string>();
-    for (const u of (authResp?.users ?? []) as { id: string; email: string | null }[]) {
-      if (wanted.has(u.id) && u.email) emailById.set(u.id, u.email);
-    }
-    for (const e of slice) {
-      if (e.actor_id) e.actor_email = emailById.get(e.actor_id) ?? null;
+  const emailById = await getAuthEmailsByUserId(admin, actorIds);
+  for (const e of slice) {
+    if (e.actor_id) {
+      e.actor_email = emailById.get(e.actor_id) ?? null;
     }
   }
 

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getRequestActor } from '@/lib/auth/request-actor';
 import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getAuthEmailsByUserId } from '@/lib/auth/admin-users';
 
 /**
  * Admin live-updates monitoring feed — read-only browse of what users
@@ -83,14 +84,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const emailByUser = new Map<string, string>();
-  if (userIds.length > 0) {
-    const { data: authResp } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    const wanted = new Set(userIds);
-    for (const u of (authResp?.users ?? []) as { id: string; email: string | null }[]) {
-      if (wanted.has(u.id) && u.email) emailByUser.set(u.id, u.email);
-    }
-  }
+  const emailByUser = await getAuthEmailsByUserId(admin, userIds);
 
   const out = (rows ?? []).map((r) => ({
     ...r,

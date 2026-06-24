@@ -67,11 +67,10 @@ function setup() {
       place_requests: { data: placeRequests, error: null },
       flagged_reviews: { data: flaggedReviews, error: null },
     },
-    listUsers: {
-      users: [
-        { id: 'actor-1', email: 'mod1@example.com' },
-        { id: 'actor-2', email: 'mod2@example.com' },
-      ],
+    listUsers: { users: [] },
+    authUsersById: {
+      'actor-1': { id: 'actor-1', email: 'mod1@example.com' },
+      'actor-2': { id: 'actor-2', email: 'mod2@example.com' },
     },
   });
   mocks.createAdminClient.mockReturnValue(admin);
@@ -119,13 +118,16 @@ describe('GET /api/admin/activity', () => {
   });
 
   it('hydrates actor emails for the visible page', async () => {
-    setup();
+    const admin = setup();
     const { GET } = await import('@/app/api/admin/activity/route');
     const body = await (await GET(get())).json();
     const pr1 = body.events.find((e: { id: string }) => e.id === 'pr:pr1');
     expect(pr1.actor_email).toBe('mod1@example.com');
     const fr1 = body.events.find((e: { id: string }) => e.id === 'fr:fr1');
     expect(fr1.actor_email).toBe('mod2@example.com');
+    expect(admin.auth.admin.getUserById).toHaveBeenCalledWith('actor-1');
+    expect(admin.auth.admin.getUserById).toHaveBeenCalledWith('actor-2');
+    expect(admin.auth.admin.listUsers).not.toHaveBeenCalled();
   });
 
   it('paginates the merged list', async () => {
