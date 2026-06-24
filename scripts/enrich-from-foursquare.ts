@@ -123,7 +123,8 @@ async function main() {
           console.log(`  · ${p.name} ← ${m.name} → backfill ${fields.join(', ')}`);
         } else {
           const { error: updErr } = await sb.from('places').update(patch).eq('id', p.id);
-          if (!updErr) updated++;
+          if (updErr) fail(`update foursquare place fields for ${p.id}: ${updErr.message}`);
+          updated++;
         }
       }
     } catch (err) {
