@@ -3,13 +3,9 @@ import { Icon } from '@/components/icons/Icon';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { isEmailAllowlisted } from '@/lib/auth/admin-allowlist';
+import { getAuthEmailsByUserId } from '@/lib/auth/admin-users';
 import { type PlaceRequestRecord } from '@/components/admin/PlaceRequestRow';
 import { PlaceRequestsQueue } from '@/components/admin/PlaceRequestsQueue';
-
-interface AuthUserLite {
-  id: string;
-  email: string | null;
-}
 
 async function loadRequests(): Promise<PlaceRequestRecord[]> {
   const supabase = await createClient();
@@ -35,16 +31,11 @@ async function loadRequests(): Promise<PlaceRequestRecord[]> {
     .limit(100);
   if (error || !data || data.length === 0) return [];
 
-  // Pull submitter emails in one shot (admin client only).
-  const { data: authResp } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  const emailById = new Map<string, string | null>();
-  for (const u of (authResp?.users ?? []) as AuthUserLite[]) {
-    emailById.set(u.id, u.email ?? null);
-  }
+  const submitterIds = [...new Set(data.map((r) => r.submitted_by as string))];
+  const emailById = await getAuthEmailsByUserId(admin, submitterIds);
 
   // Submitter trust signal (#167): each submitter's historical approved /
   // decided ratio. One bounded query over only the submitters in this queue.
-  const submitterIds = [...new Set(data.map((r) => r.submitted_by as string))];
   const statsById = new Map<string, { approved: number; decided: number }>();
   if (submitterIds.length > 0) {
     const { data: hist } = await admin

@@ -20,6 +20,8 @@ export interface MockClientOptions {
   tables?: Record<string, QueryResult | QueryResult[]>;
   /** Payload for `auth.admin.listUsers()`. */
   listUsers?: { users: { id: string; email: string | null }[] };
+  /** Payloads for `auth.admin.getUserById()`, keyed by user id. */
+  authUsersById?: Record<string, { id: string; email: string | null }>;
 }
 
 const CHAIN_METHODS = [
@@ -47,7 +49,12 @@ const CHAIN_METHODS = [
 export interface MockClient {
   from: (table: string) => unknown;
   rpc: ReturnType<typeof vi.fn>;
-  auth: { admin: { listUsers: ReturnType<typeof vi.fn> } };
+  auth: {
+    admin: {
+      listUsers: ReturnType<typeof vi.fn>;
+      getUserById: ReturnType<typeof vi.fn>;
+    };
+  };
   calls: RecordedCall[];
 }
 
@@ -110,6 +117,13 @@ export function createMockClient(opts: MockClientOptions = {}): MockClient {
           data: opts.listUsers ?? { users: [] },
           error: null,
         })),
+        getUserById: vi.fn(async (id: string) => {
+          const user = opts.authUsersById?.[id] ?? null;
+          return {
+            data: { user },
+            error: user ? null : { message: 'User not found' },
+          };
+        }),
       },
     },
     calls,
