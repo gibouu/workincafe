@@ -138,76 +138,63 @@ describe('applyPlaceRequestDecision', () => {
 
 describe('applyFlaggedReviewDecision', () => {
   const FLAG_ID = '00000000-0000-0000-0000-000000000002';
-  const pendingFlag = (over: Record<string, unknown> = {}) => ({
-    id: FLAG_ID,
-    review_id: 'rev-1',
-    status: 'pending',
-    reviews: { id: 'rev-1', user_id: 'usr-1' },
-    ...over,
-  });
 
   let admin: MockClient;
   beforeEach(() => {
-    admin = createMockClient({
-      tables: {
-        flagged_reviews: [
-          { data: pendingFlag(), error: null }, // select
-          { data: null, error: null }, // resolution update
-        ],
-        reviews: { data: null, error: null },
-        users: { data: null, error: null },
-      },
-    });
+    admin = createMockClient();
   });
 
-  it('404 when the flag is missing', async () => {
-    const empty = createMockClient({ tables: { flagged_reviews: { data: null, error: null } } });
-    const r = await applyFlaggedReviewDecision(asAdmin(empty), FLAG_ID, 'dismiss', undefined, REVIEWER);
-    expect(r).toEqual({ ok: false, status: 404, error: 'flag not found' });
-  });
-
-  it('409 when the flag is already decided', async () => {
-    const decided = createMockClient({
-      tables: { flagged_reviews: { data: pendingFlag({ status: 'approved' }), error: null } },
-    });
-    const r = await applyFlaggedReviewDecision(asAdmin(decided), FLAG_ID, 'hide', undefined, REVIEWER);
-    expect(r).toEqual({ ok: false, status: 409, error: 'flag already decided' });
-  });
-
-  it('410 when hiding but the underlying review is gone', async () => {
-    const orphan = createMockClient({
-      tables: { flagged_reviews: { data: pendingFlag({ reviews: null }), error: null } },
-    });
-    const r = await applyFlaggedReviewDecision(asAdmin(orphan), FLAG_ID, 'hide', undefined, REVIEWER);
-    expect(r).toEqual({ ok: false, status: 410, error: 'underlying review missing' });
-  });
-
-  it('dismiss: flag rejected, review untouched', async () => {
+  it('delegates a dismiss decision to the atomic RPC', async () => {
     const r = await applyFlaggedReviewDecision(asAdmin(admin), FLAG_ID, 'dismiss', undefined, REVIEWER);
     expect(r).toEqual({ ok: true });
+    expect(admin.rpc).toHaveBeenCalledWith('decide_flagged_review', {
+      p_flag_id: FLAG_ID,
+      p_decision: 'dismiss',
+      p_reason: null,
+      p_reviewer_id: REVIEWER,
+    });
+    expect(callsFor(admin, 'flagged_reviews', 'update')).toHaveLength(0);
     expect(callsFor(admin, 'reviews', 'update')).toHaveLength(0);
-    const [update] = callsFor(admin, 'flagged_reviews', 'update');
-    expect(update.args[0]).toMatchObject({ status: 'rejected', resolution: 'dismiss' });
+    expect(callsFor(admin, 'users', 'update')).toHaveLength(0);
   });
 
-  it('hide with reason: review hidden, resolution joined with " · "', async () => {
+  it('delegates hide with a trimmed reason to the atomic RPC', async () => {
     const r = await applyFlaggedReviewDecision(asAdmin(admin), FLAG_ID, 'hide', ' spam ', REVIEWER);
     expect(r).toEqual({ ok: true });
-    const [reviewUpdate] = callsFor(admin, 'reviews', 'update');
-    expect(reviewUpdate.args[0]).toEqual({ is_hidden: true });
-    expect(callsFor(admin, 'users', 'update')).toHaveLength(0);
-    const [update] = callsFor(admin, 'flagged_reviews', 'update');
-    expect(update.args[0]).toMatchObject({ status: 'approved', resolution: 'hide · spam' });
+    expect(admin.rpc).toHaveBeenCalledWith('decide_flagged_review', {
+      p_flag_id: FLAG_ID,
+      p_decision: 'hide',
+      p_reason: 'spam',
+      p_reviewer_id: REVIEWER,
+    });
   });
 
-  it('ban: review hidden AND author banned', async () => {
+  it('delegates ban to the atomic RPC', async () => {
     const r = await applyFlaggedReviewDecision(asAdmin(admin), FLAG_ID, 'ban', undefined, REVIEWER);
     expect(r).toEqual({ ok: true });
-    const [reviewUpdate] = callsFor(admin, 'reviews', 'update');
-    expect(reviewUpdate.args[0]).toEqual({ is_hidden: true });
-    const [userUpdate] = callsFor(admin, 'users', 'update');
-    expect(userUpdate.args[0]).toEqual({ is_banned: true });
-    const [update] = callsFor(admin, 'flagged_reviews', 'update');
-    expect(update.args[0]).toMatchObject({ status: 'approved', resolution: 'ban' });
+    expect(admin.rpc).toHaveBeenCalledWith('decide_flagged_review', {
+      p_flag_id: FLAG_ID,
+      p_decision: 'ban',
+      p_reason: null,
+      p_reviewer_id: REVIEWER,
+    });
+  });
+
+  it('maps RPC missing, already-decided, and orphan-review errors to route statuses', async () => {
+    const cases = [
+      ['flag not found', 404, 'flag not found'],
+      ['flag already decided', 409, 'flag already decided'],
+      ['underlying review missing', 410, 'underlying review missing'],
+      ['unexpected database failure', 500, 'unexpected database failure'],
+    ] as const;
+
+    for (const [message, status, error] of cases) {
+      const client = createMockClient();
+      client.rpc.mockResolvedValueOnce({ data: null, error: { message } });
+
+      const r = await applyFlaggedReviewDecision(asAdmin(client), FLAG_ID, 'hide', undefined, REVIEWER);
+
+      expect(r).toEqual({ ok: false, status, error });
+    }
   });
 });
