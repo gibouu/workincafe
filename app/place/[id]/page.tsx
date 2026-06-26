@@ -7,6 +7,6 @@ export default async function PlaceRedirect({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await params;
-  redirect('/');
+  const { id } = await params;
+  redirect(`/?place=${encodeURIComponent(id)}`);
 }
