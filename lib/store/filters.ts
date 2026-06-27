@@ -104,15 +104,11 @@ export const useFilters = create<FilterState>((set, get) => ({
     // Anything different from that (zero categories, fewer chips, or
     // extras like bakery/restaurant/hotel) does count as active.
     if (!isDefaultCategorySet(s.categories)) n++;
-    if (s.openNow) n++;
     if (s.outlets) n++;
-    if (s.outdoor) n++;
-    if (s.quietNow) n++;
     if (s.noise !== 'any') n++;
     if (s.wifi !== 'any') n++;
     if (s.seats !== 'any') n++;
     if (s.minRating !== null) n++;
-    if (s.maxDistanceKm !== 2) n++;
     if (s.membership !== 'any') n++;
     return n;
   },
