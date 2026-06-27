@@ -58,28 +58,10 @@ export function FilterSheet({
             <Section title="Essentials">
               <div className="flex flex-col gap-2">
                 <Toggle
-                  icon="Clock"
-                  label="Open now"
-                  value={f.openNow}
-                  onChange={f.setOpenNow}
-                />
-                <Toggle
                   icon="Plug"
                   label="Power outlets"
                   value={f.outlets}
                   onChange={f.setOutlets}
-                />
-                <Toggle
-                  icon="Tree"
-                  label="Outdoor seating"
-                  value={f.outdoor}
-                  onChange={f.setOutdoor}
-                />
-                <Toggle
-                  icon="SpeakerSimpleLow"
-                  label="Quiet right now"
-                  value={f.quietNow}
-                  onChange={f.setQuietNow}
                 />
               </div>
             </Section>
@@ -136,18 +118,6 @@ export function FilterSheet({
                     v === 'any' ? null : (parseFloat(v) as Exclude<RatingFilter, null>),
                   )
                 }
-              />
-            </Section>
-
-            <Section title={`Distance: ${f.maxDistanceKm.toFixed(1)} km`}>
-              <input
-                type="range"
-                min={0.1}
-                max={20}
-                step={0.1}
-                value={f.maxDistanceKm}
-                onChange={(e) => f.setMaxDistanceKm(parseFloat(e.target.value))}
-                className="w-full accent-accent"
               />
             </Section>
 
