@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "bundle:report": "tsx scripts/check-bundle.ts --report",
+    "bundle:check": "tsx scripts/check-bundle.ts --check",
     "seed:paris": "tsx --env-file=.env.local scripts/seed-osm.ts paris",
     "seed:toronto": "tsx --env-file=.env.local scripts/seed-osm.ts toronto",
     "seed:nyc": "tsx --env-file=.env.local scripts/seed-osm.ts nyc",
