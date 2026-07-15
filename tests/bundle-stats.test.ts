@@ -20,7 +20,7 @@ import {
 const temporaryDirectories: string[] = [];
 const repositoryRoot = process.cwd();
 
-function createCliFixture(prefix: string) {
+function createCliFixture(prefix: string, routes = ['/']) {
   const projectRoot = mkdtempSync(join(tmpdir(), prefix));
   temporaryDirectories.push(projectRoot);
   mkdirSync(join(projectRoot, '.next/diagnostics'), { recursive: true });
@@ -34,13 +34,13 @@ function createCliFixture(prefix: string) {
   writeFileSync(join(projectRoot, chunk), contents);
   writeFileSync(
     join(projectRoot, '.next/diagnostics/route-bundle-stats.json'),
-    JSON.stringify([
-      {
-        route: '/',
+    JSON.stringify(
+      routes.map((route) => ({
+        route,
         firstLoadUncompressedJsBytes: uncompressedBytes,
         firstLoadChunkPaths: [chunk],
-      },
-    ]),
+      })),
+    ),
   );
 
   return { projectRoot, uncompressedBytes, gzipBytes };
@@ -51,7 +51,7 @@ function runBundleCli(projectRoot: string, mode: '--report' | '--check') {
     process.execPath,
     [
       '--import',
-      join(repositoryRoot, 'node_modules/tsx/dist/loader.mjs'),
+      import.meta.resolve('tsx'),
       join(repositoryRoot, 'scripts/check-bundle.ts'),
       mode,
     ],
@@ -141,6 +141,46 @@ describe('bundle stats CLI', () => {
       `/ uncompressedBytes: ${uncompressedBytes} bytes (limit ${uncompressedBytes - 1})`,
     );
   });
+
+  it('exits non-zero when a configured route is missing from diagnostics', () => {
+    const { projectRoot, uncompressedBytes, gzipBytes } = createCliFixture(
+      'bundle-missing-',
+      ['/other'],
+    );
+    writeFileSync(
+      join(projectRoot, 'config/bundle-budgets.json'),
+      JSON.stringify({
+        '/': { maxBytes: uncompressedBytes, maxGzipBytes: gzipBytes },
+      }),
+    );
+
+    const result = runBundleCli(projectRoot, '--check');
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toBe(
+      'Expected exactly one bundle measurement for route "/"; found 0.\n',
+    );
+  });
+
+  it('exits non-zero when a configured route is duplicated in diagnostics', () => {
+    const { projectRoot, uncompressedBytes, gzipBytes } = createCliFixture(
+      'bundle-duplicate-',
+      ['/', '/'],
+    );
+    writeFileSync(
+      join(projectRoot, 'config/bundle-budgets.json'),
+      JSON.stringify({
+        '/': { maxBytes: uncompressedBytes, maxGzipBytes: gzipBytes },
+      }),
+    );
+
+    const result = runBundleCli(projectRoot, '--check');
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toBe(
+      'Expected exactly one bundle measurement for route "/"; found 2.\n',
+    );
+  });
 });
 
 describe('bundle measurement configuration', () => {
@@ -189,5 +229,24 @@ describe('compareBundleStats', () => {
 
     expect(compareBundleStats(current, { '/': { maxBytes: 3_500_000, maxGzipBytes: 900_000 } }))
       .toEqual([{ route: '/', metric: 'gzipBytes', actual: 910_000, limit: 900_000 }]);
+  });
+
+  it('rejects a missing configured route measurement', () => {
+    expect(() => compareBundleStats([], {
+      '/': { maxBytes: 3_500_000, maxGzipBytes: 900_000 },
+    })).toThrow('Expected exactly one bundle measurement for route "/"; found 0.');
+  });
+
+  it('rejects duplicate configured route measurements', () => {
+    const duplicate: RouteBundleStat = {
+      route: '/',
+      uncompressedBytes: 3_000_000,
+      gzipBytes: 800_000,
+      chunks: ['root.js'],
+    };
+
+    expect(() => compareBundleStats([duplicate, duplicate], {
+      '/': { maxBytes: 3_500_000, maxGzipBytes: 900_000 },
+    })).toThrow('Expected exactly one bundle measurement for route "/"; found 2.');
   });
 });

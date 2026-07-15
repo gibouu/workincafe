@@ -38,17 +38,23 @@ if (mode === '--report') {
   const budgets = JSON.parse(
     readFileSync(resolve(projectRoot, 'config/bundle-budgets.json'), 'utf8'),
   ) as BundleBudgets;
-  const failures = compareBundleStats(readRouteBundleStats(projectRoot), budgets);
+  try {
+    const failures = compareBundleStats(readRouteBundleStats(projectRoot), budgets);
 
-  if (failures.length === 0) {
-    process.stdout.write('Bundle budgets passed.\n');
-  } else {
-    process.stderr.write('Bundle budget failures:\n');
-    for (const failure of failures) {
-      process.stderr.write(
-        `- ${failure.route} ${failure.metric}: ${failure.actual} bytes (limit ${failure.limit})\n`,
-      );
+    if (failures.length === 0) {
+      process.stdout.write('Bundle budgets passed.\n');
+    } else {
+      process.stderr.write('Bundle budget failures:\n');
+      for (const failure of failures) {
+        process.stderr.write(
+          `- ${failure.route} ${failure.metric}: ${failure.actual} bytes (limit ${failure.limit})\n`,
+        );
+      }
+      process.exitCode = 1;
     }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    process.stderr.write(`${message}\n`);
     process.exitCode = 1;
   }
 } else {

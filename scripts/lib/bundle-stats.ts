@@ -48,6 +48,15 @@ export function compareBundleStats(
   current: readonly RouteBundleStat[],
   budgets: BundleBudgets,
 ): BudgetFailure[] {
+  for (const route of Object.keys(budgets)) {
+    const measurementCount = current.filter((stat) => stat.route === route).length;
+    if (measurementCount !== 1) {
+      throw new Error(
+        `Expected exactly one bundle measurement for route "${route}"; found ${measurementCount}.`,
+      );
+    }
+  }
+
   return current.flatMap((stat) => {
     const budget = budgets[stat.route];
     if (!budget) return [];
