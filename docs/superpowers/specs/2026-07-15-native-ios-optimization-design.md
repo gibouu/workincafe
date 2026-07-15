@@ -1,7 +1,7 @@
 # Native iOS and Launch Optimization Design
 
 **Date:** 2026-07-15
-**Status:** Approved direction; implementation planning pending
+**Status:** Approved for implementation planning
 **Tracking issue:** [#298](https://github.com/gibouu/workincafe/issues/298)
 
 ## Objective
