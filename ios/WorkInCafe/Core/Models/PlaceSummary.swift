@@ -82,32 +82,19 @@ struct PlaceSummary: Codable, Hashable, Identifiable, Sendable {
     }
 
     var categoryLabel: String {
-        switch category {
-        case "cafe": "Café"
-        case "bakery": "Bakery"
-        case "library": "Library"
-        case "coworking": "Coworking"
-        case "hotel": "Hotel"
-        case "restaurant": "Restaurant"
-        case "fast_food", "fast_food_burger": "Fast food"
-        default: "Work spot"
-        }
+        presentation.label
     }
 
     var symbolName: String {
-        switch category {
-        case "cafe": "cup.and.saucer.fill"
-        case "bakery": "birthday.cake.fill"
-        case "library": "books.vertical.fill"
-        case "coworking": "briefcase.fill"
-        case "hotel": "bed.double.fill"
-        case "restaurant", "fast_food", "fast_food_burger": "fork.knife"
-        default: "mappin"
-        }
+        presentation.symbolName
+    }
+
+    var presentation: PlacePresentation {
+        .resolve(category: category, brand: brand, name: name)
     }
 
     var presentationKey: String {
-        [name, category, rating.map { String($0) } ?? ""].joined(separator: "|")
+        presentation.key
     }
 }
 

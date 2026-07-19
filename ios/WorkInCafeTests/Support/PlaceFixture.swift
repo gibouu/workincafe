@@ -39,6 +39,8 @@ enum PlaceFixture {
         name: String,
         address: String = "",
         category: String = "cafe",
+        brand: String? = nil,
+        rating: Double? = nil,
         latitude: Double = 48.8566,
         longitude: Double = 2.3522
     ) -> PlaceSummary {
@@ -50,8 +52,8 @@ enum PlaceFixture {
             category: category,
             latitude: latitude,
             longitude: longitude,
-            brand: nil,
-            rating: nil,
+            brand: brand,
+            rating: rating,
             hasUserReviews: false,
             isValidated: false,
             membershipRequired: nil
