@@ -21,14 +21,14 @@ Current priorities are:
 - Repository: `gibouu/workincafe` (`https://github.com/gibouu/workincafe.git`).
 - Default branch: `main`.
 - Stable default-branch commit at this handoff: `cf66a5c7a859b6153aeeeca1ec509dd85a618f21` (`feat: add native iPhone discovery MVP`, PR #307).
-- Active native rebuild branch: `feat/310-native-product-rebuild`.
+- Active native rebuild branch: `feat/310-native-product-rebuild`, published on `origin` with draft PR [#313](https://github.com/gibouu/workincafe/pull/313).
 - Native source-state commit documented here: `a8fd2e9a7cff34b7c32344f071bc5e22f7bca51d` (`Keep detail canonical during refresh`). The documentation commit containing this file is newer; use `git log -1` for its SHA.
-- Active web-performance branch: `feat/300-web-performance-cleanup` at `3310309a44fa3cfc41954ea6c87749d304bd8e18`.
-- Preservation audit boundary: neither active branch existed on `origin` before this handoff publication pass. Do not assume publication succeeded until the remote refs and draft PRs listed in this file and [#311](https://github.com/gibouu/workincafe/issues/311) resolve.
+- Active web-performance branch: `feat/300-web-performance-cleanup` at `3310309a44fa3cfc41954ea6c87749d304bd8e18`, published on `origin` with draft PR [#314](https://github.com/gibouu/workincafe/pull/314).
+- Preservation publication record: neither active branch existed on `origin` before this pass. Both exact audited tips were pushed without force and the draft PRs above were opened; verify remote refs before relying on this snapshot.
 - Remote publication and PR state can change after this file is committed; verify with `git ls-remote`, `gh pr list`, and onboarding issue [#311](https://github.com/gibouu/workincafe/issues/311).
 - The native branch implements Tasks 1–6 of the representative-slice plan, but Task 6 is not complete because post-`a8fd2e9` Simulator verification and cumulative independent review remain mandatory.
 - Relevant live worktrees at audit time: main, `feat/300-web-performance-cleanup`, `feat/302-native-ios-shell-map`, and `feat/310-native-product-rebuild`. Historical missing/prunable registrations and stashes are protected by [#312](https://github.com/gibouu/workincafe/issues/312).
-- Open PRs at audit time: Dependabot #295 (core checks green but branch behind) and #297 (CI `verify` and Vercel failed). Neither was merged by the preservation pass.
+- Open PRs after publication: Dependabot [#295](https://github.com/gibouu/workincafe/pull/295) (core checks green but branch behind), Dependabot [#297](https://github.com/gibouu/workincafe/pull/297) (CI `verify` and Vercel failed), native draft [#313](https://github.com/gibouu/workincafe/pull/313), and web-performance draft [#314](https://github.com/gibouu/workincafe/pull/314). None was merged by the preservation pass.
 - Web production is `https://workin.cafe` / `https://www.workin.cafe`, deployed through Vercel with Supabase/PostGIS services.
 - Native release state: no approved release candidate, TestFlight build, App Store archive/upload, or production release. Do not archive or submit the current representative slice.
 
@@ -150,12 +150,14 @@ gh pr list --state open
 - Main files: `DiscoveryStore.swift`, `DiscoveryScreen.swift`, `MapAnnotations.swift`, `PlacePreviewSheet.swift`, `PlaceDetailView.swift`, `AppRootView.swift`, and their unit/UI tests.
 - Implemented 44-point marker/cluster targets without changing visible/collision geometry; retained stable selection across transient omissions; canonical same-ID refresh for preview and already-open detail; Dynamic Type reflow; honest disabled Save; Apple Maps walking directions; canonical singular share URL; and antimeridian model regression coverage.
 - Known limitation: the strengthened post-`a8fd2e9` refresh UI test has not produced GREEN because CoreSimulator failed before XCTest. Do not mark this milestone complete yet.
+- Publication: draft PR [#313](https://github.com/gibouu/workincafe/pull/313); it intentionally remains unmerged pending the mandatory gate and cumulative review.
 
 ### Web performance Task 1, completed with concerns
 
 - Branch `feat/300-web-performance-cleanup`; commits `b3073e7` and `3310309`.
 - Added reproducible route-bundle parsing, regression budgets, CLI checks, CI wiring, and focused tests.
-- Limitation: two clean local builds measured a small reproducible variance from the supplied checked-in baseline. Preserve that evidence and keep the PR draft/unmerged until reviewed.
+- Fresh preservation verification measured 8,284,683 bytes uncompressed and 1,907,510 bytes gzip, respectively 171 and 191 bytes smaller than the checked-in baseline; all focused/full web gates listed below passed.
+- Publication: draft PR [#314](https://github.com/gibouu/workincafe/pull/314); it intentionally remains unmerged until the baseline/budget review is accepted.
 
 ## Decisions and rationale
 
@@ -226,8 +228,10 @@ Next safe recovery is a host reboot approved/performed by the user, followed by 
 ### Web/CI/PR status
 
 - Current GitHub CI covers web install, lint, typecheck, tests, and build on Ubuntu. Native/macOS CI is absent.
+- Web-performance preservation verification on `3310309`: `npm ci`; 10/10 focused bundle tests; lint; typecheck; production build; bundle report; bundle check; range diff check; and clean status all passed. The build emitted one non-fatal edge-runtime/static-generation warning.
 - Open PR #295 had core checks green but was behind `main`; no preservation merge was performed.
 - Open PR #297 had failed `verify` and Vercel status; it must not be merged until corrected and reverified.
+- Draft PR #313 is the published native handoff and remains blocked on the Task 6 final gate. Draft PR #314 is the published web-performance Task 1 slice and remains scoped to #300.
 - No Task 6, TestFlight, or App Store success should be inferred from prior artifacts.
 
 ## Known issues and unfinished work
@@ -393,7 +397,7 @@ Plan/operator-only names include `APPLE_TEAM_ID`, `VERCEL_ENV`, `WORKINCAFE_DEMO
 
 ## Recommended continuation order
 
-1. Read [#311](https://github.com/gibouu/workincafe/issues/311), verify this document against GitHub/current refs, and confirm both active branch refs and their draft PRs resolve. If not, finish the preservation plan before product work.
+1. Read [#311](https://github.com/gibouu/workincafe/issues/311), verify this document against GitHub/current refs, and confirm both active branch refs plus draft PRs [#313](https://github.com/gibouu/workincafe/pull/313) and [#314](https://github.com/gibouu/workincafe/pull/314) resolve. If not, restore the preservation record before product work.
 2. Reboot the host, restore CoreSimulator, and finish the post-`a8fd2e9` Task 6 verification twice/full suite/build-for-testing.
 3. Complete the cumulative independent Task 6 review, resolve findings, update the plan/ledger, and close #309 only with evidence.
 4. Obtain explicit approval before starting Task 7; finish Tasks 7–8 under #310.
@@ -407,7 +411,7 @@ Plan/operator-only names include `APPLE_TEAM_ID`, `VERCEL_ENV`, `WORKINCAFE_DEMO
 
 ## Last updated
 
-- UTC: 2026-07-19T18:06:04Z
+- UTC: 2026-07-19T18:16:02Z
 - Branch: `feat/310-native-product-rebuild`
 - Source-state commit SHA: `a8fd2e9a7cff34b7c32344f071bc5e22f7bca51d`
 - Authoring environment: Codex desktop preservation/handoff pass with read-only subagent inventories and GitHub CLI verification.

@@ -116,7 +116,7 @@ git diff --cached --check
 
 Expected: no output from either working-tree/index check before commit.
 
-- [ ] **Step 4: Commit the reviewed documentation before publication**
+- [x] **Step 4: Commit the reviewed documentation before publication**
 
 Stage only the five documented Task 3 files, inspect the staged diff, and commit with the required `— gib` signature. Then run:
 
@@ -157,7 +157,7 @@ Expected: record exact results. If the documented baseline variance remains, pre
 
 Run repository-available secret scanning plus targeted searches for private-key headers and credential assignments. Expected: no secret values in commits to publish.
 
-- [ ] **Step 3: Push without force and open draft PRs**
+- [x] **Step 3: Push without force and open draft PRs**
 
 Expected: current branch references #310/#309; web-performance branch references #300. Neither is merged while its documented gate remains open.
 
@@ -170,7 +170,7 @@ Expected: current branch references #310/#309; web-performance branch references
 - Consumes: published branch/PR URLs and final GitHub state.
 - Produces: a clean, remotely recoverable handoff and final report.
 
-- [ ] **Step 1: Update issue comments and `MEMORY.md` with actual remote SHAs/PRs**
+- [x] **Step 1: Update issue comments and `MEMORY.md` with actual remote SHAs/PRs**
 
 Commit this synchronization update separately with the required `— gib` signature and push it without force so the durable record itself is remotely recoverable.
 
