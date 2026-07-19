@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+
+ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+cd "$ROOT"
+
+xcodegen generate --spec ios/project.yml
+
+if [ "${1:-}" = "--check" ]; then
+  git diff --exit-code -- ios/WorkInCafe.xcodeproj
+fi

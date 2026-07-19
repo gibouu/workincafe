@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+cd "$ROOT"
+
+if [ "${1:-}" = "--check" ]; then
+  grep -q 'data-screen-id="001-map-shell"' design/ios-companion/index.html
+  grep -q 'wic-ios-notes-v1' design/ios-companion/app.js
+  grep -q 'createdAt' design/ios-companion/app.js
+  grep -q 'map.shell' design/ios-companion/screens/001-map-shell.json
+  echo "iOS companion registry and note schema OK"
+  exit 0
+fi
+
+exec python3 -m http.server 4173 --bind 127.0.0.1 --directory design/ios-companion

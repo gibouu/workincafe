@@ -1,0 +1,66 @@
+name: WorkInCafe
+options:
+  minimumXcodeGenVersion: 2.45.3
+  deploymentTarget:
+    iOS: "18.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    TARGETED_DEVICE_FAMILY: "1"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  WorkInCafe:
+    type: application
+    platform: iOS
+    sources:
+      - WorkInCafe
+    configFiles:
+      Debug: Config/Debug.xcconfig
+      Release: Config/Release.xcconfig
+    info:
+      path: WorkInCafe/Info.plist
+      properties:
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cafe.workin.app
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  WorkInCafeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - WorkInCafeTests
+    dependencies:
+      - target: WorkInCafe
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cafe.workin.app.tests
+        GENERATE_INFOPLIST_FILE: YES
+  WorkInCafeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - WorkInCafeUITests
+    dependencies:
+      - target: WorkInCafe
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cafe.workin.app.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: WorkInCafe
+schemes:
+  WorkInCafe:
+    shared: true
+    build:
+      targets:
+        WorkInCafe: all
+    test:
+      targets:
+        - WorkInCafeTests
+        - WorkInCafeUITests
