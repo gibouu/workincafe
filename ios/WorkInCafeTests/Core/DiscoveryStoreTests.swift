@@ -183,7 +183,23 @@ struct DiscoveryStoreTests {
     func categoryFilterForeground() {
         #expect(DiscoveryCategoryOption(category: "cafe").foreground == .light)
         #expect(DiscoveryCategoryOption(category: "bakery").foreground == .dark)
+        #expect(DiscoveryCategoryOption(category: "coworking").foreground == .dark)
         #expect(DiscoveryCategoryOption(category: "fast_food").foreground == .dark)
+    }
+
+    @Test("burger fast food keeps its canonical web label")
+    func burgerFastFoodLabel() {
+        #expect(
+            DiscoveryCategoryOption(category: "fast_food_burger").label
+                == "Fast food (burger)"
+        )
+    }
+
+    @Test("filter result copy pluralizes work spot correctly")
+    func filterResultCopy() {
+        #expect(DiscoveryFilterCopy.applyTitle(count: 0) == "Show 0 work spots")
+        #expect(DiscoveryFilterCopy.applyTitle(count: 1) == "Show 1 work spot")
+        #expect(DiscoveryFilterCopy.applyTitle(count: 2) == "Show 2 work spots")
     }
 
     @Test("selecting a place synchronizes selection and map focus")
@@ -201,11 +217,29 @@ struct DiscoveryStoreTests {
         #expect(store.selectedPlaceID == place.id)
         #expect(
             store.cameraIntent == .focus(
+                requestID: 1,
                 placeID: place.id,
                 latitude: place.latitude,
                 longitude: place.longitude
             )
         )
+    }
+
+    @Test("selecting the same place again emits a fresh map focus request")
+    func reselectPlace() {
+        let place = PlaceFixture.summary(
+            id: "selected",
+            name: "Selected café",
+            latitude: 48.87,
+            longitude: 2.36
+        )
+        let store = DiscoveryStore()
+
+        store.select(place: place)
+        let firstIntent = store.cameraIntent
+        store.select(place: place)
+
+        #expect(store.cameraIntent != firstIntent)
     }
 
     @Test("exposes stable map and list labels")

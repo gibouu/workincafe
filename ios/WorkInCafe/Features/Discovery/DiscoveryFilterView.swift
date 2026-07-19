@@ -1,5 +1,11 @@
 import SwiftUI
 
+enum DiscoveryFilterCopy {
+    static func applyTitle(count: Int) -> String {
+        "Show \(count) work \(count == 1 ? "spot" : "spots")"
+    }
+}
+
 struct DiscoveryCategoryOption: Identifiable, Hashable {
     let id: String
     let label: String
@@ -101,7 +107,7 @@ struct DiscoveryFilterView: View {
                 Button {
                     onApply(draft)
                 } label: {
-                    Text("Show \(matchingPlaceCount) work spots")
+                    Text(DiscoveryFilterCopy.applyTitle(count: matchingPlaceCount))
                         .font(.headline)
                         .frame(maxWidth: .infinity, minHeight: WICSpacing.minimumControlTarget)
                 }

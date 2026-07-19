@@ -143,7 +143,7 @@ struct PlacePresentation: Hashable, Sendable {
                 symbolName: "briefcase.fill",
                 monogram: nil,
                 hexColor: 0x16A085,
-                foreground: .light
+                foreground: .dark
             )
         case "hotel":
             Self(
@@ -163,10 +163,19 @@ struct PlacePresentation: Hashable, Sendable {
                 hexColor: 0xC0392B,
                 foreground: .light
             )
-        case "fast_food", "fast_food_burger":
+        case "fast_food":
             Self(
                 key: "category.fast-food",
                 label: "Fast food",
+                symbolName: "takeoutbag.and.cup.and.straw.fill",
+                monogram: nil,
+                hexColor: 0xE67E22,
+                foreground: .dark
+            )
+        case "fast_food_burger":
+            Self(
+                key: "category.fast-food-burger",
+                label: "Fast food (burger)",
                 symbolName: "takeoutbag.and.cup.and.straw.fill",
                 monogram: nil,
                 hexColor: 0xE67E22,

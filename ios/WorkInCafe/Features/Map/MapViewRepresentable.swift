@@ -179,7 +179,7 @@ final class MapCoordinator: NSObject, MKMapViewDelegate {
     private func apply(cameraIntent: MapCameraIntent?, on mapView: MKMapView) {
         guard cameraIntent != lastCameraIntent else { return }
         lastCameraIntent = cameraIntent
-        guard case let .focus(_, latitude, longitude) = cameraIntent else { return }
+        guard case let .focus(_, _, latitude, longitude) = cameraIntent else { return }
         let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         guard CLLocationCoordinate2DIsValid(coordinate) else { return }
 

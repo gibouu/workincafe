@@ -1,3 +1,8 @@
 enum MapCameraIntent: Equatable, Sendable {
-    case focus(placeID: String, latitude: Double, longitude: Double)
+    case focus(
+        requestID: UInt,
+        placeID: String,
+        latitude: Double,
+        longitude: Double
+    )
 }

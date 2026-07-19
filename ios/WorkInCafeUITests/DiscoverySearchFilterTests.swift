@@ -63,7 +63,7 @@ final class DiscoverySearchFilterTests: XCTestCase {
         XCTAssertTrue(library.waitForExistence(timeout: 2))
         let apply = app.buttons["filter.apply"]
         XCTAssertTrue(apply.waitForExistence(timeout: 2))
-        XCTAssertEqual(apply.label, "Show 1 work spots")
+        XCTAssertEqual(apply.label, "Show 1 work spot")
         let filterScreenshot = XCTAttachment(screenshot: app.screenshot())
         filterScreenshot.name = "Native filters"
         filterScreenshot.lifetime = .keepAlways
@@ -82,7 +82,7 @@ final class DiscoverySearchFilterTests: XCTestCase {
         let reset = app.buttons["filter.reset"]
         XCTAssertTrue(reset.waitForExistence(timeout: 2))
         reset.tap()
-        XCTAssertEqual(app.buttons["filter.apply"].label, "Show 1 work spots")
+        XCTAssertEqual(app.buttons["filter.apply"].label, "Show 1 work spot")
         app.buttons["filter.cancel"].tap()
         XCTAssertTrue(activeLibrary.waitForExistence(timeout: 2))
 

@@ -13,15 +13,16 @@ struct DiscoveryPlaceMatcher: Sendable {
         guard filter.includes(place) else { return false }
         guard !normalizedQuery.isEmpty else { return true }
 
-        return [
+        let searchableText = [
             place.name,
             place.address,
             place.neighborhood,
             place.category,
             place.categoryLabel
         ]
-        .map(Self.normalized)
-        .contains { $0.contains(normalizedQuery) }
+        .joined(separator: "\u{1F}")
+
+        return Self.normalized(searchableText).contains(normalizedQuery)
     }
 
     func filteredPlaces(in places: [PlaceSummary]) -> [PlaceSummary] {

@@ -87,7 +87,7 @@ struct DiscoverySearchView: View {
                                 .foregroundStyle(
                                     isSelected
                                         ? category.foreground == .light ? Color.white : Color.black
-                                        : category.color
+                                        : Color.wicPrimaryText
                                 )
                                 .padding(.horizontal, WICSpacing.compact)
                                 .frame(minHeight: WICSpacing.minimumControlTarget)
