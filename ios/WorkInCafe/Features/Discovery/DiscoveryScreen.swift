@@ -7,6 +7,7 @@ struct DiscoveryScreen: View {
 
     @State private var isMapQueryable = true
     @State private var unavailableAction: UnavailableAction?
+    @State private var pendingPreviewID: String?
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -25,9 +26,26 @@ struct DiscoveryScreen: View {
         .task(id: model.places) {
             synchronizePlaces(model.places)
         }
+        .fullScreenCover(isPresented: searchPresented, onDismiss: presentPendingPreview) {
+            DiscoverySearchView(
+                store: store,
+                categories: categoryOptions,
+                onSelect: selectPlaceFromSearch
+            )
+        }
+        .sheet(isPresented: filtersPresented) {
+            DiscoveryFilterView(
+                filter: store.filter,
+                categories: categoryOptions,
+                sourcePlaces: store.sourcePlaces,
+                query: store.query,
+                onApply: applyFilter
+            )
+        }
         .sheet(isPresented: previewPresented, onDismiss: clearSelection) {
             if let selectedPlace {
                 PlaceSheet(place: selectedPlace)
+                    .accessibilityIdentifier("place.preview")
             }
         }
         .alert(item: $unavailableAction) { action in
@@ -69,21 +87,37 @@ struct DiscoveryScreen: View {
     private var discoveryHeader: some View {
         VStack(spacing: WICSpacing.small) {
             HStack(spacing: WICSpacing.compact) {
-                Image(systemName: "magnifyingglass")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.wicSecondaryText)
+                Button {
+                    router.sheet = .search
+                } label: {
+                    HStack(spacing: WICSpacing.compact) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.wicSecondaryText)
 
-                TextField("Name, neighborhood, or address", text: $store.query)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.search)
-                    .accessibilityLabel("Search work spots")
-                    .accessibilityIdentifier("discovery.search")
+                        Text(searchLabel)
+                            .font(.body)
+                            .foregroundStyle(
+                                store.query.isEmpty ? .wicSecondaryText : .wicPrimaryText
+                            )
+                            .lineLimit(1)
+
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: WICSpacing.minimumControlTarget)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Search work spots")
+                .accessibilityValue(
+                    store.query.isEmpty ? "No search term" : store.query
+                )
+                .accessibilityIdentifier("discovery.search")
 
                 Divider()
                     .frame(height: 24)
 
-                filterMenu
+                filterButton
             }
             .padding(.horizontal, WICSpacing.compact)
             .frame(minHeight: 50)
@@ -93,33 +127,19 @@ struct DiscoveryScreen: View {
                     .stroke(.wicSurfaceBorder, lineWidth: 0.5)
             }
 
+            if store.filter.activeCount > 0 {
+                activeFilterChips
+            }
+
             DiscoveryModePicker(selection: $store.mode)
         }
         .padding(.horizontal, WICSpacing.medium)
         .padding(.top, WICSpacing.small)
     }
 
-    private var filterMenu: some View {
-        Menu {
-            ForEach(categoryOptions, id: \.key) { option in
-                Button {
-                    toggleCategory(option.key)
-                } label: {
-                    Label(
-                        option.label,
-                        systemImage: store.filter.categories.contains(option.key)
-                            ? "checkmark.circle.fill"
-                            : option.symbolName
-                    )
-                }
-            }
-
-            if store.filter.activeCount > 0 {
-                Divider()
-                Button("Clear filters", systemImage: "xmark.circle") {
-                    store.filter = DiscoveryFilter()
-                }
-            }
+    private var filterButton: some View {
+        Button {
+            router.sheet = .filters
         } label: {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: "line.3.horizontal.decrease")
@@ -145,6 +165,55 @@ struct DiscoveryScreen: View {
                 ? "No active filters"
                 : "\(store.filter.activeCount) active"
         )
+        .accessibilityIdentifier("discovery.filters")
+    }
+
+    private var activeFilterChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: WICSpacing.small) {
+                ForEach(categoryOptions.filter { store.filter.categories.contains($0.id) }) { option in
+                    activeFilterButton(
+                        title: option.label,
+                        identifier: "filter.active.\(option.id)"
+                    ) {
+                        store.filter.categories.remove(option.id)
+                    }
+                }
+
+                if let minimumRating = store.filter.minimumRating {
+                    activeFilterButton(
+                        title: "\(Int(minimumRating))+ rating",
+                        identifier: "filter.active.rating.\(Int(minimumRating))"
+                    ) {
+                        store.filter.minimumRating = nil
+                    }
+                }
+            }
+            .padding(.horizontal, 1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func activeFilterButton(
+        title: String,
+        identifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Text(title)
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.bold))
+            }
+            .font(.footnote.weight(.semibold))
+            .padding(.horizontal, WICSpacing.compact)
+            .frame(minHeight: WICSpacing.minimumControlTarget)
+            .foregroundStyle(.wicAccent)
+            .background(.wicAccentTint, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Remove \(title) filter")
+        .accessibilityIdentifier(identifier)
     }
 
     @ViewBuilder
@@ -251,15 +320,15 @@ struct DiscoveryScreen: View {
         .padding(.bottom, 88)
     }
 
-    private var categoryOptions: [CategoryOption] {
+    private var searchLabel: String {
+        store.query.isEmpty ? "Name, neighborhood, or address" : store.query
+    }
+
+    private var categoryOptions: [DiscoveryCategoryOption] {
         var seen = Set<String>()
         return store.sourcePlaces.compactMap { place in
             guard seen.insert(place.category).inserted else { return nil }
-            return CategoryOption(
-                key: place.category,
-                label: place.categoryLabel,
-                symbolName: place.symbolName
-            )
+            return DiscoveryCategoryOption(category: place.category)
         }
         .sorted { $0.label < $1.label }
     }
@@ -282,12 +351,23 @@ struct DiscoveryScreen: View {
         )
     }
 
-    private func toggleCategory(_ category: String) {
-        if store.filter.categories.contains(category) {
-            store.filter.categories.remove(category)
-        } else {
-            store.filter.categories.insert(category)
-        }
+    private var searchPresented: Binding<Bool> {
+        sheetBinding(for: .search)
+    }
+
+    private var filtersPresented: Binding<Bool> {
+        sheetBinding(for: .filters)
+    }
+
+    private func sheetBinding(for sheet: AppSheet) -> Binding<Bool> {
+        Binding(
+            get: { router.sheet == sheet },
+            set: { isPresented in
+                if !isPresented, router.sheet == sheet {
+                    router.sheet = nil
+                }
+            }
+        )
     }
 
     private func synchronizePlaces(_ places: [PlaceSummary]) {
@@ -303,6 +383,25 @@ struct DiscoveryScreen: View {
         store.select(place: place)
         store.mode = .map
         router.sheet = .placePreview(id: place.id)
+    }
+
+    private func selectPlaceFromSearch(_ place: PlaceSummary) {
+        store.select(place: place)
+        store.mode = .map
+        pendingPreviewID = place.id
+        router.sheet = nil
+    }
+
+    private func presentPendingPreview() {
+        guard let pendingPreviewID,
+              store.selectedPlaceID == pendingPreviewID else { return }
+        self.pendingPreviewID = nil
+        router.sheet = .placePreview(id: pendingPreviewID)
+    }
+
+    private func applyFilter(_ filter: DiscoveryFilter) {
+        store.filter = filter
+        router.sheet = nil
     }
 
     private func clearSelection() {
@@ -352,12 +451,6 @@ private struct DiscoveryModePicker: View {
         .accessibilityLabel("Discovery view")
         .accessibilityIdentifier("discovery.mode")
     }
-}
-
-private struct CategoryOption {
-    let key: String
-    let label: String
-    let symbolName: String
 }
 
 private enum UnavailableAction: String, Identifiable {

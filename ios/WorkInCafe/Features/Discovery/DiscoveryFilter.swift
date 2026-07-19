@@ -1,4 +1,6 @@
 struct DiscoveryFilter: Equatable, Sendable {
+    static let supportedMinimumRatings: [Double] = [7, 8, 9]
+
     var categories: Set<String> = []
     var minimumRating: Double?
 

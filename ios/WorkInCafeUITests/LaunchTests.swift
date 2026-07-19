@@ -8,7 +8,7 @@ final class LaunchTests: XCTestCase {
         app.launch()
 
         let root = app.otherElements["app.discovery.root"]
-        let search = app.textFields["discovery.search"]
+        let search = app.buttons["discovery.search"]
         let mode = app.descendants(matching: .any)["discovery.mode"]
         let dock = app.otherElements["product.dock"]
 
