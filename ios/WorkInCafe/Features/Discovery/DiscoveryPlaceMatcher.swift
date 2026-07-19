@@ -1,5 +1,27 @@
 import Foundation
 
+actor DiscoveryMatchingWorker {
+    static let shared = DiscoveryMatchingWorker()
+
+    func filteredPlaces(
+        in places: [PlaceSummary],
+        query: String,
+        filter: DiscoveryFilter
+    ) -> [PlaceSummary] {
+        DiscoveryPlaceMatcher(query: query, filter: filter)
+            .filteredPlaces(in: places)
+    }
+
+    func count(
+        in places: [PlaceSummary],
+        query: String,
+        filter: DiscoveryFilter
+    ) -> Int {
+        DiscoveryPlaceMatcher(query: query, filter: filter)
+            .count(in: places)
+    }
+}
+
 struct DiscoveryPlaceMatcher: Sendable {
     let filter: DiscoveryFilter
     private let normalizedQuery: String
@@ -26,11 +48,26 @@ struct DiscoveryPlaceMatcher: Sendable {
     }
 
     func filteredPlaces(in places: [PlaceSummary]) -> [PlaceSummary] {
-        places.filter(matches)
+        var result: [PlaceSummary] = []
+        result.reserveCapacity(places.count)
+        for place in places {
+            guard !Task.isCancelled else { return [] }
+            if matches(place) {
+                result.append(place)
+            }
+        }
+        return result
     }
 
     func count(in places: [PlaceSummary]) -> Int {
-        places.count(where: matches)
+        var result = 0
+        for place in places {
+            guard !Task.isCancelled else { return 0 }
+            if matches(place) {
+                result += 1
+            }
+        }
+        return result
     }
 
     private static func normalized(_ value: String) -> String {

@@ -6,6 +6,12 @@ enum DiscoveryFilterCopy {
     }
 }
 
+private struct DiscoveryFilterCountRequest: Equatable {
+    let sourceRevision: UInt
+    let query: String
+    let filter: DiscoveryFilter
+}
+
 struct DiscoveryCategoryOption: Identifiable, Hashable {
     let id: String
     let label: String
@@ -35,21 +41,25 @@ struct DiscoveryCategoryOption: Identifiable, Hashable {
 struct DiscoveryFilterView: View {
     let categories: [DiscoveryCategoryOption]
     let sourcePlaces: [PlaceSummary]
+    let sourceRevision: UInt
     let query: String
     let onApply: (DiscoveryFilter) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var draft: DiscoveryFilter
+    @State private var matchingPlaceCount: Int?
 
     init(
         filter: DiscoveryFilter,
         categories: [DiscoveryCategoryOption],
         sourcePlaces: [PlaceSummary],
+        sourceRevision: UInt,
         query: String,
         onApply: @escaping (DiscoveryFilter) -> Void
     ) {
         self.categories = categories
         self.sourcePlaces = sourcePlaces
+        self.sourceRevision = sourceRevision
         self.query = query
         self.onApply = onApply
         _draft = State(initialValue: filter)
@@ -107,9 +117,15 @@ struct DiscoveryFilterView: View {
                 Button {
                     onApply(draft)
                 } label: {
-                    Text(DiscoveryFilterCopy.applyTitle(count: matchingPlaceCount))
-                        .font(.headline)
-                        .frame(maxWidth: .infinity, minHeight: WICSpacing.minimumControlTarget)
+                    Group {
+                        if let matchingPlaceCount {
+                            Text(DiscoveryFilterCopy.applyTitle(count: matchingPlaceCount))
+                        } else {
+                            Label("Updating results…", systemImage: "hourglass")
+                        }
+                    }
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, minHeight: WICSpacing.minimumControlTarget)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
@@ -120,11 +136,22 @@ struct DiscoveryFilterView: View {
             }
         }
         .accessibilityIdentifier("filter.screen")
-    }
-
-    private var matchingPlaceCount: Int {
-        DiscoveryPlaceMatcher(query: query, filter: draft)
-            .count(in: sourcePlaces)
+        .task(
+            id: DiscoveryFilterCountRequest(
+                sourceRevision: sourceRevision,
+                query: query,
+                filter: draft
+            )
+        ) {
+            matchingPlaceCount = nil
+            let count = await DiscoveryMatchingWorker.shared.count(
+                in: sourcePlaces,
+                query: query,
+                filter: draft
+            )
+            guard !Task.isCancelled else { return }
+            matchingPlaceCount = count
+        }
     }
 
     private func filterRow(

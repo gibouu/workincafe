@@ -99,7 +99,7 @@ struct DiscoveryStoreTests {
     }
 
     @Test("normalizes search text before applying filters")
-    func normalizedQueryAndFilter() {
+    func normalizedQueryAndFilter() async {
         let library = PlaceFixture.summary(
             id: "library",
             name: "Bibliothèque Forney",
@@ -117,12 +117,13 @@ struct DiscoveryStoreTests {
         store.sourcePlaces = [library, cafe]
         store.query = "  bibliotheque  "
         store.filter = DiscoveryFilter(categories: ["library"], minimumRating: 8)
+        await store.waitForCurrentMatch()
 
         #expect(store.filteredPlaces == [library])
     }
 
     @Test("refreshes search results when the current discovery source changes")
-    func refreshesSearchResultsFromCurrentSource() {
+    func refreshesSearchResultsFromCurrentSource() async {
         let tenBelles = PlaceFixture.summary(
             id: "ten-belles",
             name: "Ten Belles"
@@ -135,12 +136,26 @@ struct DiscoveryStoreTests {
         let store = DiscoveryStore()
         store.query = "ten belles"
         store.sourcePlaces = [library]
+        await store.waitForCurrentMatch()
 
         #expect(store.filteredPlaces.isEmpty)
 
         store.sourcePlaces = [library, tenBelles]
+        await store.waitForCurrentMatch()
 
         #expect(store.filteredPlaces == [tenBelles])
+    }
+
+    @Test("publishes matching after the main-actor mutation returns")
+    func publishesMatchingAsynchronously() async {
+        let place = PlaceFixture.summary(id: "cafe", name: "Café")
+        let store = DiscoveryStore()
+
+        store.sourcePlaces = [place]
+
+        #expect(store.filteredPlaces.isEmpty)
+        await store.waitForCurrentMatch()
+        #expect(store.filteredPlaces == [place])
     }
 
     @Test("removing one category filter preserves the remaining criteria")

@@ -38,6 +38,7 @@ struct DiscoveryScreen: View {
                 filter: store.filter,
                 categories: categoryOptions,
                 sourcePlaces: store.sourcePlaces,
+                sourceRevision: store.sourceRevision,
                 query: store.query,
                 onApply: applyFilter
             )
