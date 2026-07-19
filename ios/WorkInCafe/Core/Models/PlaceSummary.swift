@@ -96,6 +96,11 @@ struct PlaceSummary: Codable, Hashable, Identifiable, Sendable {
     var presentationKey: String {
         presentation.key
     }
+
+    static func deduplicated(_ places: [PlaceSummary]) -> [PlaceSummary] {
+        var seenIDs = Set<String>()
+        return places.filter { seenIDs.insert($0.id).inserted }
+    }
 }
 
 struct PlacesResponse: Codable, Sendable {
@@ -124,5 +129,54 @@ struct PlaceBounds: Codable, Hashable, Sendable {
         [west, south, east, north]
             .map { String(format: "%.3f", locale: Locale(identifier: "en_US_POSIX"), $0) }
             .joined(separator: ",")
+    }
+
+    var isQueryable: Bool {
+        let coordinates = [west, south, east, north]
+        guard coordinates.allSatisfy(\.isFinite),
+              south >= -90,
+              north <= 90,
+              north >= south else { return false }
+
+        let latitudeSpan = north - south
+        let rawLongitudeSpan = east - west
+        let longitudeSpan: Double
+        if rawLongitudeSpan >= 0 {
+            longitudeSpan = rawLongitudeSpan
+        } else {
+            let remainder = rawLongitudeSpan.truncatingRemainder(dividingBy: 360)
+            longitudeSpan = remainder < 0 ? remainder + 360 : remainder
+        }
+        return latitudeSpan <= 2 && longitudeSpan >= 0 && longitudeSpan <= 2
+    }
+
+    var normalizedSegments: [PlaceBounds] {
+        guard isQueryable else { return [] }
+        let normalizedWest = Self.normalizedLongitude(west)
+        let normalizedEast = Self.normalizedLongitude(east)
+        guard normalizedWest > normalizedEast else {
+            return [
+                PlaceBounds(
+                    west: normalizedWest,
+                    south: south,
+                    east: normalizedEast,
+                    north: north
+                ),
+            ]
+        }
+        return [
+            PlaceBounds(west: normalizedWest, south: south, east: 180, north: north),
+            PlaceBounds(west: -180, south: south, east: normalizedEast, north: north),
+        ]
+    }
+
+    private static func normalizedLongitude(_ longitude: Double) -> Double {
+        var normalized = longitude.truncatingRemainder(dividingBy: 360)
+        if normalized > 180 {
+            normalized -= 360
+        } else if normalized < -180 {
+            normalized += 360
+        }
+        return normalized
     }
 }
