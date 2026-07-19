@@ -54,6 +54,19 @@ Protected prefixes (defined in `middleware.ts`): `/profile`, `/admin`. **`/revie
 
 All write routes return 503 / 404 cleanly when the underlying table is missing — clients treat that as "demo mode acceptable" and don't surface an error.
 
+## Native iPhone app (`ios/`)
+
+| Surface | Location | Purpose |
+| --- | --- | --- |
+| App shell | `ios/WorkInCafe/App/` | Guest-only SwiftUI entry point and discovery navigation |
+| Map discovery | `ios/WorkInCafe/Features/Map/` | Clustered reusable `MKMapView`, cache-first viewport refresh, stable off-main annotation diffing |
+| Search | `ios/WorkInCafe/Features/Search/` | Local name/address/category search over visible summaries |
+| Place details | `ios/WorkInCafe/Features/Place/` | Native place sheet and Apple Maps walking directions |
+| Data/cache | `ios/WorkInCafe/Core/{API,Cache,Models}/` | Public `/api/places?bbox=w,s,e,n` adapter and atomic Application Support cache |
+| Visual review | `design/ios-companion/` | Versioned localhost comparison screen with immediate position-aware notes |
+
+Generate the reproducible Xcode project with `scripts/ios-generate`, run the shared unit/UI scheme with `scripts/ios-test`, and serve/check the review companion with `scripts/ios-companion` / `scripts/ios-companion --check`.
+
 ## State stores (`lib/store/`)
 
 | Store | File | Persists | Owns |

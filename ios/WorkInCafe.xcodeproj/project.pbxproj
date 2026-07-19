@@ -1,0 +1,703 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0E1F1FBE6A2489729B85148E /* MapAnnotationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A34442D382307A7B9EA134AB /* MapAnnotationTests.swift */; };
+		18A53F82514D90098B095568 /* AnnotationReconciler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79CE473DAFF5AAB9B4DEE3EF /* AnnotationReconciler.swift */; };
+		1ACB8FAE6D2017CA20765BE6 /* MapFeatureModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6396B59AD41A188A50197554 /* MapFeatureModel.swift */; };
+		207145A3006D810C0EA9C151 /* PlaceSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD4C7E158451219FEC099A39 /* PlaceSheet.swift */; };
+		29009775BA1D3D335AC16E5A /* PlaceSearchIndexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAE8803E12C9D771C0104F5E /* PlaceSearchIndexTests.swift */; };
+		38B9DFA0B72A1435611F18CC /* MapAnnotations.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1057082C1203A9831EC5272 /* MapAnnotations.swift */; };
+		3A8E55A01BC1C4CCD95C6624 /* AppRootState.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE5A6F54D86EE4DFDB8194B9 /* AppRootState.swift */; };
+		492AE5DB00DBD43E75E0DC88 /* AnnotationReconcilerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E8DBA3843EDAAD4F9088C02 /* AnnotationReconcilerTests.swift */; };
+		494709BBAC5C4C2E3259F0A9 /* MapViewRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 384255A17036CDC72DB1970C /* MapViewRepresentable.swift */; };
+		49B741D695042B7494E8C12C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BBA404C8912E7379EE09B904 /* Assets.xcassets */; };
+		5A9EDE34E2A2FD2258F95AF4 /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5004824A5E495C32B95A8157 /* AppRootView.swift */; };
+		625EB4FCAA04DC48239BCFF3 /* PlaceCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25C210DACEC5639FE44CE49A /* PlaceCacheTests.swift */; };
+		719A11AA6ED8A9D19E416623 /* WorkInCafeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32DFE576B86D19A5E2B3CA25 /* WorkInCafeApp.swift */; };
+		81A859859BA0AC7B53129A9D /* PlaceDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7242432E43C3D06D5D106893 /* PlaceDecodingTests.swift */; };
+		81C360040E8E43405A4FF5F7 /* MapFeatureModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 573A0448CF70890D7AB1AD02 /* MapFeatureModelTests.swift */; };
+		906FDE899B545D5966421BAB /* MapScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1E7DE34122C91E1A5A57EE /* MapScreen.swift */; };
+		A4C95C3583C7DB8B109F68C6 /* SearchSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C097D096A0403DA37BD9E960 /* SearchSheet.swift */; };
+		B7426C0C1487C0C2BDF83FA0 /* PlacesRequestBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC9E2DDC26550F2E2F991219 /* PlacesRequestBuilderTests.swift */; };
+		B8D3A1DDCDE726B09EC973BD /* WICDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCFBAAD59D2A4A33374CAB7 /* WICDesign.swift */; };
+		C67467113B89274CB1248726 /* LaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9910BF4062C378812A98F48C /* LaunchTests.swift */; };
+		D8CB4844207932EAB5A6528E /* PlaceSearchIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92EC6E1008389EA0DD145E03 /* PlaceSearchIndex.swift */; };
+		D91CBE2FEA08E5F486033F72 /* PlaceSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23369FC54CE80F6799098467 /* PlaceSummary.swift */; };
+		EACFC909F018547B148FB060 /* PlaceCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 236A376C461F666DF343953B /* PlaceCache.swift */; };
+		EF8539DCB5F7BBA3F4C3ACDF /* PlaceFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 566BBB544984A4BFE75D478B /* PlaceFixture.swift */; };
+		F6DFD72D7D5C2D85B029E846 /* AppRootStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 035914A7FD0CED9F7237CAE0 /* AppRootStateTests.swift */; };
+		F85921635DC5B004CDF94863 /* PlacesAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96C1913F5A0BEC4181A5C0E0 /* PlacesAPI.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		ABDDD7891CC7A39BE7A91DFE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD4CE82B305C1591FF7ED5D6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 941D5400C153619C369D5DB4;
+			remoteInfo = WorkInCafe;
+		};
+		B068EDB479772AF392DCB2AC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD4CE82B305C1591FF7ED5D6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 941D5400C153619C369D5DB4;
+			remoteInfo = WorkInCafe;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		035914A7FD0CED9F7237CAE0 /* AppRootStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootStateTests.swift; sourceTree = "<group>"; };
+		1E8DBA3843EDAAD4F9088C02 /* AnnotationReconcilerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationReconcilerTests.swift; sourceTree = "<group>"; };
+		23369FC54CE80F6799098467 /* PlaceSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceSummary.swift; sourceTree = "<group>"; };
+		236A376C461F666DF343953B /* PlaceCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceCache.swift; sourceTree = "<group>"; };
+		25C210DACEC5639FE44CE49A /* PlaceCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceCacheTests.swift; sourceTree = "<group>"; };
+		32DFE576B86D19A5E2B3CA25 /* WorkInCafeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkInCafeApp.swift; sourceTree = "<group>"; };
+		384255A17036CDC72DB1970C /* MapViewRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapViewRepresentable.swift; sourceTree = "<group>"; };
+		5004824A5E495C32B95A8157 /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
+		566BBB544984A4BFE75D478B /* PlaceFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceFixture.swift; sourceTree = "<group>"; };
+		573A0448CF70890D7AB1AD02 /* MapFeatureModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapFeatureModelTests.swift; sourceTree = "<group>"; };
+		5A9346A856A795683B964759 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6396B59AD41A188A50197554 /* MapFeatureModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapFeatureModel.swift; sourceTree = "<group>"; };
+		7242432E43C3D06D5D106893 /* PlaceDecodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceDecodingTests.swift; sourceTree = "<group>"; };
+		79CE473DAFF5AAB9B4DEE3EF /* AnnotationReconciler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnotationReconciler.swift; sourceTree = "<group>"; };
+		89B685F7F3216940C6D082AE /* WorkInCafeUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WorkInCafeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		92EC6E1008389EA0DD145E03 /* PlaceSearchIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceSearchIndex.swift; sourceTree = "<group>"; };
+		96C1913F5A0BEC4181A5C0E0 /* PlacesAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesAPI.swift; sourceTree = "<group>"; };
+		9910BF4062C378812A98F48C /* LaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchTests.swift; sourceTree = "<group>"; };
+		A34442D382307A7B9EA134AB /* MapAnnotationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapAnnotationTests.swift; sourceTree = "<group>"; };
+		AA1E7DE34122C91E1A5A57EE /* MapScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapScreen.swift; sourceTree = "<group>"; };
+		BAE8803E12C9D771C0104F5E /* PlaceSearchIndexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceSearchIndexTests.swift; sourceTree = "<group>"; };
+		BB691012E207F61C551EC6C4 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		BBA404C8912E7379EE09B904 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BD4C7E158451219FEC099A39 /* PlaceSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceSheet.swift; sourceTree = "<group>"; };
+		C01FB42F572C18B9D2A3C98F /* WorkInCafe.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = WorkInCafe.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C097D096A0403DA37BD9E960 /* SearchSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchSheet.swift; sourceTree = "<group>"; };
+		CCCFBAAD59D2A4A33374CAB7 /* WICDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WICDesign.swift; sourceTree = "<group>"; };
+		D4B7C4D62484DD86CD8186DE /* WorkInCafeTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WorkInCafeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DC9E2DDC26550F2E2F991219 /* PlacesRequestBuilderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacesRequestBuilderTests.swift; sourceTree = "<group>"; };
+		DE5A6F54D86EE4DFDB8194B9 /* AppRootState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootState.swift; sourceTree = "<group>"; };
+		E1057082C1203A9831EC5272 /* MapAnnotations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapAnnotations.swift; sourceTree = "<group>"; };
+		F7B98D132C0F53A23EFE1033 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		02475EB8A333D7C37CA5F9E7 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				23369FC54CE80F6799098467 /* PlaceSummary.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		175CC26EBE780796CCFD51A8 /* Place */ = {
+			isa = PBXGroup;
+			children = (
+				BD4C7E158451219FEC099A39 /* PlaceSheet.swift */,
+			);
+			path = Place;
+			sourceTree = "<group>";
+		};
+		4280ECA2F709CE8D585DA9EC /* WorkInCafeTests */ = {
+			isa = PBXGroup;
+			children = (
+				6519A35873A08871C2967B67 /* Core */,
+				55AD56DBD52D1CBE2C3E7F36 /* Support */,
+			);
+			path = WorkInCafeTests;
+			sourceTree = "<group>";
+		};
+		44AF997965E01075512DFDAB /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				96901D40A560DF42F7808E40 /* API */,
+				9FBB6572C42D4EE6005AB89C /* Cache */,
+				65AD41862B8ED4B883F5C012 /* DesignSystem */,
+				02475EB8A333D7C37CA5F9E7 /* Models */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		4F2240CC14F90DB725EB8378 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				BB691012E207F61C551EC6C4 /* Debug.xcconfig */,
+				F7B98D132C0F53A23EFE1033 /* Release.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		55AD56DBD52D1CBE2C3E7F36 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				566BBB544984A4BFE75D478B /* PlaceFixture.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		5E79AF18AF6026E52B4E9B91 = {
+			isa = PBXGroup;
+			children = (
+				4F2240CC14F90DB725EB8378 /* Config */,
+				A9D6C85047ABD4491B730EC5 /* WorkInCafe */,
+				4280ECA2F709CE8D585DA9EC /* WorkInCafeTests */,
+				83FA951069D482121E8FED99 /* WorkInCafeUITests */,
+				B8ED7AC660FC78EBEB4F6563 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6519A35873A08871C2967B67 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				1E8DBA3843EDAAD4F9088C02 /* AnnotationReconcilerTests.swift */,
+				035914A7FD0CED9F7237CAE0 /* AppRootStateTests.swift */,
+				A34442D382307A7B9EA134AB /* MapAnnotationTests.swift */,
+				573A0448CF70890D7AB1AD02 /* MapFeatureModelTests.swift */,
+				25C210DACEC5639FE44CE49A /* PlaceCacheTests.swift */,
+				7242432E43C3D06D5D106893 /* PlaceDecodingTests.swift */,
+				BAE8803E12C9D771C0104F5E /* PlaceSearchIndexTests.swift */,
+				DC9E2DDC26550F2E2F991219 /* PlacesRequestBuilderTests.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		65AD41862B8ED4B883F5C012 /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				CCCFBAAD59D2A4A33374CAB7 /* WICDesign.swift */,
+			);
+			path = DesignSystem;
+			sourceTree = "<group>";
+		};
+		6FC961858371D6E2227B6FBB /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				716BE9E904D6453C83176510 /* Map */,
+				175CC26EBE780796CCFD51A8 /* Place */,
+				D4CE7E07AFCC99741F8D446D /* Search */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		716BE9E904D6453C83176510 /* Map */ = {
+			isa = PBXGroup;
+			children = (
+				79CE473DAFF5AAB9B4DEE3EF /* AnnotationReconciler.swift */,
+				E1057082C1203A9831EC5272 /* MapAnnotations.swift */,
+				6396B59AD41A188A50197554 /* MapFeatureModel.swift */,
+				AA1E7DE34122C91E1A5A57EE /* MapScreen.swift */,
+				384255A17036CDC72DB1970C /* MapViewRepresentable.swift */,
+			);
+			path = Map;
+			sourceTree = "<group>";
+		};
+		83FA951069D482121E8FED99 /* WorkInCafeUITests */ = {
+			isa = PBXGroup;
+			children = (
+				9910BF4062C378812A98F48C /* LaunchTests.swift */,
+			);
+			path = WorkInCafeUITests;
+			sourceTree = "<group>";
+		};
+		96901D40A560DF42F7808E40 /* API */ = {
+			isa = PBXGroup;
+			children = (
+				96C1913F5A0BEC4181A5C0E0 /* PlacesAPI.swift */,
+			);
+			path = API;
+			sourceTree = "<group>";
+		};
+		9FBB6572C42D4EE6005AB89C /* Cache */ = {
+			isa = PBXGroup;
+			children = (
+				236A376C461F666DF343953B /* PlaceCache.swift */,
+			);
+			path = Cache;
+			sourceTree = "<group>";
+		};
+		A9D6C85047ABD4491B730EC5 /* WorkInCafe */ = {
+			isa = PBXGroup;
+			children = (
+				BBA404C8912E7379EE09B904 /* Assets.xcassets */,
+				5A9346A856A795683B964759 /* Info.plist */,
+				D23AE5FA9BF7D165633ECBDA /* App */,
+				44AF997965E01075512DFDAB /* Core */,
+				6FC961858371D6E2227B6FBB /* Features */,
+			);
+			path = WorkInCafe;
+			sourceTree = "<group>";
+		};
+		B8ED7AC660FC78EBEB4F6563 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C01FB42F572C18B9D2A3C98F /* WorkInCafe.app */,
+				D4B7C4D62484DD86CD8186DE /* WorkInCafeTests.xctest */,
+				89B685F7F3216940C6D082AE /* WorkInCafeUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D23AE5FA9BF7D165633ECBDA /* App */ = {
+			isa = PBXGroup;
+			children = (
+				DE5A6F54D86EE4DFDB8194B9 /* AppRootState.swift */,
+				5004824A5E495C32B95A8157 /* AppRootView.swift */,
+				32DFE576B86D19A5E2B3CA25 /* WorkInCafeApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		D4CE7E07AFCC99741F8D446D /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				92EC6E1008389EA0DD145E03 /* PlaceSearchIndex.swift */,
+				C097D096A0403DA37BD9E960 /* SearchSheet.swift */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		941D5400C153619C369D5DB4 /* WorkInCafe */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C3FF8D665DBEFB131978C408 /* Build configuration list for PBXNativeTarget "WorkInCafe" */;
+			buildPhases = (
+				B8DFA51F3CA8AD7287D7CC1F /* Sources */,
+				8172A5EE3E4F583A535B7208 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WorkInCafe;
+			packageProductDependencies = (
+			);
+			productName = WorkInCafe;
+			productReference = C01FB42F572C18B9D2A3C98F /* WorkInCafe.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EBBAE3E8A41C98D78A2BD6AC /* WorkInCafeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3D67FC7CF3F4A40578FBAD3B /* Build configuration list for PBXNativeTarget "WorkInCafeTests" */;
+			buildPhases = (
+				6078D6B38D79C330CA627A14 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				85155D335AA9606BEB793625 /* PBXTargetDependency */,
+			);
+			name = WorkInCafeTests;
+			packageProductDependencies = (
+			);
+			productName = WorkInCafeTests;
+			productReference = D4B7C4D62484DD86CD8186DE /* WorkInCafeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		F64290EA8DBA18419457B7F6 /* WorkInCafeUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8828711A21F407BAC3B8135A /* Build configuration list for PBXNativeTarget "WorkInCafeUITests" */;
+			buildPhases = (
+				B8BF15641DC5D7FC6D458D53 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				70514C7A3A9BF3B2B4DA2A5B /* PBXTargetDependency */,
+			);
+			name = WorkInCafeUITests;
+			packageProductDependencies = (
+			);
+			productName = WorkInCafeUITests;
+			productReference = 89B685F7F3216940C6D082AE /* WorkInCafeUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DD4CE82B305C1591FF7ED5D6 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					941D5400C153619C369D5DB4 = {
+						ProvisioningStyle = Automatic;
+					};
+					F64290EA8DBA18419457B7F6 = {
+						TestTargetID = 941D5400C153619C369D5DB4;
+					};
+				};
+			};
+			buildConfigurationList = 9D5A8A949F4588BDCC1AED5A /* Build configuration list for PBXProject "WorkInCafe" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 5E79AF18AF6026E52B4E9B91;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B8ED7AC660FC78EBEB4F6563 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				941D5400C153619C369D5DB4 /* WorkInCafe */,
+				EBBAE3E8A41C98D78A2BD6AC /* WorkInCafeTests */,
+				F64290EA8DBA18419457B7F6 /* WorkInCafeUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		8172A5EE3E4F583A535B7208 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				49B741D695042B7494E8C12C /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		6078D6B38D79C330CA627A14 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				492AE5DB00DBD43E75E0DC88 /* AnnotationReconcilerTests.swift in Sources */,
+				F6DFD72D7D5C2D85B029E846 /* AppRootStateTests.swift in Sources */,
+				0E1F1FBE6A2489729B85148E /* MapAnnotationTests.swift in Sources */,
+				81C360040E8E43405A4FF5F7 /* MapFeatureModelTests.swift in Sources */,
+				625EB4FCAA04DC48239BCFF3 /* PlaceCacheTests.swift in Sources */,
+				81A859859BA0AC7B53129A9D /* PlaceDecodingTests.swift in Sources */,
+				EF8539DCB5F7BBA3F4C3ACDF /* PlaceFixture.swift in Sources */,
+				29009775BA1D3D335AC16E5A /* PlaceSearchIndexTests.swift in Sources */,
+				B7426C0C1487C0C2BDF83FA0 /* PlacesRequestBuilderTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B8BF15641DC5D7FC6D458D53 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C67467113B89274CB1248726 /* LaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B8DFA51F3CA8AD7287D7CC1F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				18A53F82514D90098B095568 /* AnnotationReconciler.swift in Sources */,
+				3A8E55A01BC1C4CCD95C6624 /* AppRootState.swift in Sources */,
+				5A9EDE34E2A2FD2258F95AF4 /* AppRootView.swift in Sources */,
+				38B9DFA0B72A1435611F18CC /* MapAnnotations.swift in Sources */,
+				1ACB8FAE6D2017CA20765BE6 /* MapFeatureModel.swift in Sources */,
+				906FDE899B545D5966421BAB /* MapScreen.swift in Sources */,
+				494709BBAC5C4C2E3259F0A9 /* MapViewRepresentable.swift in Sources */,
+				EACFC909F018547B148FB060 /* PlaceCache.swift in Sources */,
+				D8CB4844207932EAB5A6528E /* PlaceSearchIndex.swift in Sources */,
+				207145A3006D810C0EA9C151 /* PlaceSheet.swift in Sources */,
+				D91CBE2FEA08E5F486033F72 /* PlaceSummary.swift in Sources */,
+				F85921635DC5B004CDF94863 /* PlacesAPI.swift in Sources */,
+				A4C95C3583C7DB8B109F68C6 /* SearchSheet.swift in Sources */,
+				B8D3A1DDCDE726B09EC973BD /* WICDesign.swift in Sources */,
+				719A11AA6ED8A9D19E416623 /* WorkInCafeApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		70514C7A3A9BF3B2B4DA2A5B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 941D5400C153619C369D5DB4 /* WorkInCafe */;
+			targetProxy = ABDDD7891CC7A39BE7A91DFE /* PBXContainerItemProxy */;
+		};
+		85155D335AA9606BEB793625 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 941D5400C153619C369D5DB4 /* WorkInCafe */;
+			targetProxy = B068EDB479772AF392DCB2AC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		03DC73D9F0DB8931482323F5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = cafe.workin.app.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = WorkInCafe;
+			};
+			name = Debug;
+		};
+		1DB48E4D098F43590F7ADE77 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = cafe.workin.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WorkInCafe.app/WorkInCafe";
+			};
+			name = Debug;
+		};
+		3DCEFFDA86A733B11E70AA37 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = cafe.workin.app.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = WorkInCafe;
+			};
+			name = Release;
+		};
+		4CE154A085015CA4B6D40162 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		52C77236CBD348B54855664B /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = F7B98D132C0F53A23EFE1033 /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = WorkInCafe/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = cafe.workin.app;
+				SDKROOT = iphoneos;
+			};
+			name = Release;
+		};
+		62BE7EC3E9DD952977103A36 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = BB691012E207F61C551EC6C4 /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = WorkInCafe/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = cafe.workin.app;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		71226CC41207F54E940FE38F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		929B2E46F38E2FB491468FDB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = cafe.workin.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WorkInCafe.app/WorkInCafe";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3D67FC7CF3F4A40578FBAD3B /* Build configuration list for PBXNativeTarget "WorkInCafeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DB48E4D098F43590F7ADE77 /* Debug */,
+				929B2E46F38E2FB491468FDB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8828711A21F407BAC3B8135A /* Build configuration list for PBXNativeTarget "WorkInCafeUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				03DC73D9F0DB8931482323F5 /* Debug */,
+				3DCEFFDA86A733B11E70AA37 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9D5A8A949F4588BDCC1AED5A /* Build configuration list for PBXProject "WorkInCafe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71226CC41207F54E940FE38F /* Debug */,
+				4CE154A085015CA4B6D40162 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C3FF8D665DBEFB131978C408 /* Build configuration list for PBXNativeTarget "WorkInCafe" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				62BE7EC3E9DD952977103A36 /* Debug */,
+				52C77236CBD348B54855664B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DD4CE82B305C1591FF7ED5D6 /* Project object */;
+}
