@@ -178,7 +178,7 @@ Commit this synchronization update separately with the required `— gib` signat
 
 Expected: PR #295 remains open pending update/review decision; PR #297 remains open with failed verification documented; draft preservation PRs remain open until their gates pass.
 
-- [ ] **Step 3: Run final documentation and repository checks**
+- [x] **Step 3: Run final documentation and repository checks**
 
 Run:
 
@@ -193,6 +193,8 @@ gh issue view 312
 ```
 
 Expected: documentation is coherent, relevant branches exist remotely, PR/issue links resolve, and the active checkout is clean.
+
+Final result: XcodeGen check, range diff check, both worktree status checks, exact remote SHA verification, issue/PR linkage, and GitHub state inspection passed. Draft PR checks were recorded at their observed state; Simulator-dependent Task 6 verification remains explicitly blocked rather than skipped or claimed green.
 
 ## Self-review
 
