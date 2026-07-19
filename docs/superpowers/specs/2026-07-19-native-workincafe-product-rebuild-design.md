@@ -1,8 +1,8 @@
 # Native WorkinCafe Product Rebuild Design
 
-**Date:** 2026-07-19  
+**Date:** 2026-07-19
 **Status:** Approved
-**Tracking issue:** [#310](https://github.com/gibouu/workincafe/issues/310)  
+**Tracking issue:** [#310](https://github.com/gibouu/workincafe/issues/310)
 **Branch:** `feat/310-native-product-rebuild`
 
 ## Objective

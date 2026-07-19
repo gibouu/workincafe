@@ -80,6 +80,11 @@ If an issue-driven-workflow skill is installed (e.g. the `claude-optimizer` plug
 _Migrated from this repo's prior CLAUDE.md/AGENTS.md. These are project-specific facts; the canonical agent rules are above. Original files remain in git history._
 
 
+## Durable handoff rule
+
+Before starting work, read `MEMORY.md` completely, then confirm the GitHub issue being worked on and verify the documented branch/PR/blocker state. Work on a scoped branch; avoid destructive Git operations; commit and push completed work; update the related issue; and update `MEMORY.md` after any material completion or newly discovered constraint. Record exact verification commands/results and leave the repository in a recoverable state for the next contributor.
+
+
 ## Where to look first
 
 Before re-grepping the codebase, check:
@@ -103,11 +108,12 @@ npm run dev         # start dev server on :3000
 npm run build       # production build (CI runs this)
 npm run lint        # ESLint flat config
 npm run typecheck   # tsc --noEmit
+npm test            # Vitest suite (CI runs this)
 npm run seed:paris  # run OSM Overpass seed for Paris (requires Supabase env + applied migrations)
 npm run seed:toronto   # same per city: seed:nyc / seed:london / seed:tokyo / seed:seoul
 ```
 
-CI (`.github/workflows/ci.yml`) runs `npm ci && npm run lint && npm run typecheck && npm run build` on every PR. The map uses public OpenFreeMap tiles, so no map-related secrets are needed at build time.
+CI (`.github/workflows/ci.yml`) runs `npm ci && npm run lint && npm run typecheck && npm test && npm run build` on every PR. The map uses public OpenFreeMap tiles, so no map-related secrets are needed at build time.
 
 ## Architecture: big picture
 
