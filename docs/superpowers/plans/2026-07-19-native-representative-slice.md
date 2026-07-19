@@ -92,7 +92,7 @@
 - Consumes: `PlaceSummary.category`, `PlaceSummary.brand`, and `PlaceSummary.name` from the existing public response.
 - Produces: `PlacePresentation.resolve(category:brand:name:) -> PlacePresentation`, `PlaceSummary.presentation`, `PlaceIdentityBadge(place:size:)`, and `WorkRatingView(rating:labelStyle:)`.
 
-- [ ] **Step 1: Write failing canonical-palette and brand-resolution tests**
+- [x] **Step 1: Write failing canonical-palette and brand-resolution tests**
 
 ```swift
 import Testing
@@ -134,13 +134,13 @@ struct PlacePresentationTests {
 }
 ```
 
-- [ ] **Step 2: Run the focused test and verify it fails**
+- [x] **Step 2: Run the focused test and verify it fails**
 
 Run: `scripts/ios-test --only WorkInCafeTests/PlacePresentationTests`
 
 Expected: compilation fails because `PlacePresentation` and `PlaceSummary.presentation` do not exist.
 
-- [ ] **Step 3: Implement the canonical presentation model and design tokens**
+- [x] **Step 3: Implement the canonical presentation model and design tokens**
 
 Implement `PlacePresentation` as an immutable `Sendable` value with `key`, `label`, `symbolName`, `monogram`, `hexColor`, and `foreground`. Normalize brand/name with lowercasing, diacritic folding, and punctuation removal. Register exactly Starbucks, Tim Hortons, McDonald's, WeWork, Anticafé, and De Mello; otherwise use the eight canonical category identities. Add `Color(hex:)`, semantic WorkinCafe colors, spacing `8/12/16/20/24`, radii `8/12/16/24/32`, and `44` point minimum targets.
 
@@ -164,7 +164,7 @@ extension PlaceSummary {
 }
 ```
 
-- [ ] **Step 4: Implement reusable identity and rating components**
+- [x] **Step 4: Implement reusable identity and rating components**
 
 `PlaceIdentityBadge` renders the resolved monogram or SF Symbol in a category/brand circle, exposes a single useful accessibility label, and supports 32, 40, and 52 point sizes. `WorkRatingView` omits nil/zero ratings and renders valid ratings as `x.x/10` with tabular digits and a star symbol.
 
@@ -183,7 +183,7 @@ struct WorkRatingView: View {
 }
 ```
 
-- [ ] **Step 5: Run focused and full native tests**
+- [x] **Step 5: Run focused and full native tests**
 
 Run: `scripts/ios-test --only WorkInCafeTests/PlacePresentationTests`
 
@@ -193,7 +193,7 @@ Run: `scripts/ios-test --only WorkInCafeTests`
 
 Expected: all native unit suites pass.
 
-- [ ] **Step 6: Commit the design foundation**
+- [x] **Step 6: Commit the design foundation**
 
 ```bash
 git add ios/WorkInCafe/Core/DesignSystem ios/WorkInCafe/Core/Models/PlaceSummary.swift ios/WorkInCafe/Features/Place ios/WorkInCafeTests/Core/PlacePresentationTests.swift ios/WorkInCafeTests/Support/PlaceFixture.swift
@@ -215,7 +215,7 @@ git commit -m $'feat(ios): establish WorkinCafe place identity\n\nRefs #310\n\n�
 - Consumes: `PlacesServing`, `PlaceCaching`, `MapFeatureModel`.
 - Produces: `AppEnvironment.live()`, `AppEnvironment.fixture()`, `ProductMode`, `AppRoute`, `AppSheet`, `AppRouter`, and `RootProductDock(selection:)`.
 
-- [ ] **Step 1: Write failing router and environment-selection tests**
+- [x] **Step 1: Write failing router and environment-selection tests**
 
 ```swift
 @MainActor
@@ -241,13 +241,13 @@ struct AppRouterTests {
 }
 ```
 
-- [ ] **Step 2: Run the focused tests and verify they fail**
+- [x] **Step 2: Run the focused tests and verify they fail**
 
 Run: `scripts/ios-test --only WorkInCafeTests/AppRouterTests`
 
 Expected: compilation fails because the router types do not exist.
 
-- [ ] **Step 3: Implement the environment and fixture switch**
+- [x] **Step 3: Implement the environment and fixture switch**
 
 Use `-ui-testing` in `ProcessInfo.processInfo.arguments` to choose fixture dependencies. Do not branch feature code on test mode.
 
@@ -264,7 +264,7 @@ struct AppEnvironment: Sendable {
 
 `FixturePlacesAPI` returns a fixed Paris set spanning café, library, bakery, coworking, and known-brand presentation. It performs no network access and is available only through the injected protocol.
 
-- [ ] **Step 4: Implement router and root product dock**
+- [x] **Step 4: Implement router and root product dock**
 
 ```swift
 enum ProductMode: String, CaseIterable, Hashable { case profile, workSpots, cowork }
@@ -292,11 +292,11 @@ final class AppRouter: ObservableObject {
 
 The dock uses `person.crop.circle`, `mappin.and.ellipse`, and `person.2`, regular-to-fill state, a short selected underline, material capsule, 44-point targets, and explicit `accessibilityValue("Selected")`.
 
-- [ ] **Step 5: Wire the root without changing discovery visuals yet**
+- [x] **Step 5: Wire the root without changing discovery visuals yet**
 
 `AppRootView` owns one environment, router, and `MapFeatureModel`; Work spots temporarily hosts the existing map root while Profile and Cowork show honest `ContentUnavailableView` states. The dock remains over the three root modes and disappears for pushed details.
 
-- [ ] **Step 6: Run tests and commit**
+- [x] **Step 6: Run tests and commit**
 
 Run: `scripts/ios-test --only WorkInCafeTests`
 
@@ -326,7 +326,7 @@ git commit -m $'feat(ios): add native product shell\n\nRefs #310\n\n— gib'
 - Consumes: `MapFeatureModel.places`, `PlaceSearchIndex`, `PlaceBounds`.
 - Produces: `DiscoveryStore.filteredPlaces`, `DiscoveryStore.select(place:)`, `MapCameraIntent`, `PlaceBounds.isQueryable`, `PlaceBounds.normalizedSegments`, and generation-gated map publications.
 
-- [ ] **Step 1: Write failing filter, oversized-bounds, duplicate-ID, stale-request, and active-search tests**
+- [x] **Step 1: Write failing filter, oversized-bounds, duplicate-ID, stale-request, and active-search tests**
 
 Tests must prove:
 
@@ -339,13 +339,13 @@ Tests must prove:
 
 Use a controlled API to start request A, start request B, finish A, and assert A cannot clear B's loading state or replace B's results. Start a query against cached places, publish live places, and assert results recompute without editing the query.
 
-- [ ] **Step 2: Run the focused suites and verify they fail**
+- [x] **Step 2: Run the focused suites and verify they fail**
 
 Run: `scripts/ios-test --only WorkInCafeTests/DiscoveryFilterTests --only WorkInCafeTests/DiscoveryStoreTests --only WorkInCafeTests/MapFeatureModelTests`
 
 Expected: new assertions fail and missing types do not compile.
 
-- [ ] **Step 3: Implement filter/state types**
+- [x] **Step 3: Implement filter/state types**
 
 ```swift
 enum DiscoveryMode: String, CaseIterable, Sendable { case map = "Map"; case list = "List" }
@@ -370,13 +370,13 @@ final class DiscoveryStore: ObservableObject {
 }
 ```
 
-- [ ] **Step 4: Implement safe bounds and request generations**
+- [x] **Step 4: Implement safe bounds and request generations**
 
 `PlaceBounds.isQueryable` rejects latitude spans above 2 degrees, longitude spans above 2 degrees, and non-finite coordinates. `normalizedSegments` returns one valid segment normally or two segments split at ±180. Preserve `URLError.cancelled` as cancellation. Deduplicate response IDs by first occurrence before reconciliation.
 
 In `MapFeatureModel`, increment `requestGeneration` for every load, capture `(generation, requestKey)`, and gate success/error/loading publication on both matching values. Retain `activeSearchQuery` and recompute after every accepted source generation.
 
-- [ ] **Step 5: Run focused/full tests and commit**
+- [x] **Step 5: Run focused/full tests and commit**
 
 Run: `scripts/ios-test --only WorkInCafeTests`
 
@@ -405,7 +405,7 @@ git commit -m $'fix(ios): harden discovery state and requests\n\nRefs #310\n\n�
 - Consumes: `PlacePresentation`, `DiscoveryStore`, `MapFeatureModel`, `MapCameraIntent`.
 - Produces: `MapViewRepresentable(places:selectedPlaceID:cameraIntent:onSelect:onBoundsChanged:)`, `DiscoveryScreen`, and shared `PlaceResultRow`.
 
-- [ ] **Step 1: Write failing minimal-annotation and safe-reconciliation tests**
+- [x] **Step 1: Write failing minimal-annotation and safe-reconciliation tests**
 
 ```swift
 let payload = PlaceAnnotationPayload(place: PlaceFixture.summary(id: "1", name: "Ten Belles"))
@@ -416,27 +416,27 @@ let payload = PlaceAnnotationPayload(place: PlaceFixture.summary(id: "1", name: 
 
 Pass duplicate incoming IDs to the reconciler and assert it returns one stable annotation instead of trapping.
 
-- [ ] **Step 2: Run focused tests and verify they fail**
+- [x] **Step 2: Run focused tests and verify they fail**
 
 Run: `scripts/ios-test --only WorkInCafeTests/MapAnnotationTests --only WorkInCafeTests/AnnotationReconcilerTests`
 
 Expected: compilation fails because `PlaceAnnotationPayload` does not exist.
 
-- [ ] **Step 3: Replace default marker views with custom circular views**
+- [x] **Step 3: Replace default marker views with custom circular views**
 
 `PlaceAnnotation` holds `PlaceAnnotationPayload` only: ID, coordinate, name, category label, rating, presentation key, symbol, monogram, background color, and foreground style. `PlaceAnnotationView` becomes `MKAnnotationView` with one `CAShapeLayer`, one centered `UILabel` or `UIImageView`, a 2-point white ring, controlled shadow, and 32/42 point normal/selected sizes. `ClusterAnnotationView` becomes a charcoal circular `MKAnnotationView` sized 34/40/46 by member count and uses white tabular text.
 
 Selection uses `setSelected(_:animated:)`; Reduce Motion chooses immediate bounds/layer updates. Do not immediately deselect a place annotation. Cluster selection calls `showAnnotations` and then deselects the cluster only.
 
-- [ ] **Step 4: Implement safe reconciliation and camera coordination**
+- [x] **Step 4: Implement safe reconciliation and camera coordination**
 
 Replace every `Dictionary(uniqueKeysWithValues:)` over network-derived IDs with deterministic insertion. Configure `MKStandardMapConfiguration(elevationStyle: .flat)` with muted emphasis, excluded POIs, zoom range, user-location support, and compass. Debounce bounds publication for 250 ms in the coordinator; suppress unqueryable bounds and expose `onQueryabilityChanged(false)`.
 
-- [ ] **Step 5: Build the approved discovery shell**
+- [x] **Step 5: Build the approved discovery shell**
 
 `DiscoveryScreen` places a single top search/filter surface inside the safe area, a compact Map/List segmented picker, restrained location and Add place actions, and the product dock owned by the root. `DiscoveryListView` and map use the same `filteredPlaces` and selected ID. Selecting a row sets a camera intent and opens the preview. Empty, loading, stale/error, and zoom-in states remain visible without covering the whole map.
 
-- [ ] **Step 6: Run tests and build**
+- [x] **Step 6: Run tests and build**
 
 Run: `scripts/ios-test --only WorkInCafeTests`
 
@@ -446,7 +446,7 @@ Run: `xcodebuild -project ios/WorkInCafe.xcodeproj -scheme WorkInCafe -sdk iphon
 
 Expected: `** BUILD SUCCEEDED **`.
 
-- [ ] **Step 7: Commit the branded discovery shell**
+- [x] **Step 7: Commit the branded discovery shell**
 
 ```bash
 git add ios/WorkInCafe/App/AppRootView.swift ios/WorkInCafe/Features/Discovery ios/WorkInCafe/Features/Map ios/WorkInCafeTests/Core
@@ -467,25 +467,25 @@ git commit -m $'feat(ios): build branded map and list discovery\n\nRefs #310\n\n
 - Consumes: `DiscoveryStore.query`, `DiscoveryStore.filter`, `DiscoveryStore.filteredPlaces`.
 - Produces: full-height search selection and filter application callbacks that update map/list selection consistently.
 
-- [ ] **Step 1: Add failing UI/unit tests for search refresh and filter removal**
+- [x] **Step 1: Add failing UI/unit tests for search refresh and filter removal**
 
 Launch with `-ui-testing`, open `discovery.search`, search `Ten Belles`, select the result, and assert `place.preview` exists. Reopen filters, select Library, apply, assert the active filter chip `filter.active.library` exists, remove it, and assert it disappears.
 
-- [ ] **Step 2: Run focused tests and verify failure**
+- [x] **Step 2: Run focused tests and verify failure**
 
 Run: `scripts/ios-test --only WorkInCafeTests/DiscoveryStoreTests --ui-only WorkInCafeUITests/DiscoverySearchFilterTests`
 
 Expected: UI controls are not found because search/filter views do not exist.
 
-- [ ] **Step 3: Implement full-height native search**
+- [x] **Step 3: Implement full-height native search**
 
 Use `NavigationStack`, `.searchable`, dense `PlaceResultRow` rows, and quick category chips backed by real category values. Empty copy must suggest clearing filters, moving the map, or changing the term. Selecting a result dismisses search, switches to map, sets camera intent, keeps selection, and opens the preview.
 
-- [ ] **Step 4: Implement the native filter sheet**
+- [x] **Step 4: Implement the native filter sheet**
 
 Render category choices with canonical identity and a checkmark; use only actual 1–10 rating thresholds `7+`, `8+`, and `9+`. Keep edits in a local draft until Apply. The sticky safe-area button reads `Show N work spots` from the local currently loaded result set. Reset returns an empty filter. Do not show outlets, Wi-Fi, seating, open-now, or noise filters because slim viewport data cannot support them honestly.
 
-- [ ] **Step 5: Run unit/UI tests and commit**
+- [x] **Step 5: Run unit/UI tests and commit**
 
 Run: `scripts/ios-test --only WorkInCafeTests --ui-only WorkInCafeUITests/DiscoverySearchFilterTests`
 
