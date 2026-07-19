@@ -24,5 +24,7 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+	<key>WORKINCAFE_API_BASE_URL</key>
+	<string>$(WORKINCAFE_API_BASE_URL)</string>
 </dict>
 </plist>

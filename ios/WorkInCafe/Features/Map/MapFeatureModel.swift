@@ -9,6 +9,8 @@ final class MapFeatureModel: ObservableObject {
     private var loadTask: Task<Void, Never>?
     private var searchTask: Task<Void, Never>?
     private var currentRequestKey: String?
+    private var hasStarted = false
+    private var isReadingInitialCache = false
     private(set) var lastBounds: PlaceBounds
 
     @Published private(set) var places: [PlaceSummary] = []
@@ -30,18 +32,36 @@ final class MapFeatureModel: ObservableObject {
     }
 
     func start() {
-        guard loadTask == nil else { return }
-        load(bounds: lastBounds, includeCache: true)
+        guard !hasStarted else { return }
+        hasStarted = true
+        isReadingInitialCache = true
+        isLoading = places.isEmpty
+        errorMessage = nil
+        loadTask = Task { [weak self] in
+            guard let self else { return }
+            if let cached = try? await cache.load(), !cached.isEmpty {
+                guard !Task.isCancelled else { return }
+                places = cached
+                isLoading = false
+            }
+            isReadingInitialCache = false
+            guard !Task.isCancelled else { return }
+            let bounds = lastBounds
+            currentRequestKey = bounds.requestKey
+            await refresh(bounds: bounds)
+        }
     }
 
     func viewportChanged(to bounds: PlaceBounds) {
+        lastBounds = bounds
+        guard hasStarted, !isReadingInitialCache else { return }
         guard bounds.requestKey != currentRequestKey else { return }
-        load(bounds: bounds, includeCache: false)
+        load(bounds: bounds)
     }
 
     func retry() {
         currentRequestKey = nil
-        load(bounds: lastBounds, includeCache: places.isEmpty)
+        load(bounds: lastBounds)
     }
 
     func search(_ query: String) {
@@ -55,7 +75,7 @@ final class MapFeatureModel: ObservableObject {
         }
     }
 
-    private func load(bounds: PlaceBounds, includeCache: Bool) {
+    private func load(bounds: PlaceBounds) {
         loadTask?.cancel()
         lastBounds = bounds
         currentRequestKey = bounds.requestKey
@@ -63,24 +83,23 @@ final class MapFeatureModel: ObservableObject {
         errorMessage = nil
         loadTask = Task { [weak self] in
             guard let self else { return }
-            if includeCache, let cached = try? await cache.load(), !cached.isEmpty {
-                guard !Task.isCancelled else { return }
-                places = cached
-                isLoading = false
-            }
-            do {
-                let freshPlaces = try await api.places(in: bounds)
-                try Task.checkCancellation()
-                places = freshPlaces
-                isLoading = false
-                errorMessage = nil
-                try? await cache.store(freshPlaces)
-            } catch is CancellationError {
-                return
-            } catch {
-                isLoading = false
-                errorMessage = error.localizedDescription
-            }
+            await refresh(bounds: bounds)
+        }
+    }
+
+    private func refresh(bounds: PlaceBounds) async {
+        do {
+            let freshPlaces = try await api.places(in: bounds)
+            try Task.checkCancellation()
+            places = freshPlaces
+            isLoading = false
+            errorMessage = nil
+            try? await cache.store(freshPlaces)
+        } catch is CancellationError {
+            return
+        } catch {
+            isLoading = false
+            errorMessage = error.localizedDescription
         }
     }
 }

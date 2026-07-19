@@ -3,8 +3,9 @@ import Testing
 
 @Suite("App root")
 struct AppRootStateTests {
-    @Test("starts in guest discovery")
+    @MainActor
+    @Test("production root starts in guest discovery")
     func guestDiscovery() {
-        #expect(AppRootState().destination == .discovery)
+        #expect(AppRootView().destination == .discovery)
     }
 }

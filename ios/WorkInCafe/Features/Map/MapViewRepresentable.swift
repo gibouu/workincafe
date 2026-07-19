@@ -41,6 +41,7 @@ final class MapCoordinator: NSObject, MKMapViewDelegate {
     var onBoundsChanged: (PlaceBounds) -> Void
     private let reconciler = AnnotationReconciler()
     private var reconcileTask: Task<Void, Never>?
+    private var lastPlaces: [PlaceSummary]?
 
     init(
         onSelect: @escaping (PlaceSummary) -> Void,
@@ -51,15 +52,12 @@ final class MapCoordinator: NSObject, MKMapViewDelegate {
     }
 
     func reconcile(places: [PlaceSummary], on mapView: MKMapView) {
+        guard places != lastPlaces else { return }
+        lastPlaces = places
         reconcileTask?.cancel()
         let snapshots = mapView.annotations.compactMap { annotation -> AnnotationSnapshot? in
             guard let annotation = annotation as? PlaceAnnotation else { return nil }
-            return AnnotationSnapshot(
-                id: annotation.id,
-                latitude: annotation.coordinate.latitude,
-                longitude: annotation.coordinate.longitude,
-                presentationKey: annotation.place.presentationKey
-            )
+            return AnnotationSnapshot(place: annotation.place)
         }
         reconcileTask = Task { [weak self, weak mapView] in
             guard let self, let mapView else { return }
@@ -79,7 +77,9 @@ final class MapCoordinator: NSObject, MKMapViewDelegate {
         let removals = diff.removedIDs.compactMap { annotationsByID[$0] }
         mapView.removeAnnotations(removals)
         for update in diff.updated {
-            annotationsByID[update.id]?.update(with: update.place)
+            guard let annotation = annotationsByID[update.id] else { continue }
+            annotation.update(with: update.place)
+            (mapView.view(for: annotation) as? PlaceAnnotationView)?.refresh()
         }
         mapView.addAnnotations(diff.added.map(PlaceAnnotation.init))
     }

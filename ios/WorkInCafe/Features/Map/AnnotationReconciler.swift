@@ -1,10 +1,9 @@
 import Foundation
 
 struct AnnotationSnapshot: Hashable, Sendable {
-    let id: String
-    let latitude: Double
-    let longitude: Double
-    let presentationKey: String
+    let place: PlaceSummary
+
+    var id: String { place.id }
 }
 
 struct AnnotationUpdate: Hashable, Sendable {
@@ -27,9 +26,7 @@ actor AnnotationReconciler {
         let added = incomingByID.values.filter { existingByID[$0.id] == nil }.sorted { $0.id < $1.id }
         let updated = incomingByID.values.compactMap { place -> AnnotationUpdate? in
             guard let current = existingByID[place.id] else { return nil }
-            guard current.latitude != place.latitude
-                    || current.longitude != place.longitude
-                    || current.presentationKey != place.presentationKey else { return nil }
+            guard current.place != place else { return nil }
             return AnnotationUpdate(id: place.id, place: place)
         }.sorted { $0.id < $1.id }
 

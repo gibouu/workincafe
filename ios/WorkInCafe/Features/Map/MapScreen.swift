@@ -37,7 +37,13 @@ struct MapScreen: View {
                         Image(systemName: "wifi.exclamationmark")
                         Text(errorMessage).font(.footnote).lineLimit(2)
                         Spacer(minLength: 4)
-                        Button("Retry") { model.retry() }.font(.footnote.weight(.semibold))
+                        Button("Retry") { model.retry() }
+                            .font(.footnote.weight(.semibold))
+                            .frame(
+                                minWidth: WICSpacing.minimumControlTarget,
+                                minHeight: WICSpacing.minimumControlTarget
+                            )
+                            .contentShape(Rectangle())
                     }
                     .padding(.horizontal, WICSpacing.medium)
                     .frame(minHeight: WICSpacing.minimumControlTarget)

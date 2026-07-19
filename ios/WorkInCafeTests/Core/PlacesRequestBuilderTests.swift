@@ -4,6 +4,16 @@ import Testing
 
 @Suite("Public places request")
 struct PlacesRequestBuilderTests {
+    @Test("resolves the generated app bundle API base URL")
+    func generatedBundleConfiguration() throws {
+        let configuredValue = try #require(
+            Bundle.main.object(forInfoDictionaryKey: "WORKINCAFE_API_BASE_URL") as? String
+        )
+
+        #expect(configuredValue == "https://www.workin.cafe")
+        #expect(APIConfiguration.baseURL == URL(string: configuredValue))
+    }
+
     @Test("builds the bbox query against the configured base URL")
     func bboxQuery() throws {
         let builder = PlacesRequestBuilder(baseURL: try #require(URL(string: "https://workin.cafe")))

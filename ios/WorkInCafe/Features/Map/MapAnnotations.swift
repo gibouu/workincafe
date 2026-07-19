@@ -35,6 +35,10 @@ final class PlaceAnnotationView: MKMarkerAnnotationView {
         accessibilityHint = nil
     }
 
+    func refresh() {
+        configure()
+    }
+
     private func configure() {
         guard let annotation = annotation as? PlaceAnnotation else { return }
         clusteringIdentifier = Self.reuseIdentifier
@@ -44,7 +48,9 @@ final class PlaceAnnotationView: MKMarkerAnnotationView {
         canShowCallout = false
         isAccessibilityElement = true
         accessibilityTraits = .button
-        let rating = annotation.place.rating.map { ", rated \(String(format: "%.1f", $0))" } ?? ""
+        let rating = annotation.place.rating.flatMap { value in
+            value > 0 ? ", rated \(String(format: "%.1f", value))" : nil
+        } ?? ""
         accessibilityLabel = "\(annotation.place.name), \(annotation.place.categoryLabel)\(rating)"
         accessibilityHint = "Shows details"
     }
