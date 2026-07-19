@@ -93,15 +93,24 @@ struct AppRootView: View {
     private func destination(for route: AppRoute) -> some View {
         switch route {
         case let .placeDetail(id):
-            if let place = discoveryStore.place(id: id) {
-                PlaceDetailView(place: place)
-            } else {
-                ContentUnavailableView(
-                    "Work spot unavailable",
-                    systemImage: "mappin.slash",
-                    description: Text("This work spot is no longer in the current results.")
-                )
-            }
+            PlaceDetailDestination(store: discoveryStore, placeID: id)
+        }
+    }
+}
+
+private struct PlaceDetailDestination: View {
+    @ObservedObject var store: DiscoveryStore
+    let placeID: String
+
+    var body: some View {
+        if let place = store.place(id: placeID) {
+            PlaceDetailView(place: place)
+        } else {
+            ContentUnavailableView(
+                "Work spot unavailable",
+                systemImage: "mappin.slash",
+                description: Text("This work spot is no longer in the current results.")
+            )
         }
     }
 }

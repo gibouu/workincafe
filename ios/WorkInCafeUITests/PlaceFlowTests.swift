@@ -169,11 +169,24 @@ final class PlaceFlowTests: XCTestCase {
         XCTAssertTrue(preview.exists)
         XCTAssertTrue(app.staticTexts["Ten Belles"].exists)
 
+        let details = app.buttons["place.preview.details"]
+        XCTAssertTrue(details.isHittable)
+        details.tap()
+        let detail = app.descendants(matching: .any)["place.detail"]
+        XCTAssertTrue(detail.waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Ten Belles"].exists)
+
         XCTAssertTrue(
             app.staticTexts["Ten Belles, refreshed"].waitForExistence(timeout: 8)
         )
+        XCTAssertTrue(detail.exists)
+
+        let backButton = app.buttons["BackButton"]
+        XCTAssertTrue(backButton.waitForExistence(timeout: 2))
+        backButton.tap()
+        XCTAssertTrue(preview.waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Ten Belles, refreshed"].exists)
         XCTAssertTrue(marker.waitForExistence(timeout: 2))
-        XCTAssertTrue(preview.exists)
         XCTAssertTrue(app.buttons["place.preview.details"].exists)
     }
 
