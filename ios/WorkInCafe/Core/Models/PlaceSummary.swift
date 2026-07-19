@@ -167,7 +167,7 @@ struct PlaceBounds: Codable, Hashable, Sendable {
         return [
             PlaceBounds(west: normalizedWest, south: south, east: 180, north: north),
             PlaceBounds(west: -180, south: south, east: normalizedEast, north: north),
-        ]
+        ].filter { $0.west < $0.east }
     }
 
     private static func normalizedLongitude(_ longitude: Double) -> Double {

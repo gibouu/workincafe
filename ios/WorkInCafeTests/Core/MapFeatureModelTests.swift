@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import Testing
 @testable import WorkInCafe
@@ -31,65 +32,64 @@ struct MapFeatureModelTests {
     }
 
     @MainActor
-    @Test("a stale success cannot clear or replace the active request")
-    func staleSuccessCannotPublish() async {
-        let requestA = PlaceBounds(west: 2.1, south: 48.7, east: 2.4, north: 49.0)
-        let requestB = PlaceBounds(west: 2.2, south: 48.8, east: 2.5, north: 49.1)
+    @Test("a stale same-key success cannot clear or replace the active retry")
+    func staleSameKeySuccessCannotPublish() async {
+        let bounds = PlaceBounds(west: 2.1, south: 48.7, east: 2.4, north: 49.0)
         let stale = [PlaceFixture.summary(id: "stale", name: "Stale café")]
         let active = [PlaceFixture.summary(id: "active", name: "Active café")]
         let api = ControlledPlacesAPI()
         let model = MapFeatureModel(
             api: api,
             cache: EmptyPlaceCache(),
-            initialBounds: requestA
+            initialBounds: bounds
         )
+        let publications = MapFeaturePublicationRecorder(model: model)
 
         model.start()
-        await waitUntilAsync { await api.hasRequest(for: requestA) }
-        model.viewportChanged(to: requestB)
-        await waitUntilAsync { await api.hasRequest(for: requestB) }
+        let requestA = await api.request(for: bounds, occurrence: 0)
+        model.retry()
+        let requestB = await api.request(for: bounds, occurrence: 1)
 
         await api.succeed(requestA, with: stale)
-        for _ in 0..<100 { await Task.yield() }
-
-        #expect(model.isLoading)
-        #expect(model.places.isEmpty)
-        #expect(model.errorMessage == nil)
-
+        #expect(await api.hasFinished(requestA))
         await api.succeed(requestB, with: active)
-        await waitUntil { model.places == active }
+        await publications.waitForPlaces(active)
+
+        #expect(!publications.places.contains(stale))
+        #expect(publications.errors.allSatisfy { $0 == nil })
+        #expect(publications.loadingStates.dropLast().allSatisfy { $0 })
+        #expect(model.places == active)
         #expect(!model.isLoading)
     }
 
     @MainActor
-    @Test("a stale failure cannot clear the active request loading state")
-    func staleFailureCannotPublish() async {
-        let requestA = PlaceBounds(west: 2.1, south: 48.7, east: 2.4, north: 49.0)
-        let requestB = PlaceBounds(west: 2.2, south: 48.8, east: 2.5, north: 49.1)
+    @Test("a stale same-key failure cannot clear the active retry loading state")
+    func staleSameKeyFailureCannotPublish() async {
+        let bounds = PlaceBounds(west: 2.1, south: 48.7, east: 2.4, north: 49.0)
         let active = [PlaceFixture.summary(id: "active", name: "Active café")]
         let api = ControlledPlacesAPI()
         let model = MapFeatureModel(
             api: api,
             cache: EmptyPlaceCache(),
-            initialBounds: requestA
+            initialBounds: bounds
         )
+        let publications = MapFeaturePublicationRecorder(model: model)
 
         model.start()
-        await waitUntilAsync { await api.hasRequest(for: requestA) }
-        model.viewportChanged(to: requestB)
-        await waitUntilAsync { await api.hasRequest(for: requestB) }
+        let requestA = await api.request(for: bounds, occurrence: 0)
+        model.retry()
+        let requestB = await api.request(for: bounds, occurrence: 1)
 
         await api.fail(requestA, with: APIError.invalidResponse)
-        for _ in 0..<100 {
-            if !model.isLoading || model.errorMessage != nil { break }
-            await Task.yield()
-        }
-
-        #expect(model.isLoading)
-        #expect(model.errorMessage == nil)
-
+        #expect(await api.hasFinished(requestA))
         await api.succeed(requestB, with: active)
-        await waitUntil { model.places == active }
+        await publications.waitForPlaces(active)
+
+        #expect(publications.errors.allSatisfy { $0 == nil })
+        #expect(publications.loadingStates.dropLast().allSatisfy { $0 })
+        #expect(model.places == active)
+        #expect(!model.isLoading)
+        #expect(model.errorMessage == nil)
     }
 
     @MainActor
@@ -105,12 +105,12 @@ struct MapFeatureModelTests {
         await waitUntilAsync { await cache.hasStartedLoading }
         await cache.finishLoading()
         await waitUntil { model.places == cached }
-        await waitUntilAsync { await api.hasRequest(for: .paris) }
+        let request = await api.request(for: .paris, occurrence: 0)
 
         model.search("atlas")
         await waitUntil { model.searchResults == cached }
 
-        await api.succeed(.paris, with: live)
+        await api.succeed(request, with: live)
         await waitUntil { model.places == live }
         await waitUntil { model.searchResults == live }
     }
@@ -202,23 +202,149 @@ private actor SuspendedPlacesAPI: PlacesServing {
 }
 
 private actor ControlledPlacesAPI: PlacesServing {
-    private var continuations: [String: CheckedContinuation<[PlaceSummary], any Error>] = [:]
+    struct Request: Hashable, Sendable {
+        let id: Int
+        let requestKey: String
+    }
+
+    private struct RequestWaiter {
+        let requestKey: String
+        let occurrence: Int
+        let continuation: CheckedContinuation<Request, Never>
+    }
+
+    private var nextRequestID = 0
+    private var requestsByKey: [String: [Request]] = [:]
+    private var pendingResponses: [Int: CheckedContinuation<[PlaceSummary], any Error>] = [:]
+    private var requestWaiters: [RequestWaiter] = []
+    private var finishedRequestIDs = Set<Int>()
+    private var finishWaiters: [Int: [CheckedContinuation<Void, Never>]] = [:]
 
     func places(in bounds: PlaceBounds) async throws -> [PlaceSummary] {
-        try await withCheckedThrowingContinuation { continuation in
-            continuations[bounds.requestKey] = continuation
+        let request = Request(id: nextRequestID, requestKey: bounds.requestKey)
+        nextRequestID += 1
+        requestsByKey[request.requestKey, default: []].append(request)
+        resumeRequestWaiters()
+
+        do {
+            let places = try await withCheckedThrowingContinuation { continuation in
+                pendingResponses[request.id] = continuation
+            }
+            markFinished(request)
+            return places
+        } catch {
+            markFinished(request)
+            throw error
         }
     }
 
-    func hasRequest(for bounds: PlaceBounds) -> Bool {
-        continuations[bounds.requestKey] != nil
+    func request(for bounds: PlaceBounds, occurrence: Int) async -> Request {
+        let requestKey = bounds.requestKey
+        if let requests = requestsByKey[requestKey], requests.indices.contains(occurrence) {
+            return requests[occurrence]
+        }
+        return await withCheckedContinuation { continuation in
+            requestWaiters.append(
+                RequestWaiter(
+                    requestKey: requestKey,
+                    occurrence: occurrence,
+                    continuation: continuation
+                )
+            )
+        }
     }
 
-    func succeed(_ bounds: PlaceBounds, with places: [PlaceSummary]) {
-        continuations.removeValue(forKey: bounds.requestKey)?.resume(returning: places)
+    func succeed(_ request: Request, with places: [PlaceSummary]) async {
+        pendingResponses.removeValue(forKey: request.id)?.resume(returning: places)
+        await waitUntilFinished(request)
     }
 
-    func fail(_ bounds: PlaceBounds, with error: any Error) {
-        continuations.removeValue(forKey: bounds.requestKey)?.resume(throwing: error)
+    func fail(_ request: Request, with error: any Error) async {
+        pendingResponses.removeValue(forKey: request.id)?.resume(throwing: error)
+        await waitUntilFinished(request)
+    }
+
+    func hasFinished(_ request: Request) -> Bool {
+        finishedRequestIDs.contains(request.id)
+    }
+
+    private func waitUntilFinished(_ request: Request) async {
+        guard !finishedRequestIDs.contains(request.id) else { return }
+        await withCheckedContinuation { continuation in
+            finishWaiters[request.id, default: []].append(continuation)
+        }
+    }
+
+    private func markFinished(_ request: Request) {
+        finishedRequestIDs.insert(request.id)
+        for waiter in finishWaiters.removeValue(forKey: request.id) ?? [] {
+            waiter.resume()
+        }
+    }
+
+    private func resumeRequestWaiters() {
+        var pendingWaiters: [RequestWaiter] = []
+        for waiter in requestWaiters {
+            if let requests = requestsByKey[waiter.requestKey],
+               requests.indices.contains(waiter.occurrence) {
+                waiter.continuation.resume(returning: requests[waiter.occurrence])
+            } else {
+                pendingWaiters.append(waiter)
+            }
+        }
+        requestWaiters = pendingWaiters
+    }
+}
+
+@MainActor
+private final class MapFeaturePublicationRecorder {
+    private(set) var places: [[PlaceSummary]] = []
+    private(set) var errors: [String?] = []
+    private(set) var loadingStates: [Bool] = []
+    private var placeWaiters: [([PlaceSummary], CheckedContinuation<Void, Never>)] = []
+    private var cancellables = Set<AnyCancellable>()
+
+    init(model: MapFeatureModel) {
+        model.$places
+            .sink { [weak self] places in
+                MainActor.assumeIsolated {
+                    self?.record(places)
+                }
+            }
+            .store(in: &cancellables)
+        model.$errorMessage
+            .sink { [weak self] errorMessage in
+                MainActor.assumeIsolated {
+                    self?.errors.append(errorMessage)
+                }
+            }
+            .store(in: &cancellables)
+        model.$isLoading
+            .sink { [weak self] isLoading in
+                MainActor.assumeIsolated {
+                    self?.loadingStates.append(isLoading)
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    func waitForPlaces(_ expectedPlaces: [PlaceSummary]) async {
+        guard !places.contains(expectedPlaces) else { return }
+        await withCheckedContinuation { continuation in
+            placeWaiters.append((expectedPlaces, continuation))
+        }
+    }
+
+    private func record(_ publishedPlaces: [PlaceSummary]) {
+        places.append(publishedPlaces)
+        var pendingWaiters: [([PlaceSummary], CheckedContinuation<Void, Never>)] = []
+        for (expectedPlaces, continuation) in placeWaiters {
+            if publishedPlaces == expectedPlaces {
+                continuation.resume()
+            } else {
+                pendingWaiters.append((expectedPlaces, continuation))
+            }
+        }
+        placeWaiters = pendingWaiters
     }
 }

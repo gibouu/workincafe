@@ -116,7 +116,6 @@ final class MapFeatureModel: ObservableObject {
     private func refresh(bounds: PlaceBounds, generation: Int, requestKey: String) async {
         do {
             let freshPlaces = try await api.places(in: bounds)
-            try Task.checkCancellation()
             guard isCurrent(generation: generation, requestKey: requestKey) else { return }
             let acceptedPlaces = PlaceSummary.deduplicated(freshPlaces)
             publishPlaces(acceptedPlaces)

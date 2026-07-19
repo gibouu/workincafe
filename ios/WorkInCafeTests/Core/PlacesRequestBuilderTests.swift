@@ -51,6 +51,8 @@ struct PlacesRequestBuilderTests {
         let crossing = PlaceBounds(west: 179.5, south: -1, east: -179.5, north: 1)
         let positiveOvershoot = PlaceBounds(west: 179.3, south: -1, east: 180.3, north: 1)
         let negativeOvershoot = PlaceBounds(west: -180.3, south: -1, east: -179.3, north: 1)
+        let positiveBoundary = PlaceBounds(west: 180, south: -1, east: 181, north: 1)
+        let negativeBoundary = PlaceBounds(west: -181, south: -1, east: -180, north: 1)
 
         #expect(ordinary.normalizedSegments == [ordinary])
         #expect(
@@ -69,6 +71,16 @@ struct PlacesRequestBuilderTests {
             negativeOvershoot.normalizedSegments == [
                 PlaceBounds(west: 179.7, south: -1, east: 180, north: 1),
                 PlaceBounds(west: -180, south: -1, east: -179.3, north: 1),
+            ]
+        )
+        #expect(
+            positiveBoundary.normalizedSegments == [
+                PlaceBounds(west: -180, south: -1, east: -179, north: 1),
+            ]
+        )
+        #expect(
+            negativeBoundary.normalizedSegments == [
+                PlaceBounds(west: 179, south: -1, east: 180, north: 1),
             ]
         )
     }
