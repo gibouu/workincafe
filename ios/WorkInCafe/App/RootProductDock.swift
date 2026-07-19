@@ -25,6 +25,8 @@ struct RootProductDock: View {
             Capsule()
                 .stroke(.wicSurfaceBorder, lineWidth: 0.5)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("product.dock")
     }
 
     private func dockItem(for mode: ProductMode) -> some View {

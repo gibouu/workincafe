@@ -19,6 +19,7 @@ struct DiscoveryScreen: View {
                 mapActions
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("app.discovery.root")
         .task { model.start() }
         .task(id: model.places) {
@@ -55,7 +56,12 @@ struct DiscoveryScreen: View {
             DiscoveryListView(
                 places: store.filteredPlaces,
                 selectedPlaceID: store.selectedPlaceID,
-                onSelect: selectPlace
+                isLoading: model.isLoading,
+                errorMessage: model.errorMessage,
+                hasActiveCriteria: !store.query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    || store.filter.activeCount > 0,
+                onSelect: selectPlace,
+                onRetry: model.retry
             )
         }
     }
@@ -72,6 +78,7 @@ struct DiscoveryScreen: View {
                     .autocorrectionDisabled()
                     .submitLabel(.search)
                     .accessibilityLabel("Search work spots")
+                    .accessibilityIdentifier("discovery.search")
 
                 Divider()
                     .frame(height: 24)
@@ -86,14 +93,7 @@ struct DiscoveryScreen: View {
                     .stroke(.wicSurfaceBorder, lineWidth: 0.5)
             }
 
-            Picker("Discovery view", selection: $store.mode) {
-                ForEach(DiscoveryMode.allCases, id: \.self) { mode in
-                    Text(mode.rawValue).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 144)
-            .accessibilityIdentifier("discovery.mode")
+            DiscoveryModePicker(selection: $store.mode)
         }
         .padding(.horizontal, WICSpacing.medium)
         .padding(.top, WICSpacing.small)
@@ -308,6 +308,49 @@ struct DiscoveryScreen: View {
     private func clearSelection() {
         router.sheet = nil
         store.selectedPlaceID = nil
+    }
+}
+
+private struct DiscoveryModePicker: View {
+    @Binding var selection: DiscoveryMode
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(Color(uiColor: .tertiarySystemFill))
+                .frame(height: 32)
+
+            HStack(spacing: 2) {
+                ForEach(DiscoveryMode.allCases, id: \.self) { mode in
+                    Button {
+                        selection = mode
+                    } label: {
+                        Text(mode.rawValue)
+                            .font(.footnote.weight(selection == mode ? .semibold : .regular))
+                            .foregroundStyle(.primary)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .contentShape(Rectangle())
+                            .background {
+                                if selection == mode {
+                                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                        .fill(Color(uiColor: .systemBackground))
+                                        .frame(height: 28)
+                                        .shadow(color: .black.opacity(0.12), radius: 1, y: 1)
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(mode.rawValue)
+                    .accessibilityValue(selection == mode ? "Selected" : "Not selected")
+                    .accessibilityAddTraits(selection == mode ? .isSelected : [])
+                    .accessibilityIdentifier("discovery.mode.\(mode.rawValue.lowercased())")
+                }
+            }
+        }
+        .frame(width: 144, height: WICSpacing.minimumControlTarget)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Discovery view")
+        .accessibilityIdentifier("discovery.mode")
     }
 }
 

@@ -125,6 +125,7 @@ final class PlaceAnnotationView: MKAnnotationView {
         accessibilityLabel = nil
         accessibilityHint = nil
         applySelection(false, animated: false)
+        accessibilityValue = nil
     }
 
     override func layoutSubviews() {
@@ -193,6 +194,12 @@ final class PlaceAnnotationView: MKAnnotationView {
         let changes = { [self] in
             currentDiameter = selected ? Self.selectedDiameter : Self.normalDiameter
             displayPriority = selected ? .required : .defaultHigh
+            accessibilityValue = selected ? "Selected" : "Not selected"
+            if selected {
+                accessibilityTraits.insert(.selected)
+            } else {
+                accessibilityTraits.remove(.selected)
+            }
             bounds = CGRect(
                 x: 0,
                 y: 0,
