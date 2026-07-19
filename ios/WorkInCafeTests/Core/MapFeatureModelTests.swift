@@ -38,12 +38,16 @@ struct MapFeatureModelTests {
         let stale = [PlaceFixture.summary(id: "stale", name: "Stale café")]
         let active = [PlaceFixture.summary(id: "active", name: "Active café")]
         let api = ControlledPlacesAPI()
+        let decisions = RecordingRequestDecisionObserver()
         let model = MapFeatureModel(
             api: api,
             cache: EmptyPlaceCache(),
-            initialBounds: bounds
+            initialBounds: bounds,
+            requestDecisionObserver: decisions
         )
         let publications = MapFeaturePublicationRecorder(model: model)
+        let requestAIdentity = MapRequestIdentity(generation: 1, requestKey: bounds.requestKey)
+        let requestBIdentity = MapRequestIdentity(generation: 2, requestKey: bounds.requestKey)
 
         model.start()
         let requestA = await api.request(for: bounds, occurrence: 0)
@@ -52,8 +56,17 @@ struct MapFeatureModelTests {
 
         await api.succeed(requestA, with: stale)
         #expect(await api.hasFinished(requestA))
+        await decisions.wait(for: requestAIdentity, decision: .rejectedStale)
+
+        #expect(!publications.places.contains(stale))
+        #expect(publications.errors.allSatisfy { $0 == nil })
+        #expect(publications.loadingStates.allSatisfy { $0 })
+        #expect(model.places.isEmpty)
+        #expect(model.isLoading)
+        #expect(model.errorMessage == nil)
+
         await api.succeed(requestB, with: active)
-        await publications.waitForPlaces(active)
+        await decisions.wait(for: requestBIdentity, decision: .accepted)
 
         #expect(!publications.places.contains(stale))
         #expect(publications.errors.allSatisfy { $0 == nil })
@@ -66,14 +79,17 @@ struct MapFeatureModelTests {
     @Test("a stale same-key failure cannot clear the active retry loading state")
     func staleSameKeyFailureCannotPublish() async {
         let bounds = PlaceBounds(west: 2.1, south: 48.7, east: 2.4, north: 49.0)
-        let active = [PlaceFixture.summary(id: "active", name: "Active café")]
         let api = ControlledPlacesAPI()
+        let decisions = RecordingRequestDecisionObserver()
         let model = MapFeatureModel(
             api: api,
             cache: EmptyPlaceCache(),
-            initialBounds: bounds
+            initialBounds: bounds,
+            requestDecisionObserver: decisions
         )
         let publications = MapFeaturePublicationRecorder(model: model)
+        let requestAIdentity = MapRequestIdentity(generation: 1, requestKey: bounds.requestKey)
+        let requestBIdentity = MapRequestIdentity(generation: 2, requestKey: bounds.requestKey)
 
         model.start()
         let requestA = await api.request(for: bounds, occurrence: 0)
@@ -82,14 +98,23 @@ struct MapFeatureModelTests {
 
         await api.fail(requestA, with: APIError.invalidResponse)
         #expect(await api.hasFinished(requestA))
-        await api.succeed(requestB, with: active)
-        await publications.waitForPlaces(active)
+        await decisions.wait(for: requestAIdentity, decision: .rejectedStale)
 
         #expect(publications.errors.allSatisfy { $0 == nil })
-        #expect(publications.loadingStates.dropLast().allSatisfy { $0 })
-        #expect(model.places == active)
-        #expect(!model.isLoading)
+        #expect(publications.loadingStates.allSatisfy { $0 })
+        #expect(model.places.isEmpty)
+        #expect(model.isLoading)
         #expect(model.errorMessage == nil)
+
+        await api.fail(requestB, with: APIError.invalidConfiguration)
+        await decisions.wait(for: requestBIdentity, decision: .failedCurrent)
+
+        #expect(publications.errors.dropLast().allSatisfy { $0 == nil })
+        #expect(publications.errors.last != nil)
+        #expect(publications.loadingStates.dropLast().allSatisfy { $0 })
+        #expect(model.places.isEmpty)
+        #expect(!model.isLoading)
+        #expect(model.errorMessage != nil)
     }
 
     @MainActor
@@ -296,12 +321,37 @@ private actor ControlledPlacesAPI: PlacesServing {
     }
 }
 
+private actor RecordingRequestDecisionObserver: RequestDecisionObserving {
+    private struct Event: Hashable {
+        let request: MapRequestIdentity
+        let decision: RequestDecision
+    }
+
+    private var observedEvents = Set<Event>()
+    private var waiters: [Event: [CheckedContinuation<Void, Never>]] = [:]
+
+    func didDecide(_ decision: RequestDecision, for request: MapRequestIdentity) async {
+        let event = Event(request: request, decision: decision)
+        observedEvents.insert(event)
+        for waiter in waiters.removeValue(forKey: event) ?? [] {
+            waiter.resume()
+        }
+    }
+
+    func wait(for request: MapRequestIdentity, decision: RequestDecision) async {
+        let event = Event(request: request, decision: decision)
+        guard !observedEvents.contains(event) else { return }
+        await withCheckedContinuation { continuation in
+            waiters[event, default: []].append(continuation)
+        }
+    }
+}
+
 @MainActor
 private final class MapFeaturePublicationRecorder {
     private(set) var places: [[PlaceSummary]] = []
     private(set) var errors: [String?] = []
     private(set) var loadingStates: [Bool] = []
-    private var placeWaiters: [([PlaceSummary], CheckedContinuation<Void, Never>)] = []
     private var cancellables = Set<AnyCancellable>()
 
     init(model: MapFeatureModel) {
@@ -328,23 +378,7 @@ private final class MapFeaturePublicationRecorder {
             .store(in: &cancellables)
     }
 
-    func waitForPlaces(_ expectedPlaces: [PlaceSummary]) async {
-        guard !places.contains(expectedPlaces) else { return }
-        await withCheckedContinuation { continuation in
-            placeWaiters.append((expectedPlaces, continuation))
-        }
-    }
-
     private func record(_ publishedPlaces: [PlaceSummary]) {
         places.append(publishedPlaces)
-        var pendingWaiters: [([PlaceSummary], CheckedContinuation<Void, Never>)] = []
-        for (expectedPlaces, continuation) in placeWaiters {
-            if publishedPlaces == expectedPlaces {
-                continuation.resume()
-            } else {
-                pendingWaiters.append((expectedPlaces, continuation))
-            }
-        }
-        placeWaiters = pendingWaiters
     }
 }

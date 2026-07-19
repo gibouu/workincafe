@@ -1,11 +1,31 @@
 import Combine
 import Foundation
 
+struct MapRequestIdentity: Hashable, Sendable {
+    let generation: Int
+    let requestKey: String
+}
+
+enum RequestDecision: Hashable, Sendable {
+    case accepted
+    case rejectedStale
+    case failedCurrent
+}
+
+protocol RequestDecisionObserving: Sendable {
+    func didDecide(_ decision: RequestDecision, for request: MapRequestIdentity) async
+}
+
+struct NoOpRequestDecisionObserver: RequestDecisionObserving {
+    func didDecide(_ decision: RequestDecision, for request: MapRequestIdentity) async {}
+}
+
 @MainActor
 final class MapFeatureModel: ObservableObject {
     private let api: any PlacesServing
     private let cache: any PlaceCaching
     private let searchIndex: PlaceSearchIndex
+    private let requestDecisionObserver: any RequestDecisionObserving
     private var loadTask: Task<Void, Never>?
     private var searchTask: Task<Void, Never>?
     private var currentRequestKey: String?
@@ -25,11 +45,13 @@ final class MapFeatureModel: ObservableObject {
         api: any PlacesServing,
         cache: any PlaceCaching,
         searchIndex: PlaceSearchIndex = PlaceSearchIndex(),
-        initialBounds: PlaceBounds = .paris
+        initialBounds: PlaceBounds = .paris,
+        requestDecisionObserver: any RequestDecisionObserving = NoOpRequestDecisionObserver()
     ) {
         self.api = api
         self.cache = cache
         self.searchIndex = searchIndex
+        self.requestDecisionObserver = requestDecisionObserver
         lastBounds = initialBounds
     }
 
@@ -114,20 +136,29 @@ final class MapFeatureModel: ObservableObject {
     }
 
     private func refresh(bounds: PlaceBounds, generation: Int, requestKey: String) async {
+        let request = MapRequestIdentity(generation: generation, requestKey: requestKey)
         do {
             let freshPlaces = try await api.places(in: bounds)
-            guard isCurrent(generation: generation, requestKey: requestKey) else { return }
+            guard isCurrent(generation: generation, requestKey: requestKey) else {
+                await requestDecisionObserver.didDecide(.rejectedStale, for: request)
+                return
+            }
             let acceptedPlaces = PlaceSummary.deduplicated(freshPlaces)
             publishPlaces(acceptedPlaces)
             isLoading = false
             errorMessage = nil
+            await requestDecisionObserver.didDecide(.accepted, for: request)
             try? await cache.store(acceptedPlaces)
         } catch is CancellationError {
             return
         } catch {
-            guard isCurrent(generation: generation, requestKey: requestKey) else { return }
+            guard isCurrent(generation: generation, requestKey: requestKey) else {
+                await requestDecisionObserver.didDecide(.rejectedStale, for: request)
+                return
+            }
             isLoading = false
             errorMessage = error.localizedDescription
+            await requestDecisionObserver.didDecide(.failedCurrent, for: request)
         }
     }
 
