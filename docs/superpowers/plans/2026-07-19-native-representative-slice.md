@@ -532,7 +532,7 @@ Save is visibly disabled with the accessibility hint `Sign in support is coming 
 
 Push `.placeDetail(id:)` into the Work spots `NavigationStack`, resolve the place by ID, and show identity, address, work rating, directions, share, supported membership/validation information, and a clear partial-data state. Use a safe-area action bar for Directions and Share. Keep review, vitals, live conditions, menus, and business fields out until the detail-read API task provides them.
 
-Move `AppleMapsDirections` into the detail file unchanged in behavior. Share an `https://www.workin.cafe/places/{id}` URL with `ShareLink`.
+Move `AppleMapsDirections` into the detail file unchanged in behavior. Share the production-canonical `https://www.workin.cafe/place/{id}` URL with `ShareLink`; the web route redirects into the map-backed place card.
 
 - [ ] **Step 5: Run full native verification and commit**
 
