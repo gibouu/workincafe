@@ -1,9 +1,18 @@
 struct FixturePlacesAPI: PlacesServing {
-    func places(in bounds: PlaceBounds) async throws -> [PlaceSummary] {
-        Self.parisPlaces
+    let refreshController: FixtureRefreshController?
+
+    init(refreshController: FixtureRefreshController? = nil) {
+        self.refreshController = refreshController
     }
 
-    private static let parisPlaces = [
+    func places(in bounds: PlaceBounds) async throws -> [PlaceSummary] {
+        if let refreshController {
+            return await refreshController.places()
+        }
+        return Self.parisPlaces
+    }
+
+    static let parisPlaces = [
         PlaceSummary(
             id: "fixture-ten-belles",
             name: "Ten Belles",
@@ -75,4 +84,49 @@ struct FixturePlacesAPI: PlacesServing {
             membershipRequired: nil
         ),
     ]
+}
+
+actor FixtureRefreshController {
+    private enum Phase {
+        case baseline
+        case omitted(String)
+        case canonical(String)
+    }
+
+    private var phase = Phase.baseline
+
+    func omit(placeID: String) {
+        phase = .omitted(placeID)
+    }
+
+    func publishCanonical(placeID: String) {
+        phase = .canonical(placeID)
+    }
+
+    func places() -> [PlaceSummary] {
+        switch phase {
+        case .baseline:
+            FixturePlacesAPI.parisPlaces
+        case let .omitted(placeID):
+            FixturePlacesAPI.parisPlaces.filter { $0.id != placeID }
+        case let .canonical(placeID):
+            FixturePlacesAPI.parisPlaces.map { place in
+                guard place.id == placeID else { return place }
+                return PlaceSummary(
+                    id: place.id,
+                    name: "\(place.name), refreshed",
+                    address: place.address,
+                    neighborhood: place.neighborhood,
+                    category: place.category,
+                    latitude: place.latitude,
+                    longitude: place.longitude,
+                    brand: place.brand,
+                    rating: place.rating,
+                    hasUserReviews: place.hasUserReviews,
+                    isValidated: place.isValidated,
+                    membershipRequired: place.membershipRequired
+                )
+            }
+        }
+    }
 }

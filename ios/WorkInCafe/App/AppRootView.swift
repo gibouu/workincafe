@@ -48,7 +48,8 @@ struct AppRootView: View {
                 DiscoveryScreen(
                     model: model,
                     store: discoveryStore,
-                    router: router
+                    router: router,
+                    fixtureRefreshController: environment.fixtureRefreshController
                 )
                     .toolbar(.hidden, for: .navigationBar)
                     .navigationDestination(for: AppRoute.self, destination: destination)
@@ -92,7 +93,7 @@ struct AppRootView: View {
     private func destination(for route: AppRoute) -> some View {
         switch route {
         case let .placeDetail(id):
-            if let place = model.places.first(where: { $0.id == id }) {
+            if let place = discoveryStore.place(id: id) {
                 PlaceDetailView(place: place)
             } else {
                 ContentUnavailableView(

@@ -94,7 +94,32 @@ final class PlaceAnnotation: NSObject, @preconcurrency MKAnnotation {
 }
 
 @MainActor
-final class PlaceAnnotationView: MKAnnotationView {
+class MinimumTargetAnnotationView: MKAnnotationView {
+    static let minimumTargetDiameter: CGFloat = 44
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        guard isUserInteractionEnabled, !isHidden, alpha > 0.01 else { return false }
+        return interactionBounds.contains(point)
+    }
+
+    override var accessibilityFrame: CGRect {
+        get { convert(interactionBounds, to: nil) }
+        set { super.accessibilityFrame = newValue }
+    }
+
+    private var interactionBounds: CGRect {
+        let diameter = max(Self.minimumTargetDiameter, bounds.width, bounds.height)
+        return CGRect(
+            x: bounds.midX - diameter / 2,
+            y: bounds.midY - diameter / 2,
+            width: diameter,
+            height: diameter
+        )
+    }
+}
+
+@MainActor
+final class PlaceAnnotationView: MinimumTargetAnnotationView {
     static let reuseIdentifier = "workincafe.place"
     static let normalDiameter: CGFloat = 32
     static let selectedDiameter: CGFloat = 42
@@ -263,7 +288,7 @@ final class PlaceAnnotationView: MKAnnotationView {
 }
 
 @MainActor
-final class ClusterAnnotationView: MKAnnotationView {
+final class ClusterAnnotationView: MinimumTargetAnnotationView {
     static let reuseIdentifier = "workincafe.cluster"
 
     private let badgeLayer = CAShapeLayer()

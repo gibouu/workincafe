@@ -70,4 +70,53 @@ struct MapAnnotationTests {
         #expect(ClusterAnnotationView.diameter(for: 99) == 40)
         #expect(ClusterAnnotationView.diameter(for: 100) == 46)
     }
+
+    @Test("place markers keep 32 point artwork with a centered 44 point target")
+    func placeMarkerHitAndAccessibilityTarget() {
+        let annotation = PlaceAnnotation(
+            place: PlaceFixture.summary(id: "target", name: "Target café")
+        )
+        let view = PlaceAnnotationView(
+            annotation: annotation,
+            reuseIdentifier: PlaceAnnotationView.reuseIdentifier
+        )
+        let host = UIWindow(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        host.isHidden = false
+        host.addSubview(view)
+        view.center = CGPoint(x: 80, y: 90)
+
+        #expect(view.bounds.size == CGSize(width: 32, height: 32))
+        #expect(view.point(inside: CGPoint(x: 16, y: 16), with: nil))
+        #expect(view.point(inside: CGPoint(x: -4, y: 16), with: nil))
+        #expect(!view.point(inside: CGPoint(x: -7, y: 16), with: nil))
+        #expect(view.accessibilityFrame.width >= 44)
+        #expect(view.accessibilityFrame.height >= 44)
+        #expect(view.accessibilityFrame.midX == view.frame.midX)
+        #expect(view.accessibilityFrame.midY == view.frame.midY)
+    }
+
+    @Test("small clusters keep 34 point artwork with a centered 44 point target")
+    func clusterHitAndAccessibilityTarget() {
+        let members = [
+            PlaceAnnotation(place: PlaceFixture.summary(id: "one", name: "One")),
+            PlaceAnnotation(place: PlaceFixture.summary(id: "two", name: "Two")),
+        ]
+        let view = ClusterAnnotationView(
+            annotation: MKClusterAnnotation(memberAnnotations: members),
+            reuseIdentifier: ClusterAnnotationView.reuseIdentifier
+        )
+        let host = UIWindow(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        host.isHidden = false
+        host.addSubview(view)
+        view.center = CGPoint(x: 80, y: 90)
+
+        #expect(view.bounds.size == CGSize(width: 34, height: 34))
+        #expect(view.point(inside: CGPoint(x: 17, y: 17), with: nil))
+        #expect(view.point(inside: CGPoint(x: -4, y: 17), with: nil))
+        #expect(!view.point(inside: CGPoint(x: -6, y: 17), with: nil))
+        #expect(view.accessibilityFrame.width >= 44)
+        #expect(view.accessibilityFrame.height >= 44)
+        #expect(view.accessibilityFrame.midX == view.frame.midX)
+        #expect(view.accessibilityFrame.midY == view.frame.midY)
+    }
 }

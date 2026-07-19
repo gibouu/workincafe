@@ -9,10 +9,14 @@ final class DiscoveryStore: ObservableObject {
     @Published var filter = DiscoveryFilter() {
         didSet { refreshFilteredPlaces() }
     }
-    @Published var selectedPlaceID: String?
+    @Published private(set) var selectedPlace: PlaceSummary?
     @Published var cameraIntent: MapCameraIntent?
     @Published var sourcePlaces: [PlaceSummary] = [] {
         didSet {
+            selectedPlace = DiscoveryPresentationReconciler.reconcile(
+                selectedPlace: selectedPlace,
+                currentPlaces: sourcePlaces
+            )
             sourceRevision &+= 1
             refreshFilteredPlaces()
         }
@@ -24,8 +28,12 @@ final class DiscoveryStore: ObservableObject {
     private var matchGeneration: UInt = 0
     private var matchingTask: Task<Void, Never>?
 
+    var selectedPlaceID: String? {
+        selectedPlace?.id
+    }
+
     func select(place: PlaceSummary) {
-        selectedPlaceID = place.id
+        selectedPlace = place
         cameraRequestID &+= 1
         cameraIntent = .focus(
             requestID: cameraRequestID,
@@ -33,6 +41,28 @@ final class DiscoveryStore: ObservableObject {
             latitude: place.latitude,
             longitude: place.longitude
         )
+    }
+
+    func place(id: String) -> PlaceSummary? {
+        if selectedPlace?.id == id {
+            return selectedPlace
+        }
+        return sourcePlaces.first { $0.id == id }
+    }
+
+    func clearSelection() {
+        selectedPlace = nil
+    }
+
+    func invalidateSelection(id: String) {
+        guard selectedPlace?.id == id else { return }
+        selectedPlace = nil
+    }
+
+    func resetSearchContext() {
+        query = ""
+        filter = DiscoveryFilter()
+        clearSelection()
     }
 
     func waitForCurrentMatch() async {

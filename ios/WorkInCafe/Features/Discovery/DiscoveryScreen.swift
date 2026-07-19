@@ -4,6 +4,7 @@ struct DiscoveryScreen: View {
     @ObservedObject var model: MapFeatureModel
     @ObservedObject var store: DiscoveryStore
     @ObservedObject var router: AppRouter
+    let fixtureRefreshController: FixtureRefreshController?
 
     @State private var isMapQueryable = true
     @State private var unavailableAction: UnavailableAction?
@@ -340,8 +341,7 @@ struct DiscoveryScreen: View {
     }
 
     private var selectedPlace: PlaceSummary? {
-        guard let selectedPlaceID = store.selectedPlaceID else { return nil }
-        return store.sourcePlaces.first { $0.id == selectedPlaceID }
+        store.selectedPlace
     }
 
     private var previewPresented: Binding<Bool> {
@@ -378,23 +378,13 @@ struct DiscoveryScreen: View {
 
     private func synchronizePlaces(_ places: [PlaceSummary]) {
         store.sourcePlaces = places
-        let presentation = DiscoveryPresentationReconciler.reconcile(
-            selectedPlaceID: store.selectedPlaceID,
-            sheet: router.sheet,
-            availablePlaceIDs: Set(places.map(\.id))
-        )
-        if store.selectedPlaceID != presentation.selectedPlaceID {
-            store.selectedPlaceID = presentation.selectedPlaceID
-        }
-        if router.sheet != presentation.sheet {
-            router.sheet = presentation.sheet
-        }
     }
 
     private func selectPlace(_ place: PlaceSummary) {
         store.select(place: place)
         store.mode = .map
         router.sheet = .placePreview(id: place.id)
+        exerciseFixtureRefreshIfNeeded(for: place.id)
     }
 
     private func selectPlaceFromSearch(_ place: PlaceSummary) {
@@ -438,15 +428,25 @@ struct DiscoveryScreen: View {
         guard path.isEmpty,
               let previousRoute = previousPath.last,
               case let .placeDetail(id) = previousRoute,
-              store.selectedPlaceID == id,
-              store.sourcePlaces.contains(where: { $0.id == id }) else { return }
+              store.selectedPlaceID == id else { return }
 
         router.sheet = .placePreview(id: id)
     }
 
     private func clearSelection() {
         router.sheet = nil
-        store.selectedPlaceID = nil
+        store.clearSelection()
+    }
+
+    private func exerciseFixtureRefreshIfNeeded(for placeID: String) {
+        guard let fixtureRefreshController else { return }
+        Task {
+            await fixtureRefreshController.omit(placeID: placeID)
+            model.retry()
+            try? await Task.sleep(for: .seconds(6))
+            await fixtureRefreshController.publishCanonical(placeID: placeID)
+            model.retry()
+        }
     }
 }
 

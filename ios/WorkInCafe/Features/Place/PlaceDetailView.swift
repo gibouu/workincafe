@@ -40,6 +40,7 @@ struct PlaceDetailView: View {
                 Text(place.name)
                     .font(.title2.weight(.bold))
                     .foregroundStyle(.wicPrimaryText)
+                    .accessibilityIdentifier("place.detail.name")
 
                 WorkRatingView(rating: place.rating, labelStyle: .full)
                     .accessibilityIdentifier("place.detail.rating")
@@ -63,6 +64,7 @@ struct PlaceDetailView: View {
                     }
                 }
             }
+            .accessibilityIdentifier("place.detail.location")
         }
     }
 
@@ -74,10 +76,12 @@ struct PlaceDetailView: View {
                     if place.isValidated {
                         Label("Validated work spot", systemImage: "checkmark.seal.fill")
                             .foregroundStyle(.wicPositive)
+                            .accessibilityIdentifier("place.detail.status.validated")
                     }
                     if let membership = nonemptyMembership {
                         Label(membership, systemImage: "person.badge.key.fill")
                             .foregroundStyle(.wicSecondaryText)
+                            .accessibilityIdentifier("place.detail.status.membership")
                     }
                 }
                 .font(.subheadline.weight(.semibold))
@@ -153,9 +157,17 @@ struct PlaceDetailView: View {
     }
 
     private var shareURL: URL {
-        URL(string: "https://www.workin.cafe")!
+        PlaceShareURL.url(for: place.id)
+    }
+}
+
+enum PlaceShareURL {
+    private static let baseURL = URL(string: "https://www.workin.cafe")!
+
+    static func url(for placeID: String) -> URL {
+        baseURL
             .appending(path: "place")
-            .appending(path: place.id)
+            .appending(path: placeID)
     }
 }
 

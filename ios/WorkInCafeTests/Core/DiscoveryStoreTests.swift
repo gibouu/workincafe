@@ -62,28 +62,83 @@ struct DiscoveryStoreTests {
         #expect(matcher.count(in: places) == 1)
     }
 
-    @Test("invalid selected preview is dismissed when its place disappears")
-    func dismissesInvalidSelectedPreview() {
-        let reconciled = DiscoveryPresentationReconciler.reconcile(
-            selectedPlaceID: "removed",
-            sheet: .placePreview(id: "removed"),
-            availablePlaceIDs: ["remaining"]
-        )
+    @Test("ordinary source omission retains the selected summary for preview and detail")
+    func retainsSelectedPlaceAcrossSourceOmission() {
+        let selected = PlaceFixture.summary(id: "selected", name: "Selected café")
+        let store = DiscoveryStore()
+        store.sourcePlaces = [selected]
+        store.select(place: selected)
 
-        #expect(reconciled.selectedPlaceID == nil)
-        #expect(reconciled.sheet == nil)
+        store.sourcePlaces = [PlaceFixture.summary(id: "other", name: "Other café")]
+
+        #expect(store.selectedPlace == selected)
+        #expect(store.selectedPlaceID == selected.id)
+        #expect(store.place(id: selected.id) == selected)
     }
 
-    @Test(arguments: [AppSheet.search, AppSheet.filters])
-    func preservesUnrelatedSheetWhenSelectedPlaceDisappears(sheet: AppSheet) {
-        let reconciled = DiscoveryPresentationReconciler.reconcile(
-            selectedPlaceID: "removed",
-            sheet: sheet,
-            availablePlaceIDs: ["remaining"]
+    @Test("same-ID refresh replaces retained selection with canonical current data")
+    func refreshesRetainedSelectionFromCanonicalSource() {
+        let original = PlaceFixture.summary(id: "selected", name: "Old name")
+        let refreshed = PlaceFixture.summary(
+            id: "selected",
+            name: "Canonical name",
+            address: "Updated address"
         )
+        let store = DiscoveryStore()
+        store.select(place: original)
 
-        #expect(reconciled.selectedPlaceID == nil)
-        #expect(reconciled.sheet == sheet)
+        store.sourcePlaces = [
+            PlaceFixture.summary(id: "other", name: "Other café"),
+            refreshed,
+        ]
+
+        #expect(store.selectedPlace == refreshed)
+        #expect(store.place(id: original.id) == refreshed)
+    }
+
+    @Test("ordinary source reordering preserves the selected stable ID and summary")
+    func preservesSelectionAcrossSourceReordering() {
+        let first = PlaceFixture.summary(id: "first", name: "First café")
+        let selected = PlaceFixture.summary(id: "selected", name: "Selected café")
+        let last = PlaceFixture.summary(id: "last", name: "Last café")
+        let store = DiscoveryStore()
+        store.sourcePlaces = [first, selected, last]
+        store.select(place: selected)
+
+        store.sourcePlaces = [last, selected, first]
+
+        #expect(store.selectedPlaceID == selected.id)
+        #expect(store.selectedPlace == selected)
+        #expect(store.place(id: selected.id) == selected)
+    }
+
+    @Test("selection changes only on explicit replacement, dismissal, reset, or invalidation")
+    func explicitSelectionLifetime() {
+        let first = PlaceFixture.summary(id: "first", name: "First café")
+        let second = PlaceFixture.summary(id: "second", name: "Second café")
+        let store = DiscoveryStore()
+
+        store.select(place: first)
+        store.select(place: second)
+        #expect(store.selectedPlace == second)
+
+        store.clearSelection()
+        #expect(store.selectedPlace == nil)
+
+        store.select(place: first)
+        store.invalidateSelection(id: "unrelated")
+        #expect(store.selectedPlace == first)
+
+        store.invalidateSelection(id: first.id)
+        #expect(store.selectedPlace == nil)
+
+        store.query = "café"
+        store.filter = DiscoveryFilter(categories: ["cafe"])
+        store.select(place: second)
+        store.resetSearchContext()
+        #expect(store.query.isEmpty)
+        #expect(store.filter == DiscoveryFilter())
+        #expect(store.selectedPlace == nil)
     }
 
     @Test("active category presentation survives a source refresh without that category")
