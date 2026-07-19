@@ -24,6 +24,22 @@ final class DiscoverySearchFilterTests: XCTestCase {
 
         let searchField = app.searchFields["Name, neighborhood, or address"]
         XCTAssertTrue(searchField.waitForExistence(timeout: 2))
+
+        let searchCafe = app.buttons["search.category.cafe"]
+        XCTAssertTrue(searchCafe.waitForExistence(timeout: 2))
+        XCTAssertEqual(searchCafe.value as? String, "Not selected")
+        XCTAssertFalse(searchCafe.isSelected)
+        searchCafe.tap()
+        XCTAssertEqual(searchCafe.value as? String, "Selected, checkmark visible")
+        XCTAssertTrue(searchCafe.isSelected)
+        let selectedQuickFilterScreenshot = XCTAttachment(screenshot: app.screenshot())
+        selectedQuickFilterScreenshot.name = "Selected search quick filter"
+        selectedQuickFilterScreenshot.lifetime = .keepAlways
+        add(selectedQuickFilterScreenshot)
+        searchCafe.tap()
+        XCTAssertEqual(searchCafe.value as? String, "Not selected")
+        XCTAssertFalse(searchCafe.isSelected)
+
         searchField.tap()
         searchField.typeText("Ten Belles")
 
@@ -45,23 +61,50 @@ final class DiscoverySearchFilterTests: XCTestCase {
 
         let library = app.buttons["filter.category.library"]
         XCTAssertTrue(library.waitForExistence(timeout: 2))
+        let apply = app.buttons["filter.apply"]
+        XCTAssertTrue(apply.waitForExistence(timeout: 2))
+        XCTAssertEqual(apply.label, "Show 1 work spots")
         let filterScreenshot = XCTAttachment(screenshot: app.screenshot())
         filterScreenshot.name = "Native filters"
         filterScreenshot.lifetime = .keepAlways
         add(filterScreenshot)
         XCTAssertGreaterThanOrEqual(library.frame.height, 44)
         library.tap()
-
-        let apply = app.buttons["filter.apply"]
-        XCTAssertTrue(apply.waitForExistence(timeout: 2))
+        XCTAssertEqual(apply.label, "Show 0 work spots")
         XCTAssertGreaterThanOrEqual(apply.frame.height, 44)
         apply.tap()
 
         let activeLibrary = app.buttons["filter.active.library"]
         XCTAssertTrue(activeLibrary.waitForExistence(timeout: 2))
         XCTAssertGreaterThanOrEqual(activeLibrary.frame.height, 44)
-        activeLibrary.tap()
 
+        filters.tap()
+        let reset = app.buttons["filter.reset"]
+        XCTAssertTrue(reset.waitForExistence(timeout: 2))
+        reset.tap()
+        XCTAssertEqual(app.buttons["filter.apply"].label, "Show 1 work spots")
+        app.buttons["filter.cancel"].tap()
+        XCTAssertTrue(activeLibrary.waitForExistence(timeout: 2))
+
+        activeLibrary.tap()
         XCTAssertFalse(activeLibrary.waitForExistence(timeout: 1))
+
+        filters.tap()
+        XCTAssertTrue(library.waitForExistence(timeout: 2))
+        library.tap()
+        app.buttons["filter.cancel"].tap()
+        XCTAssertFalse(activeLibrary.waitForExistence(timeout: 1))
+
+        filters.tap()
+        let rating = app.buttons["filter.rating.7"]
+        XCTAssertTrue(rating.waitForExistence(timeout: 2))
+        rating.tap()
+        XCTAssertEqual(app.buttons["filter.apply"].label, "Show 0 work spots")
+        app.buttons["filter.apply"].tap()
+
+        let activeRating = app.buttons["filter.active.rating.7"]
+        XCTAssertTrue(activeRating.waitForExistence(timeout: 2))
+        activeRating.tap()
+        XCTAssertFalse(activeRating.waitForExistence(timeout: 1))
     }
 }

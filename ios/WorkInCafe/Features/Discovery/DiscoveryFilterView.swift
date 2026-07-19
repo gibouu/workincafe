@@ -5,6 +5,7 @@ struct DiscoveryCategoryOption: Identifiable, Hashable {
     let label: String
     let symbolName: String
     let color: Color
+    let foreground: PlacePresentation.Foreground
 
     init(category: String) {
         let presentation = PlacePresentation.resolve(
@@ -16,6 +17,12 @@ struct DiscoveryCategoryOption: Identifiable, Hashable {
         label = presentation.label
         symbolName = presentation.symbolName
         color = Color(hex: presentation.hexColor)
+        foreground = presentation.foreground
+    }
+
+    static func activeOptions(for categories: Set<String>) -> [Self] {
+        categories.map(Self.init(category:))
+            .sorted { $0.label < $1.label }
     }
 }
 
@@ -110,25 +117,8 @@ struct DiscoveryFilterView: View {
     }
 
     private var matchingPlaceCount: Int {
-        let needle = query.folding(
-            options: [.caseInsensitive, .diacriticInsensitive],
-            locale: .current
-        )
-        .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        return sourcePlaces.filter { place in
-            guard draft.includes(place) else { return false }
-            guard !needle.isEmpty else { return true }
-            return [place.name, place.address, place.neighborhood, place.category, place.categoryLabel]
-                .map {
-                    $0.folding(
-                        options: [.caseInsensitive, .diacriticInsensitive],
-                        locale: .current
-                    )
-                }
-                .contains { $0.contains(needle) }
-        }
-        .count
+        DiscoveryPlaceMatcher(query: query, filter: draft)
+            .count(in: sourcePlaces)
     }
 
     private func filterRow(

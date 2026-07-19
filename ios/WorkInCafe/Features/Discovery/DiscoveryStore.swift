@@ -1,5 +1,4 @@
 import Combine
-import Foundation
 
 @MainActor
 final class DiscoveryStore: ObservableObject {
@@ -11,14 +10,8 @@ final class DiscoveryStore: ObservableObject {
     @Published var sourcePlaces: [PlaceSummary] = []
 
     var filteredPlaces: [PlaceSummary] {
-        let needle = normalized(query)
-        return sourcePlaces.filter { place in
-            guard filter.includes(place) else { return false }
-            guard !needle.isEmpty else { return true }
-            return [place.name, place.address, place.neighborhood, place.category, place.categoryLabel]
-                .map(normalized)
-                .contains { $0.contains(needle) }
-        }
+        DiscoveryPlaceMatcher(query: query, filter: filter)
+            .filteredPlaces(in: sourcePlaces)
     }
 
     func select(place: PlaceSummary) {
@@ -28,10 +21,5 @@ final class DiscoveryStore: ObservableObject {
             latitude: place.latitude,
             longitude: place.longitude
         )
-    }
-
-    private func normalized(_ value: String) -> String {
-        value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

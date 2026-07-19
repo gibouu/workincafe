@@ -4,6 +4,100 @@ import Testing
 @Suite("Discovery state")
 @MainActor
 struct DiscoveryStoreTests {
+    @Test("matcher normalizes case, accents, and surrounding whitespace")
+    func matcherNormalizesQuery() {
+        let library = PlaceFixture.summary(
+            id: "library",
+            name: "Bibliothèque Forney"
+        )
+        let matcher = DiscoveryPlaceMatcher(
+            query: "  BIBLIOTHEQUE  ",
+            filter: DiscoveryFilter()
+        )
+
+        #expect(matcher.matches(library))
+    }
+
+    @Test("matcher applies category criteria")
+    func matcherAppliesCategory() {
+        let cafe = PlaceFixture.summary(id: "cafe", name: "Café", category: "cafe")
+        let library = PlaceFixture.summary(
+            id: "library",
+            name: "Library",
+            category: "library"
+        )
+        let matcher = DiscoveryPlaceMatcher(
+            query: "",
+            filter: DiscoveryFilter(categories: ["library"])
+        )
+
+        #expect(!matcher.matches(cafe))
+        #expect(matcher.matches(library))
+    }
+
+    @Test("matcher excludes an unrated place when a minimum rating is active")
+    func matcherExcludesNilRating() {
+        let unrated = PlaceFixture.summary(id: "unrated", name: "Unrated", rating: nil)
+        let matcher = DiscoveryPlaceMatcher(
+            query: "",
+            filter: DiscoveryFilter(minimumRating: 8)
+        )
+
+        #expect(!matcher.matches(unrated))
+    }
+
+    @Test("matcher count agrees with the filtered discovery result")
+    func matcherCountAgreement() {
+        let places = [
+            PlaceFixture.summary(id: "one", name: "Quiet Library", category: "library"),
+            PlaceFixture.summary(id: "two", name: "Busy Library", category: "library"),
+            PlaceFixture.summary(id: "three", name: "Quiet Café", category: "cafe")
+        ]
+        let matcher = DiscoveryPlaceMatcher(
+            query: "quiet",
+            filter: DiscoveryFilter(categories: ["library"])
+        )
+
+        #expect(matcher.count(in: places) == matcher.filteredPlaces(in: places).count)
+        #expect(matcher.count(in: places) == 1)
+    }
+
+    @Test("invalid selected preview is dismissed when its place disappears")
+    func dismissesInvalidSelectedPreview() {
+        let reconciled = DiscoveryPresentationReconciler.reconcile(
+            selectedPlaceID: "removed",
+            sheet: .placePreview(id: "removed"),
+            availablePlaceIDs: ["remaining"]
+        )
+
+        #expect(reconciled.selectedPlaceID == nil)
+        #expect(reconciled.sheet == nil)
+    }
+
+    @Test(arguments: [AppSheet.search, AppSheet.filters])
+    func preservesUnrelatedSheetWhenSelectedPlaceDisappears(sheet: AppSheet) {
+        let reconciled = DiscoveryPresentationReconciler.reconcile(
+            selectedPlaceID: "removed",
+            sheet: sheet,
+            availablePlaceIDs: ["remaining"]
+        )
+
+        #expect(reconciled.selectedPlaceID == nil)
+        #expect(reconciled.sheet == sheet)
+    }
+
+    @Test("active category presentation survives a source refresh without that category")
+    func activeCategoryPresentationSurvivesSourceRefresh() {
+        let refreshedSource = [
+            PlaceFixture.summary(id: "cafe", name: "Café", category: "cafe")
+        ]
+        let activeOptions = DiscoveryCategoryOption.activeOptions(for: ["library"])
+
+        #expect(!refreshedSource.contains { $0.category == "library" })
+        #expect(activeOptions.map(\.id) == ["library"])
+        #expect(activeOptions.map(\.label) == ["Library"])
+    }
+
     @Test("normalizes search text before applying filters")
     func normalizedQueryAndFilter() {
         let library = PlaceFixture.summary(
@@ -83,6 +177,13 @@ struct DiscoveryStoreTests {
         #expect(category.id == "coworking")
         #expect(category.label == "Coworking")
         #expect(category.symbolName == "briefcase.fill")
+    }
+
+    @Test("category filters preserve the canonical accessible foreground")
+    func categoryFilterForeground() {
+        #expect(DiscoveryCategoryOption(category: "cafe").foreground == .light)
+        #expect(DiscoveryCategoryOption(category: "bakery").foreground == .dark)
+        #expect(DiscoveryCategoryOption(category: "fast_food").foreground == .dark)
     }
 
     @Test("selecting a place synchronizes selection and map focus")

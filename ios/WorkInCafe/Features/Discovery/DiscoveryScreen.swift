@@ -171,7 +171,9 @@ struct DiscoveryScreen: View {
     private var activeFilterChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: WICSpacing.small) {
-                ForEach(categoryOptions.filter { store.filter.categories.contains($0.id) }) { option in
+                ForEach(
+                    DiscoveryCategoryOption.activeOptions(for: store.filter.categories)
+                ) { option in
                     activeFilterButton(
                         title: option.label,
                         identifier: "filter.active.\(option.id)"
@@ -372,10 +374,16 @@ struct DiscoveryScreen: View {
 
     private func synchronizePlaces(_ places: [PlaceSummary]) {
         store.sourcePlaces = places
-        if let selectedPlaceID = store.selectedPlaceID,
-           !places.contains(where: { $0.id == selectedPlaceID }) {
-            store.selectedPlaceID = nil
-            router.sheet = nil
+        let presentation = DiscoveryPresentationReconciler.reconcile(
+            selectedPlaceID: store.selectedPlaceID,
+            sheet: router.sheet,
+            availablePlaceIDs: Set(places.map(\.id))
+        )
+        if store.selectedPlaceID != presentation.selectedPlaceID {
+            store.selectedPlaceID = presentation.selectedPlaceID
+        }
+        if router.sheet != presentation.sheet {
+            router.sheet = presentation.sheet
         }
     }
 

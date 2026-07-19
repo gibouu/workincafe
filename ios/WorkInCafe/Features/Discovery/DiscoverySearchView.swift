@@ -79,9 +79,16 @@ struct DiscoverySearchView: View {
                                 store.filter.categories.insert(category.id)
                             }
                         } label: {
-                            Label(category.label, systemImage: category.symbolName)
+                            Label(
+                                category.label,
+                                systemImage: isSelected ? "checkmark" : category.symbolName
+                            )
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(isSelected ? Color.white : category.color)
+                                .foregroundStyle(
+                                    isSelected
+                                        ? category.foreground == .light ? Color.white : Color.black
+                                        : category.color
+                                )
                                 .padding(.horizontal, WICSpacing.compact)
                                 .frame(minHeight: WICSpacing.minimumControlTarget)
                                 .background(
@@ -90,7 +97,10 @@ struct DiscoverySearchView: View {
                                 )
                         }
                         .buttonStyle(.plain)
-                        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+                        .accessibilityValue(
+                            isSelected ? "Selected, checkmark visible" : "Not selected"
+                        )
+                        .accessibilityAddTraits(isSelected ? .isSelected : [])
                         .accessibilityIdentifier("search.category.\(category.id)")
                     }
                 }
