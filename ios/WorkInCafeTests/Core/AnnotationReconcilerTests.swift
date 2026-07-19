@@ -35,10 +35,10 @@ struct AnnotationReconcilerTests {
         #expect(diff.added.map(\.id) == ["new"])
     }
 
-    @Test("metadata-only changes refresh a stable annotation")
-    func metadataOnlyUpdate() async {
-        let existingPlace = PlaceFixture.summary(id: "place-a", name: "Cafe", address: "Old address")
-        let incoming = PlaceFixture.summary(id: "place-a", name: "Cafe", address: "New address")
+    @Test("visible presentation changes refresh a stable annotation")
+    func visiblePresentationUpdate() async {
+        let existingPlace = PlaceFixture.summary(id: "place-a", name: "Cafe", rating: nil)
+        let incoming = PlaceFixture.summary(id: "place-a", name: "Cafe", rating: 8.5)
 
         let diff = await AnnotationReconciler().diff(
             existing: [AnnotationSnapshot(place: existingPlace)],
@@ -46,5 +46,17 @@ struct AnnotationReconcilerTests {
         )
 
         #expect(diff.updated == [AnnotationUpdate(id: "place-a", place: incoming)])
+    }
+
+    @Test("duplicate incoming identities keep their first stable annotation")
+    func duplicateIncomingIDs() async {
+        let first = PlaceFixture.summary(id: "place-a", name: "First")
+        let duplicate = PlaceFixture.summary(id: "place-a", name: "Duplicate")
+
+        let diff = await AnnotationReconciler().diff(existing: [], incoming: [first, duplicate])
+
+        #expect(diff.added == [first])
+        #expect(diff.updated.isEmpty)
+        #expect(diff.removedIDs.isEmpty)
     }
 }

@@ -5,17 +5,14 @@ import Testing
 @Suite("Map annotation presentation")
 @MainActor
 struct MapAnnotationTests {
-    @Test("refresh updates a visible marker and its VoiceOver label")
-    func refreshesExistingView() throws {
-        let initial = PlaceFixture.summary(id: "place-a", name: "Old café", category: "cafe")
-        let updated = PlaceFixture.summary(id: "place-a", name: "New library", category: "library")
-        let annotation = PlaceAnnotation(place: initial)
-        let view = PlaceAnnotationView(annotation: annotation, reuseIdentifier: PlaceAnnotationView.reuseIdentifier)
+    @Test("payload keeps only stable map presentation values")
+    func minimalPayload() {
+        let payload = PlaceAnnotationPayload(
+            place: PlaceFixture.summary(id: "1", name: "Ten Belles")
+        )
 
-        annotation.update(with: updated)
-        view.refresh()
-
-        #expect(view.markerTintColor == .systemBlue)
-        #expect(view.accessibilityLabel == "New library, Library")
+        #expect(payload.id == "1")
+        #expect(payload.name == "Ten Belles")
+        #expect(payload.presentationKey == "category.cafe")
     }
 }

@@ -4,10 +4,12 @@ struct AppRootView: View {
     private let environment: AppEnvironment
     @StateObject private var router: AppRouter
     @StateObject private var model: MapFeatureModel
+    @StateObject private var discoveryStore: DiscoveryStore
 
     init(environment: AppEnvironment = .current()) {
         self.environment = environment
         _router = StateObject(wrappedValue: AppRouter())
+        _discoveryStore = StateObject(wrappedValue: DiscoveryStore())
         _model = StateObject(
             wrappedValue: MapFeatureModel(
                 api: environment.placesAPI,
@@ -43,7 +45,11 @@ struct AppRootView: View {
             }
         case .workSpots:
             NavigationStack(path: $router.workSpotsPath) {
-                MapScreen(model: model)
+                DiscoveryScreen(
+                    model: model,
+                    store: discoveryStore,
+                    router: router
+                )
                     .toolbar(.hidden, for: .navigationBar)
                     .navigationDestination(for: AppRoute.self, destination: destination)
             }
