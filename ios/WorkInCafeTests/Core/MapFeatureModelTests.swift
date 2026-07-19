@@ -6,6 +6,70 @@ import Testing
 @Suite("Map feature lifecycle")
 struct MapFeatureModelTests {
     @MainActor
+    @Test("eastbound antimeridian bounds request and publish their response")
+    func eastboundAntimeridianRequestPublishes() async {
+        let bounds = PlaceBounds(west: 179.3, south: -1, east: 180.3, north: 1)
+        let place = PlaceFixture.summary(id: "eastbound", name: "Eastbound café")
+        let api = ControlledPlacesAPI()
+        let model = MapFeatureModel(
+            api: api,
+            cache: EmptyPlaceCache(),
+            initialBounds: bounds
+        )
+
+        model.start()
+        let request = await api.request(for: bounds, occurrence: 0)
+        await api.succeed(request, with: [place])
+
+        await waitUntil { model.places == [place] }
+        #expect(model.lastBounds == bounds)
+        #expect(model.errorMessage == nil)
+    }
+
+    @MainActor
+    @Test("westbound antimeridian bounds request and publish their response")
+    func westboundAntimeridianRequestPublishes() async {
+        let bounds = PlaceBounds(west: -180.3, south: -1, east: -179.3, north: 1)
+        let place = PlaceFixture.summary(id: "westbound", name: "Westbound café")
+        let api = ControlledPlacesAPI()
+        let model = MapFeatureModel(
+            api: api,
+            cache: EmptyPlaceCache(),
+            initialBounds: bounds
+        )
+
+        model.start()
+        let request = await api.request(for: bounds, occurrence: 0)
+        await api.succeed(request, with: [place])
+
+        await waitUntil { model.places == [place] }
+        #expect(model.lastBounds == bounds)
+        #expect(model.errorMessage == nil)
+    }
+
+    @MainActor
+    @Test("a failed antimeridian refresh preserves cached places")
+    func antimeridianFailurePreservesCachedPlaces() async {
+        let bounds = PlaceBounds(west: 179.3, south: -1, east: 180.3, north: 1)
+        let cached = [PlaceFixture.summary(id: "cached", name: "Cached café")]
+        let cache = SuspendedPlaceCache(cached: cached)
+        let api = ControlledPlacesAPI()
+        let model = MapFeatureModel(api: api, cache: cache, initialBounds: bounds)
+
+        model.start()
+        await waitUntilAsync { await cache.hasStartedLoading }
+        await cache.finishLoading()
+        await waitUntil { model.places == cached }
+        let request = await api.request(for: bounds, occurrence: 0)
+
+        await api.fail(request, with: APIError.invalidResponse)
+
+        await waitUntil { model.errorMessage != nil }
+        #expect(model.places == cached)
+        #expect(!model.isLoading)
+    }
+
+    @MainActor
     @Test("an early viewport callback cannot bypass the cache-first startup")
     func cachePrecedesInitialRefresh() async throws {
         let cached = [PlaceFixture.summary(id: "cached", name: "Cached café")]
