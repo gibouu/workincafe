@@ -498,6 +498,8 @@ git commit -m $'feat(ios): add native search and filters\n\nRefs #310\n\n— gib
 
 ### Task 6: Selected-place preview and navigated full details
 
+**Release prerequisite:** [Issue #309](https://github.com/gibouu/workincafe/issues/309) is release-blocking technical debt. Task 6 may be implemented and reviewed while #309 remains open, but no release candidate, TestFlight build, App Store submission, or production release may proceed until #309's eastbound/westbound model coverage and cached-data-on-crossing-failure regression are complete and the issue is closed.
+
 **Files:**
 - Delete: `ios/WorkInCafe/Features/Place/PlaceSheet.swift`
 - Create: `ios/WorkInCafe/Features/Place/PlacePreviewSheet.swift`
