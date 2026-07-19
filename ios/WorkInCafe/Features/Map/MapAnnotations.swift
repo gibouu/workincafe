@@ -122,6 +122,7 @@ final class PlaceAnnotationView: MKAnnotationView {
     override func prepareForReuse() {
         super.prepareForReuse()
         clusteringIdentifier = nil
+        accessibilityIdentifier = nil
         accessibilityLabel = nil
         accessibilityHint = nil
         applySelection(false, animated: false)
@@ -177,6 +178,7 @@ final class PlaceAnnotationView: MKAnnotationView {
         isHidden = false
         let payload = annotation.payload
         clusteringIdentifier = Self.reuseIdentifier
+        accessibilityIdentifier = "map.place.\(payload.id)"
         displayPriority = .defaultHigh
         withoutLayerAnimation {
             badgeLayer.fillColor = UIColor(hex: payload.backgroundHexColor).cgColor

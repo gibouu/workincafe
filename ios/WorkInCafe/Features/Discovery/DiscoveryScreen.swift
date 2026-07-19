@@ -8,6 +8,7 @@ struct DiscoveryScreen: View {
     @State private var isMapQueryable = true
     @State private var unavailableAction: UnavailableAction?
     @State private var pendingPreviewID: String?
+    @State private var pendingDetailID: String?
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -43,12 +44,14 @@ struct DiscoveryScreen: View {
                 onApply: applyFilter
             )
         }
-        .sheet(isPresented: previewPresented, onDismiss: clearSelection) {
+        .sheet(isPresented: previewPresented, onDismiss: previewDidDismiss) {
             if let selectedPlace {
-                PlaceSheet(place: selectedPlace)
-                    .accessibilityIdentifier("place.preview")
+                PlacePreviewSheet(place: selectedPlace) {
+                    showDetails(for: selectedPlace)
+                }
             }
         }
+        .onChange(of: router.workSpotsPath, restorePreviewAfterDetail)
         .alert(item: $unavailableAction) { action in
             Alert(
                 title: Text(action.title),
@@ -411,6 +414,34 @@ struct DiscoveryScreen: View {
     private func applyFilter(_ filter: DiscoveryFilter) {
         store.filter = filter
         router.sheet = nil
+    }
+
+    private func showDetails(for place: PlaceSummary) {
+        pendingDetailID = place.id
+        router.sheet = nil
+    }
+
+    private func previewDidDismiss() {
+        guard let pendingDetailID else {
+            clearSelection()
+            return
+        }
+
+        self.pendingDetailID = nil
+        router.workSpotsPath.append(.placeDetail(id: pendingDetailID))
+    }
+
+    private func restorePreviewAfterDetail(
+        _ previousPath: [AppRoute],
+        _ path: [AppRoute]
+    ) {
+        guard path.isEmpty,
+              let previousRoute = previousPath.last,
+              case let .placeDetail(id) = previousRoute,
+              store.selectedPlaceID == id,
+              store.sourcePlaces.contains(where: { $0.id == id }) else { return }
+
+        router.sheet = .placePreview(id: id)
     }
 
     private func clearSelection() {

@@ -93,7 +93,7 @@ struct AppRootView: View {
         switch route {
         case let .placeDetail(id):
             if let place = model.places.first(where: { $0.id == id }) {
-                PlaceSheet(place: place)
+                PlaceDetailView(place: place)
             } else {
                 ContentUnavailableView(
                     "Work spot unavailable",
