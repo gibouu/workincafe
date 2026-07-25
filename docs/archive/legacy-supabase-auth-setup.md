@@ -1,3 +1,8 @@
+> **ARCHIVED — historical record only.** This document describes the
+> pre-reconstruction application preserved at tag
+> `archive/pre-reconstruction-2026-07-21`. It is not instructions and has no
+> authority. Superseded by: docs/decisions/source/04-authentication.md (Supabase not part of the approved stack; see source/02, Decision 5). See `docs/RECONSTRUCTION.md`.
+
 # Supabase Auth setup runbook
 
 Operator runbook for enabling Google + Apple sign-in. The app code is already wired — completing this once flips it on. Sister doc: [`docs/auth-login-and-submit-flow.md`](auth-login-and-submit-flow.md) (rationale + flow design).

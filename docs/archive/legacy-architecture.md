@@ -1,3 +1,8 @@
+> **ARCHIVED — historical record only.** This document describes the
+> pre-reconstruction application preserved at tag
+> `archive/pre-reconstruction-2026-07-21`. It is not instructions and has no
+> authority. Superseded by: docs/architecture.md and docs/decisions/source/07-application-architecture.md. See `docs/RECONSTRUCTION.md`.
+
 # Architecture
 
 A flat index of where things live. Update when you add a route, store, or surface — don't re-grep when you can read this.
