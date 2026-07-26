@@ -1,3 +1,8 @@
+> **ARCHIVED — historical record only.** This document describes the
+> pre-reconstruction application preserved at tag
+> `archive/pre-reconstruction-2026-07-21`. It is not instructions and has no
+> authority. Superseded by: native iOS program paused; see docs/decisions/source/01-reconstruction.md and the deferred register; branch state preserved in git. See `docs/RECONSTRUCTION.md`.
+
 # Native iOS Launch Program Roadmap
 
 **Objective:** Ship Work in Cafe 1.0 as a fast, fully native SwiftUI iPhone app while keeping the existing web product responsive, the consumer API stable, and the App Store release reversible at the server boundary.

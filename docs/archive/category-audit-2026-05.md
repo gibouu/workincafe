@@ -1,3 +1,8 @@
+> **ARCHIVED — historical record only.** This document describes the
+> pre-reconstruction application preserved at tag
+> `archive/pre-reconstruction-2026-07-21`. It is not instructions and has no
+> authority. Superseded by: historical data audit of the legacy database; no successor. See `docs/RECONSTRUCTION.md`.
+
 # Place category audit — 2026-05-08
 
 Read-only audit per [issue #79](https://github.com/gibouu/workincafe/issues/79). Feeds the implementation specifics for [#80](https://github.com/gibouu/workincafe/issues/80) (`fast_food` enum split) and [#81](https://github.com/gibouu/workincafe/issues/81) (brand→category overrides).

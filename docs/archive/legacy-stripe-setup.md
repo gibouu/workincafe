@@ -1,3 +1,8 @@
+> **ARCHIVED — historical record only.** This document describes the
+> pre-reconstruction application preserved at tag
+> `archive/pre-reconstruction-2026-07-21`. It is not instructions and has no
+> authority. Superseded by: docs/product-scope.md do-not-build list (payments out of scope). See `docs/RECONSTRUCTION.md`.
+
 # Stripe Connect Express setup
 
 Operator runbook for enabling real card payments + payouts. The app code is wired; flipping it on is a matter of pasting keys + completing dashboard config.

@@ -1,3 +1,8 @@
+> **ARCHIVED — historical record only.** This document describes the
+> pre-reconstruction application preserved at tag
+> `archive/pre-reconstruction-2026-07-21`. It is not instructions and has no
+> authority. Superseded by: AGENTS.md and docs/decisions/. See `docs/RECONSTRUCTION.md`.
+
 # Project conventions
 
 Rules that, if violated *locally*, break things *globally*. If you fix a bug here once, this is where to record what you learned so the next agent doesn't reintroduce it elsewhere.
