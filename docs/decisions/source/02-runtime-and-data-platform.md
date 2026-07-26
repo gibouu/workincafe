@@ -64,6 +64,7 @@ classified PG18 as preview; re-verify at implementation; availability ≠
 stability).
 
 Bindings:
+
 - **Target requirement:** Neon organization/project ownership and recovery
   must not depend on one unrecoverable personal account; both developers
   hold the administrative access their responsibilities require. The
@@ -84,7 +85,7 @@ Bindings:
   Preview migration success is an additional smoke check, not a substitute
   for Tier 2. Automated database-backed CI is deferred.
 - **5-BK (SUPERSEDED by Decision 19a):** external backup automation is
-  *deferred and explicitly not implemented at launch*. Neon-provider
+  _deferred and explicitly not implemented at launch_. Neon-provider
   recovery is accepted for the current no-user, low-value-data stage.
   Independent external backups require a new decision when a recorded
   reconsideration trigger is reached (triggers in source/09).

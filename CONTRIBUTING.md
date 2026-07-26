@@ -30,13 +30,13 @@ git history, or agent memory can create approval on its own. Anything under
   silently widen scope.
 - **Product scope is binding.** Items on the do-not-build list in
   `docs/product-scope.md` require a **scope-change issue and a recorded
-  decision**, not a PR. Open a *Scope change* issue.
+  decision**, not a PR. Open a _Scope change_ issue.
 - **Dependencies are allowlisted.** Never add, remove, or major-upgrade a
   dependency on your own. Every dependency in `package.json` must appear in
   `docs/approved-dependencies.json` with an installable status. To request a
-  new one, open a *Dependency request* issue. Foreign lockfiles
+  new one, open a _Dependency request_ issue. Foreign lockfiles
   (`pnpm-lock.yaml`, `yarn.lock`, `bun.lock*`) are forbidden.
-- **New foundational decisions** use a *Decision proposal* issue → technical-
+- **New foundational decisions** use a _Decision proposal_ issue → technical-
   lead approval → a new record in `docs/decisions/source/` → register update.
 
 ## How to propose things

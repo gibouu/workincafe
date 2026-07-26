@@ -15,6 +15,7 @@ Closed without selection: Google supplies the launch basemap. OpenFreeMap
 remains referenced only inside the documented fallback stack.
 
 ## Decision 12 — Search and discovery (approved 2026-07-23, replacing the
+
 earlier geocoding framing; abuse posture approved 2026-07-24)
 
 **Path 1 — café-name search:** resolves entirely against WorkinCafe's

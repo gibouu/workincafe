@@ -14,19 +14,32 @@
     "pg": { "source": "6", "status": "approved" },
     "better-auth": { "source": "8", "status": "approved" },
     "zod": { "source": "17", "status": "approved" },
-    "@base-ui/react": { "source": "14", "status": "approved", "note": "verify exact official package name at implementation" },
+    "@base-ui/react": {
+      "source": "14",
+      "status": "approved",
+      "note": "exact official package name confirmed 2026-07-26 (@base-ui/react; NOT the older @base-ui-components/react, which is pre-release)"
+    },
     "clsx": { "source": "14", "status": "approved" },
     "tailwind-merge": { "source": "14", "status": "approved" },
     "class-variance-authority": { "source": "14", "status": "approved" },
     "tw-animate-css": { "source": "14", "status": "approved" },
-    "server-only": { "source": "24c-G3", "status": "conditional", "note": "install only if the package manager, lint configuration or implementation setup requires the marker package" },
-    "client-only": { "source": "24c-G3", "status": "conditional", "note": "same condition as server-only; use only where a browser-only non-component module genuinely benefits" }
+    "server-only": {
+      "source": "24c-G3",
+      "status": "conditional",
+      "note": "install only if the package manager, lint configuration or implementation setup requires the marker package"
+    },
+    "client-only": {
+      "source": "24c-G3",
+      "status": "conditional",
+      "note": "same condition as server-only; use only where a browser-only non-component module genuinely benefits"
+    }
   },
   "approved_capabilities": {
     "drizzle_to_zod_integration": {
       "source": "17f/24d/24c-G7",
       "status": "approved-selection-pending",
-      "note": "Exactly one stable Drizzle-to-Zod integration matching the approved stable Drizzle line. At implementation: verify the current stable Drizzle line; verify its officially supported Zod v4 integration; select one package or official export path; add the exact installable package name to the runtime allowlist in the same reviewed PR that introduces it; never install both a standalone and a Drizzle-exported integration; never adopt a beta Drizzle-v1 integration for a newer import path."
+      "resolved_candidate": "drizzle-zod (verified 2026-07-26: latest stable 0.8.3, peer zod ^3.25 || ^4.0, drizzle-orm >=0.36.0)",
+      "note": "Exactly one stable Drizzle-to-Zod integration matching the approved stable Drizzle line. At implementation: confirm drizzle-zod is still the stable choice for the installed Drizzle line; add the exact package name to the runtime allowlist in the same reviewed PR that introduces its use; never install both a standalone and a Drizzle-exported integration; never adopt a beta Drizzle-v1 integration for a newer import path."
     },
     "google_maps_js_loading": {
       "source": "24c-G4",
@@ -48,9 +61,51 @@
     "@types/node": { "source": "24c-G3", "status": "approved" },
     "@types/react": { "source": "24c-G3", "status": "approved" },
     "@types/react-dom": { "source": "24c-G3", "status": "approved" },
-    "@types/pg": { "source": "24c-G3", "status": "conditional", "note": "only if the selected stable pg version does not supply its own declarations" },
+    "@types/pg": {
+      "source": "24c-G3",
+      "status": "conditional",
+      "note": "only if the selected stable pg version does not supply its own declarations"
+    },
     "@types/google.maps": { "source": "24c-G3", "status": "approved" },
-    "shadcn": { "source": "24c-G3", "status": "conditional", "note": "pinned exact version; only if retained as a repository dependency rather than an exact-version invocation tool" }
+    "shadcn": {
+      "source": "24c-G3",
+      "status": "conditional",
+      "note": "pinned exact version; only if retained as a repository dependency rather than an exact-version invocation tool"
+    }
+  },
+  "allow_scripts_rationale": {
+    "$comment": "package.json `allowScripts` approves specific pinned install scripts (npm 11). Approvals are exact identity (name@version) only — never wildcards, never `dangerously-allow-all-scripts`, never auto-extended to future versions. When a resolved version changes, re-review its script deliberately and confirm `npm ci` succeeds under Node 24.",
+    "sharp@0.34.5": "Next.js image-optimizer native library; its install script builds the platform libvips binary. Required for next/image at runtime.",
+    "unrs-resolver@1.12.2": "Native binding for eslint-import-resolver-typescript (pulled by eslint-config-next); its install script builds the resolver binary used by lint's import resolution.",
+    "fsevents": "NOT approved — optional macOS-only file-watcher (via vitest/chokidar). Only affects local watch mode; not needed for verify, build, CI, or Linux (Vercel) deploys, so its install script is left unapproved."
+  },
+  "version_gates": {
+    "$comment": "Foundation-time major-version decisions (FW-1 soak posture). 'latest' does not mean the newest major when a newer major is not cleanly supported by the selected Next.js/tooling stack. Each gate lifts only via a reviewed upgrade PR.",
+    "node": {
+      "using": "24.x (24.18.0 LTS at foundation)",
+      "deferred": "26 — not offered by standard Vercel Builds/Functions yet",
+      "source": "2/20d"
+    },
+    "typescript": {
+      "using": "6.0.3 (stable)",
+      "deferred": "7 — native-port compiler API not cleanly supported by the ecosystem without a TS6 compatibility package; would require a dual-compiler/preview-flag setup",
+      "source": "24c ruling 2026-07-26"
+    },
+    "eslint": {
+      "using": "9.39.5 (latest 9.x)",
+      "deferred": "10 — eslint-config-next@16.2.12 depends on eslint-plugin-react whose latest (7.37.5) caps at eslint ^9.7 and crashes on ESLint 10 (context.getFilename removed). Lift when eslint-plugin-react/eslint-config-next ship ESLint 10 support.",
+      "source": "24c ruling 2026-07-26"
+    },
+    "postgresql": {
+      "using": "17 (at DB baseline)",
+      "deferred": "18 — Neon classifies it preview",
+      "source": "5c"
+    },
+    "drizzle": {
+      "using": "0.x stable line",
+      "deferred": "1.0 — beta/RC",
+      "source": "6d"
+    }
   },
   "prohibited_lockfiles": ["pnpm-lock.yaml", "yarn.lock", "bun.lock", "bun.lockb"]
 }

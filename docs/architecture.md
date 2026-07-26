@@ -1,47 +1,73 @@
-# Architecture (target — implemented from Step 2B)
+# Architecture
 
-Status: SKELETON. This file becomes the implemented map during Step 2B;
-until then the authoritative sources are the operative decision records
-(13, 15, 16, 17, 18) under `docs/decisions/source/`. The legacy tree does
-not follow this architecture and is scheduled for removal (Step 3A).
+Status: **foundation implemented** (Step 2B + 3A). The approved directory structure,
+toolchain, and enforcement are in place; feature code lands per vertical slice (Step 4).
+The authoritative detail lives in the operative decision records (13, 15, 16, 17, 18)
+under `docs/decisions/source/`; this file is the working map.
 
-## Target structure (Decision 13a — no `src/`)
+## Directory structure (Decision 13a — no `src/`)
 
-app/(public) · app/(operator)/{admin,gp1} · app/api ·
-components/{ui,map,list,place,search,admin,gp1} ·
-lib/{domain,application,db,auth,integrations/google/{client,server},
-integrations/overture,ingestion,flags,contracts/http,env,client-state} ·
-scripts · drizzle · tests/{unit,contracts,boundaries,compliance,integration}
-· docs
+```
+app/(public)            public anonymous experience (home shell today)
+app/(operator)/admin    auth-gated curation console
+app/(operator)/gp1      auth-gated, MAPLESS candidate-seeding surface
+app/api                 thin Route Handlers (interactive client reads only)
+components/{ui,map,list,place,search,admin,gp1}
+lib/domain              pure TypeScript rules/types (no IO/framework)
+lib/application         use cases / orchestration; returns narrow DTOs
+lib/db                  Drizzle schema, queries, spatial module (server-only)
+lib/auth                Better Auth config + operator authorization (server-only)
+lib/integrations/google/client   browser-safe Maps only
+lib/integrations/google/server   server-only Places callers + DTO mapping
+lib/integrations/overture        matching-index tooling
+lib/ingestion           operator-run ingestion/curation adapters
+lib/flags               typed feature-flag registry
+lib/contracts/http      browser-safe HTTP wire contracts
+lib/env                 split server.ts / public.ts validation
+lib/client-state        URL-first committed state + ephemeral helpers
+tests/{unit,contracts,boundaries,compliance,integration}
+drizzle                 committed SQL migrations (empty until Step 3B)
+tools                   governance-check.sh, check-dependencies.mjs
+```
 
-## Dependency directions (lint-enforced; Decision 13b)
+Each module carries a `README.md` stating its responsibility. Directories are populated
+only by their approved slice; empty modules hold only the README until then.
 
-domain → nothing · db / auth-server / google-server / overture / ingestion
-→ domain · application → domain + narrow infrastructure · google/client →
-browser-safe shared types · components → domain types + application DTOs +
-google/client (map only) · app → application + components + approved auth
-entry points · scripts → application/ingestion.
+## Dependency directions (Decision 13b — enforced by ESLint `no-restricted-imports`)
 
-Prohibitions (full list in source/07): no component imports from db/ or
-google/server; no client module imports a server-only module; no domain
-import from application/provider/persistence/auth/UI; no route
-self-orchestration where a use case exists; no imports from docs/archive;
-GP-1 never imports google/client, map components, or the Maps loader; no
-raw Google response type into persistence; of Google-returned data, only
-approved Place IDs reach canonical writes; scripts never duplicate
-domain/application rules.
+domain → nothing · db / auth-server / google-server / overture / ingestion → domain ·
+application → domain + narrow infrastructure · google/client → browser-safe shared types ·
+components → domain types + application DTOs + google/client (map only) · app →
+application + components + approved auth entry points · scripts → application/ingestion.
+
+Enforced prohibitions (see `eslint.config.mjs` and source/07): components never import
+`lib/db` or `lib/integrations/google/server`; the Google client never imports server
+modules/credentials; `lib/domain` imports no framework/IO/app/UI; routes/pages never
+touch `lib/db` directly (go through `lib/application`); the GP-1 surface never imports map
+components or the Maps client. Additional boundary/compliance checks that ESLint cannot
+express become tests under `tests/boundaries` and `tests/compliance` as slices land.
 
 ## Call topology (Decision 16a)
 
-Server Components → application use cases directly. Server Actions =
-mutations (thin, validated, authorized). Route Handlers only for viewport
-reads, selected-café enrichment, card-photo batch, future external
-protocols. No self-HTTP from server code.
+Server Components call application use cases directly. Server Actions are the mutation
+mechanism (thin, validated, authorized). Route Handlers exist only for interactive client
+reads (viewport, selected-café enrichment, card-photo batch) and future external
+protocols. No server code makes HTTP requests to this app's own Route Handlers.
 
-## Exemplars (added as their real slices land — never as placeholders)
+## Enforcement wiring (in place)
 
-TODO(step-4): route handler · server-component use-case call · client
-island fetch · domain rule · Drizzle query · spatial query · Google server
-call · Maps browser adapter · semantic-search intersection · contextual
-ID verification · ingestion adapter · flagged use case · operator
-authorization check · operator form.
+- ESLint flat config (`eslint.config.mjs`): Next core-web-vitals + TypeScript + the
+  import boundaries above.
+- `tools/governance-check.sh`: no foreign lockfiles, no `src/`, archived docs marked,
+  governance docs present, allowlist JSON valid, AGENTS.md link integrity.
+- `tools/check-dependencies.mjs`: every `package.json` dependency is allowlisted with an
+  installable status.
+- `npm run verify` runs all of the above plus typecheck and Tier 1 tests; the Vercel build
+  runs `verify` then `next build`.
+
+## Exemplars (added with their real slices — never as placeholders)
+
+Pending (Step 4): route handler · server-component use-case call · client island fetch ·
+domain rule · Drizzle query · spatial query · Google server call · Maps browser adapter ·
+semantic-search intersection · contextual Place-ID verification · ingestion adapter ·
+flagged use case · operator authorization check · operator form.

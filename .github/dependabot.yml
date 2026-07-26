@@ -10,7 +10,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-      time: "06:00"
+      time: '06:00'
       timezone: Europe/Paris
     open-pull-requests-limit: 5
     # Group routine, low-risk bumps into one PR per week. Major bumps
@@ -21,7 +21,7 @@ updates:
           - patch
           - minor
     commit-message:
-      prefix: "chore(deps)"
+      prefix: 'chore(deps)'
       include: scope
     labels:
       - dependencies
@@ -30,18 +30,18 @@ updates:
     # only, so v10 crashes `npm run lint`. Ignore the major until upstream
     # ships ESLint 10 support; patch/minor on the ^9 line still flow. See #185.
     ignore:
-      - dependency-name: "eslint"
-        update-types: ["version-update:semver-major"]
+      - dependency-name: 'eslint'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
       day: monday
-      time: "06:00"
+      time: '06:00'
       timezone: Europe/Paris
     commit-message:
-      prefix: "chore(actions)"
+      prefix: 'chore(actions)'
       include: scope
     labels:
       - dependencies

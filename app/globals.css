@@ -1,149 +1,24 @@
-@import 'maplibre-gl/dist/maplibre-gl.css' layer(base);
-@import 'tailwindcss';
-
-@theme {
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', Inter,
-    sans-serif;
-
-  --color-map-bg: #f2ede3;
-  --color-map-deeper: #eae2d1;
-
-  --color-accent: #007aff;
-  --color-accent-tint: #e5f0ff;
-
-  --color-accent-green: #34c759;
-  --color-accent-green-tint: #e4f7e6;
-
-  --color-accent-red: #ff3b30;
-  --color-accent-red-tint: #ffecea;
-
-  --color-accent-amber: #ff9500;
-  --color-accent-amber-tint: #fff2dc;
-
-  --color-sys-gray: #8e8e93;
-  --color-sys-gray-2: #aeaeb2;
-  --color-sys-gray-3: #c7c7cc;
-  --color-sys-gray-4: #d1d1d6;
-  --color-sys-gray-5: #e5e5ea;
-  --color-sys-gray-6: #f2f2f7;
-
-  --color-cat-cafe: #6b4f3b;
-  --color-cat-bakery: #d4a574;
-  --color-cat-library: #2c3e50;
-  --color-cat-coworking: #16a085;
-  --color-cat-hotel: #8e44ad;
-  --color-cat-restaurant: #c0392b;
-  --color-cat-fast-food: #e67e22;
-  --color-cat-other: #5a5a60;
-
-  --shadow-bubble: 0 1px 2px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.08);
-  --shadow-float: 0 2px 8px rgba(0, 0, 0, 0.08), 0 12px 32px rgba(0, 0, 0, 0.1);
-
-  --blur-ios: 24px;
-}
-
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
-  }
-}
-
 :root {
-  --map-bg: #F2EDE3;
-  --surface: rgba(255, 255, 255, 0.88);
-  --surface-border: rgba(0, 0, 0, 0.06);
-  --divider: rgba(60, 60, 67, 0.12);
-  --text-primary: #000000;
-  --text-secondary: #6B7280;
-  --text-tertiary: #9CA3AF;
-  --accent: #007AFF;
-  --accent-tint: #E5F0FF;
-  --accent-green: #34C759;
-  --accent-green-tint: #E4F7E6;
-  --accent-red: #FF3B30;
-  --accent-amber: #FF9500;
+  color-scheme: light dark;
 }
 
-html, body {
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
   margin: 0;
   padding: 0;
-  background: var(--map-bg);
-  color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', Inter, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  line-height: 1.5;
 }
 
-@keyframes ringpulse {
-  0%, 100% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(1.2); opacity: 0.3; }
+main {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2rem;
 }
-
-@keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
-}
-.shimmer {
-  background-image: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.6) 50%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  background-size: 400px 100%;
-  background-repeat: no-repeat;
-  animation: shimmer 1.6s ease-in-out infinite;
-}
-
-*::-webkit-scrollbar { width: 6px; height: 6px; }
-*::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 3px; }
-
-/* Hide scrollbar utility for horizontal chip rows */
-.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
-.no-scrollbar::-webkit-scrollbar { display: none; height: 0; width: 0; }
-
-/* WIC custom range slider — track painted via inline gradient on the input */
-.wic-slider {
-  border-radius: 9999px;
-  height: 6px;
-  margin-top: 9px; /* keeps thumb visually centered with ticks */
-}
-.wic-slider:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
-.wic-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 24px; height: 24px;
-  border-radius: 9999px;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.10);
-  cursor: grab;
-  margin-top: -9px;
-  transition: transform 120ms ease;
-}
-.wic-slider:active::-webkit-slider-thumb { transform: scale(1.08); cursor: grabbing; }
-.wic-slider::-moz-range-thumb {
-  width: 24px; height: 24px;
-  border-radius: 9999px;
-  background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.18), 0 2px 6px rgba(0,0,0,0.10);
-  cursor: grab;
-}
-.wic-slider:active::-moz-range-thumb { transform: scale(1.08); cursor: grabbing; }
-.wic-slider::-webkit-slider-runnable-track { height: 6px; border-radius: 9999px; background: transparent; }
-.wic-slider::-moz-range-track { height: 6px; border-radius: 9999px; background: transparent; }

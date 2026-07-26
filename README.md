@@ -1,48 +1,48 @@
-# Work in Café
+# WorkinCafe
 
-Map-first PWA at **[workin.cafe](https://workin.cafe)** for finding places to work or study — cafés, bakeries, libraries, coworking, hotel lobbies, restaurants. Six cities: **Paris**, **Toronto (GTA)**, **London**, **New York**, **Tokyo**, **Seoul**.
+A Toronto café finder for students and remote workers — discover cafés suitable for
+studying or working, filtered by the conditions that matter (Wi-Fi, noise, power outlets,
+seating).
 
-Built with Next.js 16 (App Router) + MapLibre GL JS (OpenFreeMap vector tiles) + Supabase + PostGIS, Phosphor Icons, and `vaul` drawers. Apple-native aesthetic: translucent surfaces, SF Pro stack, no user-uploaded photos in MVP.
+> **Status: under reconstruction.** This repository is being rebuilt on a governed,
+> requirement-first foundation. The previous implementation is preserved at the immutable
+> tag `archive/pre-reconstruction-2026-07-21`. See [`docs/RECONSTRUCTION.md`](docs/RECONSTRUCTION.md).
 
-## Quickstart
+## Foundation stack
 
-```bash
-npm install
-npm run dev                         # http://localhost:3000
-```
+Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · ESLint (flat config) ·
+Prettier · Vitest. Data, auth, maps, and UI libraries are introduced with their approved
+feature slices (see the dependency allowlist and decision records). Exact versions are
+pinned in `package.json` and locked in `package-lock.json`.
 
-A `.env.local` is **optional** for local exploration — see [`CLAUDE.md`](CLAUDE.md) for the full env-var list (Supabase, Cloudinary, Google Places, etc.). Without it the app runs in demo mode.
+- Runtime: **Node 24.x** (`.nvmrc`). Use `nvm use` or install Node 24 before working.
+- Package manager: **npm** (`npm ci` for reproducible installs).
 
-The repo ships with **demo mode** baked in (`lib/demo/paris-places.ts`, `lib/demo/toronto-places.ts`), so the map, sidebar, search, card, review form, and place profile all work on a fresh clone without a Supabase project. To go live, apply the migrations under `supabase/migrations/` (see `supabase/README.md`) and the API routes start writing through.
+## Commands
 
-## Scripts
+| Command                | What it does                                    |
+| ---------------------- | ----------------------------------------------- |
+| `npm run dev`          | Dev server                                      |
+| `npm run build`        | Production build                                |
+| `npm run start`        | Serve the production build                      |
+| `npm run format`       | Prettier (write)                                |
+| `npm run format:check` | Prettier (check)                                |
+| `npm run lint`         | ESLint (`eslint .`; `next lint` is not used)    |
+| `npm run typecheck`    | `tsc --noEmit`                                  |
+| `npm run test`         | Vitest (Tier 1)                                 |
+| `npm run policy:check` | Governance + dependency-allowlist checks        |
+| `npm run verify`       | format:check → lint → typecheck → policy → test |
 
-| Command            | What it does                                 |
-| ------------------ | -------------------------------------------- |
-| `npm run dev`      | Dev server on `:3000`                        |
-| `npm run build`    | Production build                             |
-| `npm run lint`     | ESLint (Next.js flat config)                 |
-| `npm run typecheck`| `tsc --noEmit`                               |
-| `npm run seed:paris` | OSM Overpass seed for Paris                |
+Deployment is Vercel's Git integration; the Vercel build runs `npm run verify` then
+`next build`. There are no custom GitHub Actions workflows.
 
-CI runs `npm ci && npm run lint && npm run typecheck && npm run build` on every PR.
+## Where to look first
 
-## Where the docs live
-
-- **[`workin-cafe-build-spec.md`](workin-cafe-build-spec.md)** — canonical product spec, MVP scope, design decisions.
-- **[`ARCHITECTURE.md`](ARCHITECTURE.md)** — flat index of routes, API routes, stores, UI surfaces, auth flow, demo-vs-live data rules.
-- **[`docs/conventions.md`](docs/conventions.md)** — invariants that, if violated locally, create global bugs (Phosphor `'use client'`, category visuals source of truth, `[lng, lat]` for supercluster, etc.).
-- **[`supabase/README.md`](supabase/README.md)** — migration runbook + Supabase setup.
-- **[`CLAUDE.md`](CLAUDE.md)** — instructions for AI coding agents working in this repo.
-
-## Contributing
-
-PRs are welcome — open an issue first for non-trivial changes so we can align on scope.
-
-1. Fork → branch (`feat/<slug>` or `fix/<slug>`).
-2. `npm run lint && npm run typecheck && npm run build` should all pass.
-3. Open a PR against `main`. Vercel will build a preview; CI will run `verify`.
-4. The repo is public, so previews work for any contributor automatically.
+- [`AGENTS.md`](AGENTS.md) — operational rules for contributors and coding agents.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — authority, plan-before-change, dependency and scope rules.
+- [`docs/product-scope.md`](docs/product-scope.md) — what is and isn't in scope.
+- [`docs/architecture.md`](docs/architecture.md) — module structure and dependency directions.
+- [`docs/decisions/`](docs/decisions/) — the ratified decision records (authoritative).
 
 ## License
 

@@ -1,0 +1,6 @@
+.next
+node_modules
+package-lock.json
+docs/archive
+next-env.d.ts
+tsconfig.json

@@ -1,7 +1,0 @@
-{
-  "screenId": "001-map-shell",
-  "route": "/",
-  "revision": 1,
-  "elements": ["map.shell", "map.brand", "map.search", "map.pin.ten-belles", "map.pin.library", "map.cluster", "place.sheet"],
-  "noteStorageKey": "wic-ios-notes-v1"
-}
