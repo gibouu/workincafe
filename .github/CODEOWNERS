@@ -1,0 +1,28 @@
+# Code owners for WorkinCafe foundational files.
+#
+# Routing reflects the agreed collaboration model: the technical lead owns the
+# governance foundation (architecture, decisions, dependency allowlist, agent
+# rules, CI/enforcement config). @cemgunay has repository write access; @gibouu
+# is the repository owner.
+#
+# NOTE (honest scope): assigning code owners here auto-requests their review on
+# matching PRs. It does NOT by itself *require* their approval — that is an
+# owner-side branch-protection setting ("Require review from Code Owners" plus a
+# non-zero required approval count), which is a Target requirement not yet
+# enabled. See CONTRIBUTING.md.
+
+# Default owner for everything.
+*                               @cemgunay
+
+# Foundational governance — changes here are architecture/scope decisions.
+/AGENTS.md                      @cemgunay
+/CLAUDE.md                      @cemgunay
+/CONTRIBUTING.md                @cemgunay
+/docs/product-scope.md          @cemgunay
+/docs/architecture.md           @cemgunay
+/docs/RECONSTRUCTION.md         @cemgunay
+/docs/decisions/                @cemgunay
+/docs/approved-dependencies.json @cemgunay
+/docs/testing/obligations.md    @cemgunay
+/.github/                       @cemgunay
+/tools/                         @cemgunay
