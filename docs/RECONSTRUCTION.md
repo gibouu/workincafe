@@ -8,9 +8,9 @@ acceptable; accidental repository disorder is not.
 ## Phase state
 
 - [x] Decision process complete (`docs/decisions/`)
-- [ ] Step 0 — snapshot, freeze, owner verifications  ← IN PROGRESS
-- [ ] Step 1 — governance (this PR)
-- [ ] Step 2A — technology-neutral enforcement
+- [x] Step 0 — snapshot, freeze; owner verifications ongoing (registrar/account recovery)
+- [x] Step 1 — governance (merged in #318)
+- [ ] Step 2A — technology-neutral enforcement  ← IN PROGRESS (this PR)
 - [ ] Step 2B — approved skeleton + enforcement wiring
 - [ ] Step 3A — legacy strip to minimal buildable shell
 - [ ] Step 3B — database baseline (chain freezes after this)
