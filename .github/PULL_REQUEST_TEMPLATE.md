@@ -25,7 +25,7 @@ Implements / refs: <!-- e.g. Refs #NN, decision docs/decisions/source/07-applica
 
 - [ ] No dependencies added/removed/major-upgraded, **or** each change is listed
       in `docs/approved-dependencies.json` with an installable status and links
-      an approved *Dependency request*.
+      an approved _Dependency request_.
 - [ ] No foreign lockfiles (`pnpm-lock.yaml`, `yarn.lock`, `bun.lock*`).
 
 ## Compliance-bearing behavior (if this touches Google/persistence/auth)

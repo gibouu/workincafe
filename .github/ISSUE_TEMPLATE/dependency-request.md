@@ -1,8 +1,8 @@
 ---
 name: Dependency request
 about: Request adding, removing, or major-upgrading a dependency
-title: "deps: <package> — <add|remove|upgrade>"
-labels: ["dependency"]
+title: 'deps: <package> — <add|remove|upgrade>'
+labels: ['dependency']
 ---
 
 <!--

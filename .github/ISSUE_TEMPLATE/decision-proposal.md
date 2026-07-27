@@ -1,8 +1,8 @@
 ---
 name: Decision proposal
 about: Propose a new or amended foundational decision (architecture, technology, process)
-title: "decision: <short title>"
-labels: ["decision"]
+title: 'decision: <short title>'
+labels: ['decision']
 ---
 
 <!--

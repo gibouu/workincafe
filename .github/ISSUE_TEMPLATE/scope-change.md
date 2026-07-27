@@ -1,8 +1,8 @@
 ---
 name: Scope change
 about: Propose building something on the do-not-build list, or changing product scope
-title: "scope: <short title>"
-labels: ["scope"]
+title: 'scope: <short title>'
+labels: ['scope']
 ---
 
 <!--

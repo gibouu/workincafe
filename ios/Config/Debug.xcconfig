@@ -1,2 +1,0 @@
-#include "Base.xcconfig"
-WORKINCAFE_API_BASE_URL = https:/$()/www.workin.cafe

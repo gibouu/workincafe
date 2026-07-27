@@ -38,7 +38,7 @@ libraries/coworking/other venue categories as canonical product types;
 analytics dashboards; notifications; email.
 
 Items here require a recorded scope decision — not a PR, not an agent
-initiative. Deferred *technologies* live in
+initiative. Deferred _technologies_ live in
 `docs/decisions/deferred-register.md`.
 
 ## Product semantic invariants

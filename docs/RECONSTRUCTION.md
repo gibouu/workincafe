@@ -10,20 +10,20 @@ acceptable; accidental repository disorder is not.
 - [x] Decision process complete (`docs/decisions/`)
 - [x] Step 0 — snapshot, freeze; owner verifications ongoing (registrar/account recovery)
 - [x] Step 1 — governance (merged in #318)
-- [ ] Step 2A — technology-neutral enforcement  ← IN PROGRESS (this PR)
-- [ ] Step 2B — approved skeleton + enforcement wiring
-- [ ] Step 3A — legacy strip to minimal buildable shell
+- [x] Step 2A — technology-neutral enforcement (merged in #319)
+- [ ] Step 2B + 3A — approved skeleton, toolchain, enforcement, and legacy strip
+      ← IN PROGRESS (this PR; combined per the 24b sequencing amendment)
 - [ ] Step 3B — database baseline (chain freezes after this)
 - [ ] Step 4 — vertical slices (order in source/11, adjustable per 24b)
 
 ## Interim rules
 
-The legacy application tree is reference material pending removal at
-Step 3A. Do not extend it, port from it without a decision-backed slice PR,
-or treat its patterns as approved. Existing legacy GitHub workflow files
-remain historical infrastructure pending Step 3A removal and are not the
-target pipeline. Feature work is frozen except reconstruction PRs.
-Deployment may be broken or absent until Step 4.
+The legacy application tree has been removed in the Step 2B+3A foundation PR;
+its previous state is preserved at the immutable tag. Do not resurrect legacy
+code except by porting into the approved structure through a decision-backed
+slice PR (cite provenance from the tag). Feature work happens only through
+reconstruction slice PRs. The deployed application is a minimal shell until
+Step 4 delivers product slices; downtime is acceptable.
 
 ## Legacy references
 
