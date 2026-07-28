@@ -8,13 +8,38 @@ acceptable; accidental repository disorder is not.
 ## Phase state
 
 - [x] Decision process complete (`docs/decisions/`)
-- [x] Step 0 — snapshot, freeze; owner verifications ongoing (registrar/account recovery)
+- [x] Step 0 — snapshot, freeze; owner verifications complete (see below)
 - [x] Step 1 — governance (merged in #318)
 - [x] Step 2A — technology-neutral enforcement (merged in #319)
-- [ ] Step 2B + 3A — approved skeleton, toolchain, enforcement, and legacy strip
-      ← IN PROGRESS (this PR; combined per the 24b sequencing amendment)
-- [ ] Step 3B — database baseline (chain freezes after this)
+- [x] Step 2B + 3A — approved skeleton, toolchain, enforcement, and legacy
+      strip (merged in #320; combined per the 24b sequencing amendment)
+- [ ] Step 3B — database baseline (immutable after application)
+      ← BUILT & VERIFIED, NOT COMMITTED. Schema + custom SQL + Better Auth,
+      migrate-from-empty verified on local PostGIS across two destroy/recreate
+      cycles; strict-gate correctness amendments applied (Decision 25). Held
+      uncommitted pending clearance of hard upstream security blockers (see the
+      zero-blocker review); not yet applied to canonical Neon.
 - [ ] Step 4 — vertical slices (order in source/11, adjustable per 24b)
+
+## Owner verifications (Step 0/1)
+
+Confirmed directly by the responsible account holders on **2026-07-28**. Only a
+minimal, non-sensitive attestation is recorded here; recovery emails/codes, 2FA
+details, registrar payment information, private-settings screenshots, and
+per-collaborator role lists are deliberately **not** stored in the repository.
+
+```text
+GitHub owner recovery: verified privately by repository owner
+Registrar and DNS readiness: verified privately by account holder
+Main protection configuration: verified by repository owner
+Collaborator access: reviewed and approved by repository owner
+Verification date: 2026-07-28
+```
+
+`main` branch protection is configured and confirmed appropriate by the
+repository owner; this document intentionally does not enumerate the specific
+protection rules beyond that confirmation. Governance references to a protected
+`main` (AGENTS.md, CONTRIBUTING.md) are backed by this confirmation.
 
 ## Interim rules
 
@@ -31,6 +56,7 @@ Snapshot tag: `archive/pre-reconstruction-2026-07-21` (commit `cf66a5c`).
 Inspect via `git show archive/pre-reconstruction-2026-07-21:<path>`.
 Archived docs: `docs/archive/` (historical, never instructions).
 Legacy database: sanitized-archive-then-decommission sequence per
-source/02 (Decision 5e) and the Step 0 owner checklist — verification
-pending; this document makes no claim about archive status or account
-access.
+source/02 (Decision 5e) and the Step 0 owner checklist. This operational
+sequence is tracked separately from the four owner attestations above and is
+independent of the greenfield reconstruction database; this document makes no
+claim about its current archive/decommission status.

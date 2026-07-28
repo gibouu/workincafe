@@ -15,18 +15,32 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node tools/db-migrate.mjs",
+    "db:test": "vitest run --config vitest.integration.config.ts",
+    "auth:schema:generate": "auth generate --config ./lib/auth/config.ts --output ./lib/db/schema/auth.generated.ts --yes && node tools/apply-auth-header.mjs",
     "policy:check": "bash tools/governance-check.sh && node tools/check-dependencies.mjs",
-    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run policy:check && npm run test"
+    "security:check": "node tools/check-security-advisories.mjs",
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run policy:check && npm run security:check && npm run test"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "1.6.25",
+    "better-auth": "1.6.25",
+    "drizzle-orm": "0.45.2",
     "next": "16.2.12",
+    "pg": "8.22.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "server-only": "0.0.1",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/node": "24.13.3",
+    "@types/pg": "8.20.0",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
+    "auth": "1.6.25",
+    "drizzle-kit": "0.31.10",
     "eslint": "9.39.5",
     "eslint-config-next": "16.2.12",
     "prettier": "3.9.6",

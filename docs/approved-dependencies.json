@@ -13,6 +13,11 @@
     "drizzle-orm": { "source": "6", "status": "approved" },
     "pg": { "source": "6", "status": "approved" },
     "better-auth": { "source": "8", "status": "approved" },
+    "@better-auth/drizzle-adapter": {
+      "source": "8/3B",
+      "status": "approved",
+      "note": "Separate official Drizzle adapter package for Better Auth; pinned to the better-auth line (1.6.25)."
+    },
     "zod": { "source": "17", "status": "approved" },
     "@base-ui/react": {
       "source": "14",
@@ -50,6 +55,11 @@
   "dev": {
     "typescript": { "source": "24d", "status": "approved" },
     "drizzle-kit": { "source": "6", "status": "approved" },
+    "auth": {
+      "source": "8/3B",
+      "status": "approved",
+      "note": "Official Better Auth schema-generation CLI (npm package 'auth'; repo better-auth/better-auth; bin 'auth'). Version-aligned to better-auth (1.6.25). Supersedes the older @better-auth/cli package, which is NOT part of the baseline. Pinned exact; invoked via the local binary in the auth:schema:generate script, never `auth@latest`."
+    },
     "vitest": { "source": "22", "status": "approved" },
     "eslint": { "source": "24d", "status": "approved" },
     "eslint-config-next": { "source": "24d", "status": "approved" },

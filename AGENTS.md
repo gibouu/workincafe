@@ -65,6 +65,15 @@ create approval independently.
   or triggered by page load (confirmed-workflow compliance rule).
 - **Formatting/linting:** Prettier owns formatting; ESLint owns correctness
   and architecture boundaries. No second formatter or linter.
+- **Dependency vulnerabilities (Decision 26):** the security gate is
+  disposition-based, not "npm audit = 0". Standard-only resolution stays
+  mandatory (no overrides/resolutions/aliases/forks/patch-package/canary/
+  `--force`/downgrade/suppression). Every `npm audit` advisory must have an
+  individual, evidence-backed disposition in
+  `docs/security/advisory-dispositions.json`; a reachable unmitigated
+  high/critical, or a new/unreviewed advisory, or an unapplied compatible
+  standard fix, blocks. `tools/check-security-advisories.mjs` (in `verify`)
+  reconciles live audit against the register and never conceals raw output.
 
 ## Compliance-bearing rules (non-optional; tests enforce them)
 
@@ -102,8 +111,10 @@ deviations require a new policy inquiry and recorded approval:
 
 ## Canonical commands (available from Step 2B)
 
-`npm run verify` = format:check → lint → typecheck → migration static
-checks → Tier 1 tests. Also: `npm test`, `npm run test:watch`,
+`npm run verify` = format:check → lint → typecheck → policy checks
+(governance + dependency allowlist + migration static checks) → security
+advisory gate (`security:check`, Decision 26) → Tier 1 tests. Also: `npm test`,
+`npm run test:watch`,
 `npm run db:test` (local Docker PostGIS Tier 2 — required by convention
 before review on schema-changing PRs), `npm run db:generate` (no DB URL),
 `npm run db:migrate` (fails clearly without direct URL). Vercel build =

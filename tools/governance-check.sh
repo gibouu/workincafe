@@ -68,6 +68,26 @@ if [ -f AGENTS.md ]; then
   if [ "$broken" -eq 1 ]; then bad "AGENTS.md references a missing path"; else ok "AGENTS.md referenced paths exist"; fi
 fi
 
+# 7. Migration static check: `drizzle-kit push` / `db:push` are prohibited in
+#    every environment (Decision 7). No push script may exist.
+if [ -f package.json ] && command -v node >/dev/null 2>&1; then
+  if node -e 'const s=(JSON.parse(require("fs").readFileSync("package.json","utf8")).scripts)||{}; const bad=Object.entries(s).filter(([k,v])=>k==="db:push"||/drizzle-kit\s+push|\bdb:push\b/.test(String(v))); if(bad.length){console.error(bad.map(b=>b[0]).join(", ")); process.exit(1)}' 2>/dev/null; then
+    ok "no drizzle-kit push / db:push scripts"
+  else
+    bad "prohibited push script present (drizzle-kit push is forbidden everywhere)"
+  fi
+fi
+
+# 8. No network-exposed dev tooling (Decision 26): no `drizzle-kit studio` /
+#    `esbuild ... serve` scripts — the vulnerable esbuild dev-server path is unused.
+if [ -f package.json ] && command -v node >/dev/null 2>&1; then
+  if node -e 'const s=(JSON.parse(require("fs").readFileSync("package.json","utf8")).scripts)||{}; const bad=Object.entries(s).filter(([,v])=>/drizzle-kit\s+studio|esbuild[^\n]*\bserve\b/.test(String(v))); if(bad.length){console.error(bad.map(b=>b[0]).join(", ")); process.exit(1)}' 2>/dev/null; then
+    ok "no network-exposed dev tooling scripts (studio/esbuild-serve)"
+  else
+    bad "prohibited dev-server script present (drizzle-kit studio / esbuild serve — Decision 26)"
+  fi
+fi
+
 echo
 if [ "$fail" -eq 0 ]; then echo "governance-check: OK"; else echo "governance-check: FAILED"; fi
 exit "$fail"
