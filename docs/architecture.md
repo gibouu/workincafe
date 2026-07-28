@@ -79,7 +79,16 @@ an injected repository port with the pure decision core in domain
 `lib/domain/attribute-promotion.ts`, `lib/db/repositories/attribute-promotion-repo.ts`);
 Tier 2 database harness (`tests/integration/`).
 
-Pending (Step 4): route handler · server-component use-case call · client island fetch ·
-typed public read query · Google server call · Maps browser adapter ·
-semantic-search intersection · contextual Place-ID verification · ingestion adapter ·
-flagged use case · operator authorization check · operator form.
+Landed (Step 4 — public read slice): validated server env (`lib/env/server.ts`);
+one pooled runtime DB client (`lib/db/connection.ts`); typed public read query
+(`lib/db/queries/published-cafes.ts`); reviewed parameterized spatial query
+(`lib/db/spatial/cafes.ts`); Server Component → application use case → narrow view
+DTO (`app/(public)/page.tsx`, `app/(public)/cafes/[slug]/page.tsx`,
+`lib/application/places/*`, `lib/domain/place-view.ts`); presentational components
+taking DTOs (`components/list`, `components/place`); local-only dev fixtures
+(`tools/seed-dev.mjs`).
+
+Pending (later Step 4 slices): route handler (interactive client reads) · client
+island fetch · Google server call · Maps browser adapter · semantic-search
+intersection · contextual Place-ID verification · ingestion adapter · flagged use
+case · operator authorization check · operator form.

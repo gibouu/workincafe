@@ -17,6 +17,7 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node tools/db-migrate.mjs",
+    "db:seed:dev": "node tools/seed-dev.mjs",
     "db:test": "vitest run --config vitest.integration.config.ts",
     "auth:schema:generate": "auth generate --config ./lib/auth/config.ts --output ./lib/db/schema/auth.generated.ts --yes && node tools/apply-auth-header.mjs",
     "policy:check": "bash tools/governance-check.sh && node tools/check-dependencies.mjs",
