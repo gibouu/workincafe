@@ -75,11 +75,21 @@ By decision (19-GH), the launch pipeline is Vercel's Git integration; there are
 no custom GitHub Actions workflows. The `CODEOWNERS`, pull-request template, and
 issue templates here are GitHub-native configuration, not Actions workflows.
 
-## Target requirements (not yet verified/enabled)
+## Owner verifications and Target requirements
 
-These are recorded requirements, not current guarantees:
+Owner-side items confirmed privately by the responsible account holders on
+2026-07-28 (minimal attestation in `docs/RECONSTRUCTION.md`):
 
-- Requiring Code Owner approval (and a non-zero required review count) on `main`
-  is an owner-side branch-protection setting to be enabled by @gibouu.
-- Repository account recovery, registrar/domain control, and hosting/provider
-  account ownership are verified during setup (see `docs/RECONSTRUCTION.md`).
+- GitHub owner-account recovery — verified.
+- Registrar / domain / DNS readiness — verified.
+- `main` branch-protection configuration — reviewed and confirmed appropriate by
+  the repository owner (this document does not enumerate the specific rules).
+- Collaborator access — reviewed and approved by the repository owner.
+
+Still Target requirements (recorded requirements, not current guarantees):
+
+- Any specific `main` protection enforcement beyond what the owner confirmed
+  appropriate (e.g. explicitly requiring Code Owner approval with a non-zero
+  review count) is an owner-side setting and is not separately asserted here.
+- Vercel project ownership, Neon organization access, and Google Cloud project
+  access are verified during their applicable setup steps.

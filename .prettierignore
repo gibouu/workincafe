@@ -4,3 +4,9 @@ package-lock.json
 docs/archive
 next-env.d.ts
 tsconfig.json
+
+# Generated artifacts — owned by their generators, never reformatted by Prettier
+# (reformatting would cause regeneration drift / unexplained diffs).
+lib/db/schema/auth.generated.ts
+drizzle/meta
+drizzle/*.sql

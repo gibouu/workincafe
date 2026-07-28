@@ -1,7 +1,9 @@
 # Architecture
 
-Status: **foundation implemented** (Step 2B + 3A). The approved directory structure,
-toolchain, and enforcement are in place; feature code lands per vertical slice (Step 4).
+Status: **foundation + database baseline implemented** (Step 2B + 3A + 3B). The
+approved directory structure, toolchain, enforcement, and the canonical database
+schema (Drizzle + PostGIS + Better Auth, first frozen migration) are in place;
+feature code lands per vertical slice (Step 4).
 The authoritative detail lives in the operative decision records (13, 15, 16, 17, 18)
 under `docs/decisions/source/`; this file is the working map.
 
@@ -67,7 +69,17 @@ protocols. No server code makes HTTP requests to this app's own Route Handlers.
 
 ## Exemplars (added with their real slices — never as placeholders)
 
+Landed (Step 3B — database baseline): single-source domain vocabularies + Zod
+(`lib/domain/attributes.ts`, `hours.ts`); Drizzle schema with DB-enforced CHECK
+matrix (`lib/db/schema/*.ts`); custom-SQL migration for objects Drizzle can't
+model (`drizzle/0000_baseline.sql` — PostGIS generated geography, GiST indexes,
+append-only triggers, cross-table constraint trigger); application use case over
+an injected repository port with the pure decision core in domain
+(`lib/application/attributes/promote-attribute-observation.ts`,
+`lib/domain/attribute-promotion.ts`, `lib/db/repositories/attribute-promotion-repo.ts`);
+Tier 2 database harness (`tests/integration/`).
+
 Pending (Step 4): route handler · server-component use-case call · client island fetch ·
-domain rule · Drizzle query · spatial query · Google server call · Maps browser adapter ·
+typed public read query · Google server call · Maps browser adapter ·
 semantic-search intersection · contextual Place-ID verification · ingestion adapter ·
 flagged use case · operator authorization check · operator form.
