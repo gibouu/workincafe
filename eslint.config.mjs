@@ -9,7 +9,7 @@ import nextTypescript from 'eslint-config-next/typescript'
 
 const config = [
   {
-    ignores: ['.next/**', 'node_modules/**', 'docs/archive/**', 'next-env.d.ts'],
+    ignores: ['.next/**', 'node_modules/**', '.vercel/**', 'docs/archive/**', 'next-env.d.ts'],
   },
   ...nextCoreWebVitals,
   ...nextTypescript,

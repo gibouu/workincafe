@@ -10,3 +10,8 @@ tsconfig.json
 lib/db/schema/auth.generated.ts
 drizzle/meta
 drizzle/*.sql
+
+# Vercel build-managed: `vercel build` rewrites vercel.json and creates .vercel/,
+# so the in-build `verify` (format:check) must not check them.
+vercel.json
+.vercel
