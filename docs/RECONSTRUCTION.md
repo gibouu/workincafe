@@ -13,12 +13,12 @@ acceptable; accidental repository disorder is not.
 - [x] Step 2A — technology-neutral enforcement (merged in #319)
 - [x] Step 2B + 3A — approved skeleton, toolchain, enforcement, and legacy
       strip (merged in #320; combined per the 24b sequencing amendment)
-- [ ] Step 3B — database baseline (immutable after application)
-      ← BUILT & VERIFIED, NOT COMMITTED. Schema + custom SQL + Better Auth,
-      migrate-from-empty verified on local PostGIS across two destroy/recreate
-      cycles; strict-gate correctness amendments applied (Decision 25). Held
-      uncommitted pending clearance of hard upstream security blockers (see the
-      zero-blocker review); not yet applied to canonical Neon.
+- [x] Step 3B — database baseline merged in #323 (Decisions 25, 26). Schema +
+      custom SQL + Better Auth; migrate-from-empty verified on local PostGIS
+      across two destroy/recreate cycles; dependency-security disposition gate in
+      place. The migration chain is **immutable after application**; it freezes
+      only when first applied to canonical Neon (pending the deploy step — see
+      Decision 20).
 - [ ] Step 4 — vertical slices (order in source/11, adjustable per 24b)
 
 ## Owner verifications (Step 0/1)
