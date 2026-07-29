@@ -1,6 +1,8 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getCurrentOperator } from '@/lib/application/operators/current-operator'
 import { listCafesForAdmin } from '@/lib/application/places/list-cafes-admin'
+import { hideCafeAction, publishCafeAction } from './actions'
 import { LogoutButton } from './logout-button'
 
 export const dynamic = 'force-dynamic'
@@ -19,9 +21,12 @@ export default async function AdminPage() {
           <span className="empty-state">{operator.email}</span> <LogoutButton />
         </div>
       </div>
-      <h2>Cafés ({cafes.length})</h2>
+      <div className="op-header">
+        <h2>Cafés ({cafes.length})</h2>
+        <Link href="/admin/new">+ New café</Link>
+      </div>
       {cafes.length === 0 ? (
-        <p className="empty-state">No cafés yet — creation lands in the next slice.</p>
+        <p className="empty-state">No cafés yet — create the first one.</p>
       ) : (
         <table className="op-table">
           <thead>
@@ -30,6 +35,7 @@ export default async function AdminPage() {
               <th>Neighborhood</th>
               <th>Publication</th>
               <th>Record</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -39,6 +45,26 @@ export default async function AdminPage() {
                 <td>{cafe.neighborhood ?? '—'}</td>
                 <td>{cafe.publicationState}</td>
                 <td>{cafe.recordState}</td>
+                <td>
+                  {cafe.recordState === 'active' ? (
+                    <div className="op-actions">
+                      {cafe.publicationState !== 'published' ? (
+                        <form action={publishCafeAction}>
+                          <input type="hidden" name="placeId" value={cafe.id} />
+                          <button type="submit">Publish</button>
+                        </form>
+                      ) : null}
+                      {cafe.publicationState !== 'hidden' ? (
+                        <form action={hideCafeAction}>
+                          <input type="hidden" name="placeId" value={cafe.id} />
+                          <button type="submit">Hide</button>
+                        </form>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <span className="empty-state">—</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
