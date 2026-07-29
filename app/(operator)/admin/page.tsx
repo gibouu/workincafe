@@ -23,7 +23,9 @@ export default async function AdminPage() {
       </div>
       <div className="op-header">
         <h2>Cafés ({cafes.length})</h2>
-        <Link href="/admin/new">+ New café</Link>
+        <div className="op-actions">
+          <Link href="/gp1">GP-1 queue</Link> <Link href="/admin/new">+ New café</Link>
+        </div>
       </div>
       {cafes.length === 0 ? (
         <p className="empty-state">No cafés yet — create the first one.</p>

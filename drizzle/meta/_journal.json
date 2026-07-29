@@ -15,6 +15,13 @@
       "when": 1785366939857,
       "tag": "0001_overture_index",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785367824186,
+      "tag": "0002_gp1_candidates",
+      "breakpoints": true
     }
   ]
 }

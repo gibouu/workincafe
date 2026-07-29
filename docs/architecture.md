@@ -121,7 +121,19 @@ PostGIS-validated boundary import (`lib/ingestion/service-area.ts`), thin
 `docs/operations/ingestion.md`; forward migration exemplar
 (`drizzle/0001_overture_index.sql` — generated DDL + custom PostGIS section).
 
-Pending (later Step 4 slices): GP-1 candidate queue + decisions · Google server
-call (Text Search IDs-only) · route handler (interactive client reads) · client
+Landed (Step 4 — slice 2 pt.2, GP-1 candidate queue): structural IDs-only
+candidate schema — the Place ID is the only Google-derived column
+(`lib/db/schema/candidates.ts`, `drizzle/0002_gp1_candidates.sql`); append-only
+reason-coded review decisions with server-built, versioned, portable-tagged
+feature snapshots — the approved label capture (`lib/domain/candidates.ts`);
+one-transaction decision write: evidence + status projection + draft café +
+source refs + curation event (`lib/db/queries/candidate-mutations.ts`); mapless
+GP-1 review surface with Maps outbound link, our-side Overture suggestion
+search via URL-committed GET form, and approve/reject/defer actions
+(`app/(operator)/gp1/`); mapless boundary test
+(`tests/boundaries/gp1-mapless.test.ts`).
+
+Pending (later Step 4 slices): Google seeding caller (Text Search IDs-only,
+accounting, fail-closed) · route handler (interactive client reads) · client
 island fetch · Maps browser adapter · semantic-search intersection · contextual
 Place-ID verification · flagged use case.
