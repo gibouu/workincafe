@@ -28,6 +28,7 @@ describe('migration baseline', () => {
       'place_attribute_current',
       'place_hours',
       'service_areas',
+      'overture_places',
       'operators',
       'curation_events',
       'user',
