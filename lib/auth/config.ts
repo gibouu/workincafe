@@ -2,6 +2,9 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { Pool } from 'pg'
 import { drizzle } from 'drizzle-orm/node-postgres'
+// Relative import (not `@/`): the Better Auth CLI resolves this config outside
+// the Next.js/tsconfig path alias context (`npm run auth:schema:generate`).
+import { account, session, user, verification } from '../db/schema/auth.generated'
 
 // Better Auth configuration for the operator surface (Decision 8): email +
 // password only, public sign-up disabled, no plugins (no organizations, teams,
@@ -21,7 +24,12 @@ const pool = new Pool({
 })
 
 export const auth = betterAuth({
-  database: drizzleAdapter(drizzle(pool), { provider: 'pg' }),
+  // The adapter requires the generated schema object; without it every model
+  // lookup (and therefore every sign-in) fails at runtime.
+  database: drizzleAdapter(drizzle(pool), {
+    provider: 'pg',
+    schema: { user, session, account, verification },
+  }),
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,

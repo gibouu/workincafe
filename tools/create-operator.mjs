@@ -4,11 +4,14 @@
 // instance to create the auth user, then inserts an active `operators` row.
 // Run against the target database (local Docker for dev, or the Neon URL to
 // create a production operator):
-//   DATABASE_URL='<url>' node tools/create-operator.mjs <email> <password> [name]
+//   DATABASE_URL='<url>' npm run create-operator -- <email> <password> [name]
+// (Runs node with --experimental-strip-types so the generated Better Auth
+// drizzle schema — a .ts module the adapter requires — can be imported here.)
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { Pool } from 'pg'
 import { drizzle } from 'drizzle-orm/node-postgres'
+import { account, session, user, verification } from '../lib/db/schema/auth.generated.ts'
 
 const [, , email, password, ...nameParts] = process.argv
 const name = nameParts.join(' ') || 'Operator'
@@ -31,7 +34,10 @@ if (!url) {
 const pool = new Pool({ connectionString: url })
 const db = drizzle(pool)
 const auth = betterAuth({
-  database: drizzleAdapter(db, { provider: 'pg' }),
+  database: drizzleAdapter(db, {
+    provider: 'pg',
+    schema: { user, session, account, verification },
+  }),
   emailAndPassword: { enabled: true, disableSignUp: false },
 })
 
