@@ -88,7 +88,18 @@ DTO (`app/(public)/page.tsx`, `app/(public)/cafes/[slug]/page.tsx`,
 taking DTOs (`components/list`, `components/place`); local-only dev fixtures
 (`tools/seed-dev.mjs`).
 
+Landed (Step 4 — operator surface): Better Auth route handler + browser-safe
+client (`app/api/auth/[...all]/route.ts`, `lib/auth/client.ts`); operator
+authorization gate — valid session AND active `operators` row, no client-trusted
+authorization (`lib/application/operators/current-operator.ts`,
+`lib/db/queries/operators.ts`); Server Action mutation exemplar — thin, authorized,
+validated (`app/(operator)/admin/actions.ts`); operator form via `useActionState`
+(`app/(operator)/admin/new/`); operator-write use cases over transactional writes
+that pair each record change with its append-only curation event
+(`lib/application/places/create-cafe.ts`, `set-cafe-publication.ts`,
+`lib/db/queries/cafe-mutations.ts`, `lib/domain/cafe-input.ts`).
+
 Pending (later Step 4 slices): route handler (interactive client reads) · client
 island fetch · Google server call · Maps browser adapter · semantic-search
 intersection · contextual Place-ID verification · ingestion adapter · flagged use
-case · operator authorization check · operator form.
+case · attribute-observation + hours curation forms.

@@ -153,3 +153,16 @@ a {
   padding: 0.4rem 0.6rem;
   border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
 }
+
+.op-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.op-actions button {
+  padding: 0.25rem 0.6rem;
+  font: inherit;
+  font-size: 0.85rem;
+  border-radius: 0.3rem;
+  cursor: pointer;
+}
