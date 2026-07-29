@@ -15,3 +15,6 @@ drizzle/*.sql
 # so the in-build `verify` (format:check) must not check them.
 vercel.json
 .vercel
+
+# Marketplace-integration-generated agent skills (not ours to format).
+.agents
