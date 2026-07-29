@@ -2,7 +2,9 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getCurrentOperator } from '@/lib/application/operators/current-operator'
 import { listReviewQueue } from '@/lib/application/candidates/list-review-queue'
+import { listSeedingRuns } from '@/lib/application/candidates/list-seeding-runs'
 import { mapsOutboundUrl } from './maps-link'
+import { SeedingForm } from './seeding-form'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +19,7 @@ export default async function Gp1QueuePage() {
   if (!operator) redirect('/login')
 
   const queue = await listReviewQueue()
+  const runs = await listSeedingRuns()
 
   return (
     <main>
@@ -58,6 +61,43 @@ export default async function Gp1QueuePage() {
             ))}
           </tbody>
         </table>
+      ) : null}
+
+      <h2>Run seeding</h2>
+      <p className="empty-state">
+        Executes one approved study-related Text Search query (IDs-only field mask; only Place IDs
+        are retained). Explicit operator initiation is the only trigger — runs are never scheduled.
+      </p>
+      <SeedingForm />
+
+      {runs.length > 0 ? (
+        <>
+          <h2>Recent runs</h2>
+          <table className="op-table">
+            <thead>
+              <tr>
+                <th>Template</th>
+                <th>Status</th>
+                <th>Started</th>
+                <th>IDs returned</th>
+                <th>Candidates queued</th>
+                <th>Attempts accounted</th>
+              </tr>
+            </thead>
+            <tbody>
+              {runs.map((r) => (
+                <tr key={r.id}>
+                  <td>{r.queryTemplateId}</td>
+                  <td>{r.status}</td>
+                  <td>{r.startedAt.slice(0, 16).replace('T', ' ')}</td>
+                  <td>{r.resultsCount ?? '—'}</td>
+                  <td>{r.candidatesInserted}</td>
+                  <td>{r.attemptCount}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       ) : null}
     </main>
   )

@@ -48,6 +48,16 @@ web dashboards — not committed to the repo.
      unset until branching is configured — Preview builds will fail at the
      migrate step until they have a direct URL, which is the intended guardrail).
    - Do **not** set any `DATABASE_URL_TEST` in Vercel (tests are local-only).
+   - **`GOOGLE_PLACES_SERVER_KEY`** (GP-1 seeding, slice 2 pt.3): a Google
+     Cloud API key restricted to **Places API (New)**, set for **Production
+     only** (Decision 20 — previews run billable server operations disabled;
+     the seeding path fails closed with a clear message when the key is
+     absent). Server-side secret — never a `NEXT_PUBLIC_*` variable. Google
+     Cloud setup: one project, billing attached, "Places API (New)" enabled
+     (the only API GP-1 needs; the Maps JavaScript API + separate browser key
+     come later with the map slice), API-restricted key, budget alert
+     recommended. Seeding uses the Text Search IDs-only field mask
+     (Essentials SKU).
 3. Keep the **registrar independent of Vercel** (Decision 20) — attach the
    `workin.cafe` domain later; do not transfer registration to Vercel.
 4. Deploy `main`. The first production build migrates Neon and goes live.
