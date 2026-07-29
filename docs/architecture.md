@@ -110,7 +110,18 @@ structured-hours upsert paired with its `hours_updated` curation event
 `lib/domain/hours-input.ts`); operator-action authorization boundary test
 (`tests/boundaries/operator-action-auth.test.ts`).
 
-Pending (later Step 4 slices): route handler (interactive client reads) · client
-island fetch · Google server call · Maps browser adapter · semantic-search
-intersection · contextual Place-ID verification · ingestion adapter · flagged use
-case.
+Landed (Step 4 — slice 2 pt.1, ingestion): operator-run ingestion adapter over a
+validated external extract — pure provider parsing
+(`lib/integrations/overture/extract.ts`), normalized index contract
+(`lib/domain/overture-index.ts`), idempotent batch upsert
+(`lib/db/queries/overture-mutations.ts`, `lib/ingestion/overture-index.ts`),
+PostGIS-validated boundary import (`lib/ingestion/service-area.ts`), thin
+`tsx` CLIs with job locks and dry-run (`tools/ingest-overture.mts`,
+`tools/import-service-area.mts`, `tools/script-db.ts`); runbook
+`docs/operations/ingestion.md`; forward migration exemplar
+(`drizzle/0001_overture_index.sql` — generated DDL + custom PostGIS section).
+
+Pending (later Step 4 slices): GP-1 candidate queue + decisions · Google server
+call (Text Search IDs-only) · route handler (interactive client reads) · client
+island fetch · Maps browser adapter · semantic-search intersection · contextual
+Place-ID verification · flagged use case.

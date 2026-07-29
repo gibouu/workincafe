@@ -18,6 +18,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node tools/db-migrate.mjs",
     "db:seed:dev": "node tools/seed-dev.mjs",
+    "ingest:overture": "tsx tools/ingest-overture.mts",
+    "import:service-area": "tsx tools/import-service-area.mts",
     "create-operator": "node --experimental-strip-types tools/create-operator.mjs",
     "db:test": "vitest run --config vitest.integration.config.ts",
     "auth:schema:generate": "auth generate --config ./lib/auth/config.ts --output ./lib/db/schema/auth.generated.ts --yes && node tools/apply-auth-header.mjs",
@@ -46,6 +48,7 @@
     "eslint": "9.39.5",
     "eslint-config-next": "16.2.12",
     "prettier": "3.9.6",
+    "tsx": "4.23.1",
     "typescript": "6.0.3",
     "vitest": "4.1.10"
   },

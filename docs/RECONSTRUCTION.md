@@ -34,9 +34,22 @@ acceptable; accidental repository disorder is not.
           recording promoted through the sole pointer-writing use case +
           structured-hours upsert paired with `hours_updated`, each in one
           transaction (merged #334)
+  - [ ] Slice 2 — ingestion + matching + GP-1 candidate queue (first Google
+        Place IDs, IDs-only). Approved design (technical-lead rulings,
+        2026-07-29): external-extract Overture acquisition (no ingestion
+        dependency in-repo); candidate queue with append-only reason-coded
+        decisions + versioned non-Google feature snapshots (AI-learning-ready
+        label capture; no model, no prediction storage in this slice).
+    - [x] pt.1 — Overture matching index + service-area import: validated
+          external-extract ingestion CLI, `overture_places` staging table
+          (migration 0001), Toronto boundary import (merged #337)
+    - [ ] pt.2 — candidate queue + append-only decisions + mapless GP-1 review
+          surface (schema + forms; label capture per approved design)
+    - [ ] pt.3 — Google Text Search seeding caller (IDs-only field mask,
+          accounting, fail-closed without key). Operational prerequisite:
+          Google Cloud project + Places key + billing
   - [ ] Remaining slices (source/11 conceptual order, reorderable per 24b):
-        ingestion + matching + GP-1 candidate queue (first Google Place IDs,
-        IDs-only) · public map (Google basemap) · name + semantic search ·
+        public map (Google basemap) · name + semantic search ·
         enrichment / contextual / photos · hardening / verification / docs
 - [x] Production operator provisioned on 2026-07-29 via `npm run create-operator`
       against the production database (after the #335 auth-adapter fix — the
