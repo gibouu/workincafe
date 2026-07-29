@@ -21,7 +21,12 @@ describe('migration governance', () => {
     let stderr = ''
     try {
       execFileSync('node', ['tools/db-migrate.mjs'], {
-        env: { ...process.env, DATABASE_URL_DIRECT: '', DATABASE_URL: '' },
+        env: {
+          ...process.env,
+          DATABASE_URL_DIRECT: '',
+          DATABASE_URL_UNPOOLED: '',
+          DATABASE_URL: '',
+        },
         stdio: ['ignore', 'pipe', 'pipe'],
       })
     } catch (e) {
