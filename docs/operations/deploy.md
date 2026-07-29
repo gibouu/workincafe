@@ -76,8 +76,51 @@ Preview deployments must never touch the production database. Two options:
   draft slugs 404. (Neon starts empty — seed real data via the operator/curation
   slice, not the local `db:seed:dev` fixtures.)
 
-## Local development (unchanged)
+## Recovery — a `main` merge didn't deploy to production
+
+The Git integration is correctly configured (production branch `main`; normal
+merges auto-deploy). If a `main` merge does **not** produce a Production
+deployment, this is almost always a one-off GitHub→Vercel **webhook delivery
+miss**, not a misconfiguration (observed once, on #330). Do not change project
+settings to chase it — recover by triggering a production build directly:
+
+```
+vercel --prod --yes
+```
+
+This uploads the current checkout and builds with the **Production** environment
+(so it uses the prod database, not a preview branch), runs the same
+`verify → build → db:migrate` pipeline, and promotes to the production alias;
+`db:migrate` no-ops if the chain is already applied. Confirm with `vercel ls`
+that the newest deployment is `Production` / `Ready`, then re-check the live
+routes.
+
+## Local development
 
 `.env.local` (see `.env.example`) with a local Docker PostGIS URL; `npm run
 db:migrate` / `db:seed:dev` / `db:test` all run locally. `db:migrate` acquires
 the same advisory lock locally (harmless single-writer).
+
+### Tier 2 database tests (local PostGIS)
+
+`npm run db:test` runs the Tier 2 integration suite but does **not** start a
+database — it expects a disposable local PostGIS at `DATABASE_URL_TEST` (the
+`local-guard` refuses any hosted/non-local host). Bring one up with any runtime
+that provides a Docker socket. On this machine that is **colima** (no Docker
+Desktop):
+
+```
+colima start
+docker run -d --name wc-test-pg \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=workincafe_test \
+  -p 5432:5432 postgis/postgis:17-3.5
+# Wait until it accepts a real connection — pg_isready races during the postgis
+# image's init-restart, so gate on an actual connect, not just the open port.
+DATABASE_URL_TEST=postgresql://postgres:postgres@127.0.0.1:5432/workincafe_test \
+  npm run db:test
+```
+
+The global setup drops the schema and migrates from empty once, then all files
+run sequentially against that database. Tear down with `docker rm -f wc-test-pg`
+(and `colima stop` to free the VM). Convention requires this before review on
+schema-changing PRs (Decision 22).
