@@ -41,7 +41,9 @@ export default async function AdminPage() {
           <tbody>
             {cafes.map((cafe) => (
               <tr key={cafe.id}>
-                <td>{cafe.name}</td>
+                <td>
+                  <Link href={`/admin/cafes/${cafe.id}`}>{cafe.name}</Link>
+                </td>
                 <td>{cafe.neighborhood ?? '—'}</td>
                 <td>{cafe.publicationState}</td>
                 <td>{cafe.recordState}</td>

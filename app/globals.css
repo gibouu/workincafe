@@ -119,13 +119,51 @@ a {
   font-size: 0.9rem;
 }
 
-.op-form input {
+.op-form input,
+.op-form select {
   padding: 0.5rem;
   font: inherit;
   border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
   border-radius: 0.4rem;
   background: transparent;
   color: inherit;
+}
+
+.op-form-wide {
+  max-width: 36rem;
+}
+
+.op-hours-day {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.op-hours-day legend {
+  float: left;
+  width: 6.5rem;
+  font-size: 0.9rem;
+}
+
+.op-hours-day select {
+  padding: 0.3rem;
+}
+
+.op-hours-interval {
+  display: inline-flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.op-hours-nextday {
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+  font-size: 0.8rem;
 }
 
 .op-form button {

@@ -99,7 +99,18 @@ that pair each record change with its append-only curation event
 (`lib/application/places/create-cafe.ts`, `set-cafe-publication.ts`,
 `lib/db/queries/cafe-mutations.ts`, `lib/domain/cafe-input.ts`).
 
+Landed (Step 4 — operator curation): attribute-observation + hours curation
+forms (`app/(operator)/admin/cafes/[id]/`); evidence recording that appends the
+immutable curator observation + accepted decision and promotes it through the
+promotion use case — the sole pointer writer — in one transaction
+(`lib/application/attributes/record-attribute-observation.ts`,
+`lib/db/queries/attribute-mutations.ts`, `lib/domain/attribute-observation-input.ts`);
+structured-hours upsert paired with its `hours_updated` curation event
+(`lib/application/hours/set-cafe-hours.ts`, `lib/db/queries/hours-mutations.ts`,
+`lib/domain/hours-input.ts`); operator-action authorization boundary test
+(`tests/boundaries/operator-action-auth.test.ts`).
+
 Pending (later Step 4 slices): route handler (interactive client reads) · client
 island fetch · Google server call · Maps browser adapter · semantic-search
 intersection · contextual Place-ID verification · ingestion adapter · flagged use
-case · attribute-observation + hours curation forms.
+case.
