@@ -17,6 +17,7 @@ const useCases = vi.hoisted(() => ({
   setCafePublication: vi.fn(),
   recordAttributeObservation: vi.fn(),
   setCafeHours: vi.fn(),
+  decideCandidate: vi.fn(),
 }))
 
 class RedirectSentinel extends Error {
@@ -42,10 +43,14 @@ vi.mock('@/lib/application/attributes/record-attribute-observation', () => ({
   recordAttributeObservation: useCases.recordAttributeObservation,
 }))
 vi.mock('@/lib/application/hours/set-cafe-hours', () => ({ setCafeHours: useCases.setCafeHours }))
+vi.mock('@/lib/application/candidates/decide-candidate', () => ({
+  decideCandidate: useCases.decideCandidate,
+}))
 
 const ACTION_MODULES = [
   '@/app/(operator)/admin/actions',
   '@/app/(operator)/admin/cafes/[id]/actions',
+  '@/app/(operator)/gp1/candidates/[id]/actions',
 ] as const
 
 describe('operator Server Action authorization boundary', () => {

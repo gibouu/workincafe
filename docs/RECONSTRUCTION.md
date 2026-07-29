@@ -43,8 +43,9 @@ acceptable; accidental repository disorder is not.
     - [x] pt.1 — Overture matching index + service-area import: validated
           external-extract ingestion CLI, `overture_places` staging table
           (migration 0001), Toronto boundary import (merged #337)
-    - [ ] pt.2 — candidate queue + append-only decisions + mapless GP-1 review
-          surface (schema + forms; label capture per approved design)
+    - [x] pt.2 — candidate queue + append-only reason-coded decisions with
+          versioned feature snapshots (label capture per approved design) +
+          mapless GP-1 review surface (migration 0002; merged #338)
     - [ ] pt.3 — Google Text Search seeding caller (IDs-only field mask,
           accounting, fail-closed without key). Operational prerequisite:
           Google Cloud project + Places key + billing
