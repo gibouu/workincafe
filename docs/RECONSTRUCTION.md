@@ -38,9 +38,12 @@ acceptable; accidental repository disorder is not.
         ingestion + matching + GP-1 candidate queue (first Google Place IDs,
         IDs-only) · public map (Google basemap) · name + semantic search ·
         enrichment / contextual / photos · hardening / verification / docs
-- [ ] No production operator provisioned yet (bootstrap via
-      `npm run create-operator` against prod env); production database is empty
-      pending curation.
+- [x] Production operator provisioned on 2026-07-29 via `npm run create-operator`
+      against the production database (after the #335 auth-adapter fix — the
+      Better Auth drizzle adapter shipped without its schema object, so
+      production sign-in had never worked); login verified end-to-end on
+      `www.workin.cafe`. Production database contains only that operator —
+      no cafés yet, pending curation.
 
 ## Owner verifications (Step 0/1)
 
