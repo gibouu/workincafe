@@ -8,6 +8,12 @@ import { z } from 'zod'
 // (local Docker PostGIS in dev; Neon pooled URL once provisioned).
 const serverEnvSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required for database access'),
+  // Server-side Google Places key (GP-1 seeding). Feature-conditional
+  // (Decision 17/20): optional here so unrelated commands, tests, and preview
+  // deployments never demand it — the seeding path itself fails closed with a
+  // clear operator-facing message when it is absent. Production-only by
+  // default; never exposed to the browser.
+  GOOGLE_PLACES_SERVER_KEY: z.string().min(1).optional(),
 })
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>

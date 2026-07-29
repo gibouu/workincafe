@@ -34,7 +34,7 @@ acceptable; accidental repository disorder is not.
           recording promoted through the sole pointer-writing use case +
           structured-hours upsert paired with `hours_updated`, each in one
           transaction (merged #334)
-  - [ ] Slice 2 — ingestion + matching + GP-1 candidate queue (first Google
+  - [x] Slice 2 — ingestion + matching + GP-1 candidate queue (first Google
         Place IDs, IDs-only). Approved design (technical-lead rulings,
         2026-07-29): external-extract Overture acquisition (no ingestion
         dependency in-repo); candidate queue with append-only reason-coded
@@ -46,9 +46,12 @@ acceptable; accidental repository disorder is not.
     - [x] pt.2 — candidate queue + append-only reason-coded decisions with
           versioned feature snapshots (label capture per approved design) +
           mapless GP-1 review surface (migration 0002; merged #338)
-    - [ ] pt.3 — Google Text Search seeding caller (IDs-only field mask,
-          accounting, fail-closed without key). Operational prerequisite:
-          Google Cloud project + Places key + billing
+    - [x] pt.3 — Google Text Search seeding caller: IDs-only field mask,
+          per-attempt accounting, no auto-retry, fail-closed without the key
+          (merged #339). Operational prerequisite before first real run:
+          Google Cloud project with **Places API (New)** enabled + billing +
+          restricted server key set as `GOOGLE_PLACES_SERVER_KEY` in Vercel
+          (production only)
   - [ ] Remaining slices (source/11 conceptual order, reorderable per 24b):
         public map (Google basemap) · name + semantic search ·
         enrichment / contextual / photos · hardening / verification / docs

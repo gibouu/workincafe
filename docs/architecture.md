@@ -133,7 +133,16 @@ search via URL-committed GET form, and approve/reject/defer actions
 (`app/(operator)/gp1/`); mapless boundary test
 (`tests/boundaries/gp1-mapless.test.ts`).
 
-Pending (later Step 4 slices): Google seeding caller (Text Search IDs-only,
-accounting, fail-closed) · route handler (interactive client reads) · client
+Landed (Step 4 — slice 2 pt.3, GP-1 seeding caller): server-only Google
+integration exemplar — IDs-only Text Search caller with exact field mask,
+runtime response validation retaining Place IDs only, `no-store` fetches,
+per-attempt accounting callback, no auto-retry
+(`lib/integrations/google/server/places-text-search.ts`); bounded documented
+query registry (`lib/domain/seeding-queries.ts`); operator-initiated seeding
+run over run/attempt accounting tables (`lib/ingestion/gp1-seeding.ts`,
+`lib/db/queries/seeding-mutations.ts`); feature-conditional server credential
+(`lib/env/server.ts` — fail-closed when absent).
+
+Pending (later Step 4 slices): route handler (interactive client reads) · client
 island fetch · Maps browser adapter · semantic-search intersection · contextual
 Place-ID verification · flagged use case.
