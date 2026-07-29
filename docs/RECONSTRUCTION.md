@@ -25,13 +25,15 @@ acceptable; accidental repository disorder is not.
         to Neon (project `workincafe`, us-east-1, PG17). Live at `www.workin.cafe`;
         production public; preview builds isolated to a Neon `preview` branch. Deploy
         runbook: `docs/operations/deploy.md`.
-  - [ ] Slice B — operator write surface (all merged parts deployed to production)
+  - [x] Slice B — operator write surface (all merged parts deployed to production)
     - [x] Operator auth + gated admin shell (merged #330)
     - [x] Café creation + publish/hide — the Server Action mutation exemplar,
           each record change paired with its append-only curation event in one
           transaction (merged #331)
-    - [ ] Attribute-observation + hours curation forms — finishes the operator
-          surface; not yet started
+    - [x] Attribute-observation + hours curation forms — curator evidence
+          recording promoted through the sole pointer-writing use case +
+          structured-hours upsert paired with `hours_updated`, each in one
+          transaction (merged #334)
   - [ ] Remaining slices (source/11 conceptual order, reorderable per 24b):
         ingestion + matching + GP-1 candidate queue (first Google Place IDs,
         IDs-only) · public map (Google basemap) · name + semantic search ·
