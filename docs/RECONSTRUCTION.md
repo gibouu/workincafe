@@ -16,10 +16,15 @@ acceptable; accidental repository disorder is not.
 - [x] Step 3B — database baseline merged in #323 (Decisions 25, 26). Schema +
       custom SQL + Better Auth; migrate-from-empty verified on local PostGIS
       across two destroy/recreate cycles; dependency-security disposition gate in
-      place. The migration chain is **immutable after application**; it freezes
-      only when first applied to canonical Neon (pending the deploy step — see
-      Decision 20).
+      place. **Applied to canonical Neon on 2026-07-28 via the first production
+      build — the migration chain is now frozen** (forward migrations only from
+      here; expand/contract per Decision 20).
 - [ ] Step 4 — vertical slices (order in source/11, adjustable per 24b)
+  - [x] Slice A — public café read path (merged #325). **Deployed** on Vercel
+        (Git integration → verify → build → migrate under advisory lock, Decision 20)
+        to Neon (project `workincafe`, us-east-1, PG17). Live at `www.workin.cafe`;
+        production public; preview builds isolated to a Neon `preview` branch. Deploy
+        runbook: `docs/operations/deploy.md`.
 
 ## Owner verifications (Step 0/1)
 

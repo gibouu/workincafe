@@ -14,11 +14,13 @@ const LOCK_KEY = 271828182 // fixed advisory-lock key for WorkinCafe migrations
 const LOCK_WAIT_MS = 60_000
 const LOCK_POLL_MS = 1_000
 
-const url = process.env.DATABASE_URL_DIRECT
+// DATABASE_URL_DIRECT is our name; DATABASE_URL_UNPOOLED is the Neon-Vercel
+// integration's name for the same direct connection — accept either.
+const url = process.env.DATABASE_URL_DIRECT || process.env.DATABASE_URL_UNPOOLED
 if (!url) {
   console.error(
-    'db:migrate: DATABASE_URL_DIRECT is not set — refusing to run.\n' +
-      '  Set DATABASE_URL_DIRECT to a direct (non-pooled) PostgreSQL connection string.\n' +
+    'db:migrate: no direct database URL set — refusing to run.\n' +
+      '  Set DATABASE_URL_DIRECT (or DATABASE_URL_UNPOOLED) to a direct (non-pooled) connection string.\n' +
       '  Generation (db:generate) needs no database; only execution does.',
   )
   process.exit(1)

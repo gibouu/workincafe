@@ -52,6 +52,22 @@ web dashboards — not committed to the repo.
    `workin.cafe` domain later; do not transfer registration to Vercel.
 4. Deploy `main`. The first production build migrates Neon and goes live.
 
+### Preview isolation (Decision 20)
+
+Preview deployments must never touch the production database. Two options:
+
+- **Shared preview branch (current):** a Neon branch (`preview`) with its
+  pooled/direct strings set as the Vercel **Preview** `DATABASE_URL` /
+  `DATABASE_URL_DIRECT`. All previews share it; isolated from production.
+- **Per-PR branches (Neon-Vercel integration):** in the **Neon console** →
+  the `workincafe` project → Integrations → **Vercel** → connect the Vercel
+  project and enable "create a branch for each preview deployment." This
+  auto-provisions a fresh Neon branch per preview and manages the Vercel env
+  vars. It sets the direct URL as `DATABASE_URL_UNPOOLED`; our migrate/config
+  accept that name as well as `DATABASE_URL_DIRECT`. Configure it to avoid
+  overwriting the working **Production** connection (scope to Preview, or verify
+  the production values after connecting).
+
 ## Verifying a deploy
 
 - Build logs show `verify` green, `next build`, then

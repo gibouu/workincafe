@@ -13,6 +13,7 @@ export default defineConfig({
   verbose: true,
   dbCredentials: {
     // Only used by commands that touch a database; empty is fine for `generate`.
-    url: process.env.DATABASE_URL_DIRECT ?? '',
+    // Accept our DATABASE_URL_DIRECT or the Neon-Vercel integration's alias.
+    url: process.env.DATABASE_URL_DIRECT ?? process.env.DATABASE_URL_UNPOOLED ?? '',
   },
 })
