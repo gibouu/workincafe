@@ -39,6 +39,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# marketplace-integration-generated agent skills (local tooling, not committed)
+.agents
+skills-lock.json
+.claude/skills/neon
+.claude/skills/neon-postgres
+
 # typescript
 *.tsbuildinfo
 
@@ -78,3 +84,4 @@ yarn-error.log*
 
 # Per-developer local Claude Code permissions (machine-specific, not shared).
 .claude/settings.local.json
+.env*
