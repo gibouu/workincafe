@@ -25,6 +25,20 @@ acceptable; accidental repository disorder is not.
         to Neon (project `workincafe`, us-east-1, PG17). Live at `www.workin.cafe`;
         production public; preview builds isolated to a Neon `preview` branch. Deploy
         runbook: `docs/operations/deploy.md`.
+  - [ ] Slice B — operator write surface (all merged parts deployed to production)
+    - [x] Operator auth + gated admin shell (merged #330)
+    - [x] Café creation + publish/hide — the Server Action mutation exemplar,
+          each record change paired with its append-only curation event in one
+          transaction (merged #331)
+    - [ ] Attribute-observation + hours curation forms — finishes the operator
+          surface; not yet started
+  - [ ] Remaining slices (source/11 conceptual order, reorderable per 24b):
+        ingestion + matching + GP-1 candidate queue (first Google Place IDs,
+        IDs-only) · public map (Google basemap) · name + semantic search ·
+        enrichment / contextual / photos · hardening / verification / docs
+- [ ] No production operator provisioned yet (bootstrap via
+      `npm run create-operator` against prod env); production database is empty
+      pending curation.
 
 ## Owner verifications (Step 0/1)
 
