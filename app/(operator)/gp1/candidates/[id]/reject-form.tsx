@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react'
 import {
   CANDIDATE_NOTE_MAX_LENGTH,
+  CANDIDATE_NOTE_MIN_LENGTH,
   CANDIDATE_REJECT_REASON_DEFINITIONS,
   CANDIDATE_REJECT_REASONS,
   type CandidateRejectReason,
@@ -35,14 +36,20 @@ export function RejectForm({ candidateId }: { candidateId: string }) {
       </label>
       <p className="empty-state">{CANDIDATE_REJECT_REASON_DEFINITIONS[reason].definition}</p>
       <label>
-        Note {reason === 'other' ? '(required)' : <span className="empty-state">(optional)</span>}
+        Why reject? (required — becomes training-label reasoning)
         <input
           name="note"
+          required
+          minLength={CANDIDATE_NOTE_MIN_LENGTH}
           maxLength={CANDIDATE_NOTE_MAX_LENGTH}
-          required={reason === 'other'}
+          placeholder="e.g. sign in the window says no laptops on weekends"
           autoComplete="off"
         />
       </label>
+      <p className="empty-state">
+        Your own words only — never paste Google review text or photo links. What did you observe,
+        and why did it decide this?
+      </p>
       {state.error ? <p className="op-error">{state.error}</p> : null}
       <button type="submit" disabled={pending}>
         {pending ? 'Rejecting…' : 'Reject candidate'}

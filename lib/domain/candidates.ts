@@ -78,6 +78,13 @@ export const CANDIDATE_REJECT_REASON_DEFINITIONS: Record<
 
 const blankToUndefined = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? undefined : v)
 export const CANDIDATE_NOTE_MAX_LENGTH = 2000
+// Final decisions (approve/reject) require a substantive note capturing the
+// operator's exact reasoning — the richest part of the label-capture design
+// (technical-lead instruction, 2026-07-30). The note is operator-AUTHORED
+// judgment in the operator's own words; it must never contain copied Google
+// content (review text, photo links) — the same boundary the persistence rules
+// draw everywhere else. Defer notes stay optional.
+export const CANDIDATE_NOTE_MIN_LENGTH = 10
 
 // The single validation contract for a review decision. `approved` requires
 // draft-café fields: from a matched Overture record (matchedGersId + editable
@@ -102,6 +109,16 @@ export const candidateDecisionInputSchema = z
     longitude: z.preprocess(blankToUndefined, z.coerce.number().pipe(longitudeSchema).optional()),
   })
   .superRefine((val, ctx) => {
+    // Approve and reject are final decisions: both require the reasoning note.
+    if (val.decision !== 'deferred') {
+      if (!val.note || val.note.length < CANDIDATE_NOTE_MIN_LENGTH) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `describe your specific reasoning in your own words (at least ${CANDIDATE_NOTE_MIN_LENGTH} characters)`,
+          path: ['note'],
+        })
+      }
+    }
     if (val.decision === 'rejected') {
       if (!val.reasonCode) {
         ctx.addIssue({
@@ -109,8 +126,6 @@ export const candidateDecisionInputSchema = z
           message: 'a rejection requires a reason',
           path: ['reasonCode'],
         })
-      } else if (val.reasonCode === 'other' && !val.note) {
-        ctx.addIssue({ code: 'custom', message: 'reason "other" requires a note', path: ['note'] })
       }
     } else if (val.reasonCode) {
       ctx.addIssue({
