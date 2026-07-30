@@ -16,6 +16,10 @@ import {
 
 const rawFeatureSchema = z.object({
   type: z.literal('Feature'),
+  // The overturemaps CLI's GeoJSONSeq output carries the GERS id at the
+  // feature level; some other Overture exports put it in properties. Accept
+  // both (feature-level wins).
+  id: z.string().optional(),
   geometry: z.object({
     type: z.string(),
     coordinates: z.unknown(),
@@ -64,7 +68,7 @@ export function parseExtractLine(line: string): ExtractLineResult {
   }
   const [longitude, latitude] = geometry.coordinates as unknown[]
 
-  const gersId = properties.id
+  const gersId = feature.data.id ?? properties.id
   const name = properties.names?.primary
   if (!gersId || !name) return { status: 'skipped', reason: 'missing_id_or_name' }
 

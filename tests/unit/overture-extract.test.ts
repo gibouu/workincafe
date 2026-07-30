@@ -6,12 +6,18 @@ import { OVERTURE_ALTERNATE_CATEGORIES_MAX } from '@/lib/domain/overture-index'
 // validated; structural problems skip a line (typed reason), optional-field
 // problems degrade to absent without losing the record.
 
-function feature(overrides: { geometry?: unknown; properties?: Record<string, unknown> }): string {
+// Mirrors the overturemaps CLI GeoJSONSeq shape: the GERS id lives at the
+// FEATURE level (not properties) — the parser accepts both.
+function feature(overrides: {
+  geometry?: unknown
+  properties?: Record<string, unknown>
+  topLevelId?: string | null
+}): string {
   return JSON.stringify({
     type: 'Feature',
+    id: overrides.topLevelId === null ? undefined : (overrides.topLevelId ?? 'gers-abc123'),
     geometry: overrides.geometry ?? { type: 'Point', coordinates: [-79.3832, 43.6532] },
     properties: {
-      id: 'gers-abc123',
       names: { primary: 'Sam James Coffee Bar' },
       categories: { primary: 'coffee_shop', alternate: ['cafe'] },
       addresses: [{ freeform: '150 King St W' }],
@@ -54,7 +60,7 @@ describe('parseExtractLine', () => {
   })
 
   it('skips features missing the GERS id or primary name', () => {
-    expect(parseExtractLine(feature({ properties: { id: undefined } }))).toEqual({
+    expect(parseExtractLine(feature({ topLevelId: null }))).toEqual({
       status: 'skipped',
       reason: 'missing_id_or_name',
     })
@@ -62,6 +68,13 @@ describe('parseExtractLine', () => {
       status: 'skipped',
       reason: 'missing_id_or_name',
     })
+  })
+
+  it('falls back to a properties-level id when the feature-level id is absent', () => {
+    const result = parseExtractLine(feature({ topLevelId: null, properties: { id: 'gers-props' } }))
+    expect(result.status).toBe('record')
+    if (result.status !== 'record') return
+    expect(result.record.gersId).toBe('gers-props')
   })
 
   it('skips out-of-range coordinates as invalid records', () => {
