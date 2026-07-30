@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
+import { CANDIDATE_NOTE_MAX_LENGTH, CANDIDATE_NOTE_MIN_LENGTH } from '@/lib/domain/candidates'
 import { SLUG_MAX_LENGTH, SLUG_PATTERN } from '@/lib/domain/places'
 import { type DecisionFormState, decideCandidateAction } from './actions'
 
@@ -84,6 +85,21 @@ export function ApproveForm({
           </label>
         </>
       ) : null}
+      <label>
+        Why approve? (required — becomes training-label reasoning)
+        <input
+          name="note"
+          required
+          minLength={CANDIDATE_NOTE_MIN_LENGTH}
+          maxLength={CANDIDATE_NOTE_MAX_LENGTH}
+          placeholder="e.g. laptops visible at several tables; long counters; study-friendly vibe"
+          autoComplete="off"
+        />
+      </label>
+      <p className="empty-state">
+        Your own words only — never paste Google review text or photo links. What did you observe,
+        and why did it decide this?
+      </p>
       {state.error ? <p className="op-error">{state.error}</p> : null}
       <button type="submit" disabled={pending}>
         {pending ? 'Approving…' : 'Approve → create draft café'}

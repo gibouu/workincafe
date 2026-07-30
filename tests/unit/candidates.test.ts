@@ -20,6 +20,7 @@ describe('candidateDecisionInputSchema', () => {
         candidateId: CANDIDATE_ID,
         decision: 'rejected',
         reasonCode: 'chain',
+        note: 'large chain location',
       }).success,
     ).toBe(true)
     expect(
@@ -54,7 +55,13 @@ describe('candidateDecisionInputSchema', () => {
   })
 
   it('approval requires name+slug and a match or manual coordinates', () => {
-    const base = { candidateId: CANDIDATE_ID, decision: 'approved', name: 'Cafe', slug: 'cafe' }
+    const base = {
+      candidateId: CANDIDATE_ID,
+      decision: 'approved',
+      name: 'Cafe',
+      slug: 'cafe',
+      note: 'good study fit per my review',
+    }
     expect(candidateDecisionInputSchema.safeParse(base).success).toBe(false)
     expect(
       candidateDecisionInputSchema.safeParse({ ...base, matchedGersId: 'gers-1' }).success,
@@ -70,6 +77,41 @@ describe('candidateDecisionInputSchema', () => {
         matchedGersId: 'gers-1',
       }).success,
     ).toBe(false)
+  })
+
+  it('final decisions require a substantive reasoning note; defer does not', () => {
+    // Reject with a reason but no note — fails.
+    expect(
+      candidateDecisionInputSchema.safeParse({
+        candidateId: CANDIDATE_ID,
+        decision: 'rejected',
+        reasonCode: 'chain',
+      }).success,
+    ).toBe(false)
+    // Approve with all fields but no note — fails.
+    expect(
+      candidateDecisionInputSchema.safeParse({
+        candidateId: CANDIDATE_ID,
+        decision: 'approved',
+        name: 'Cafe',
+        slug: 'cafe',
+        matchedGersId: 'gers-1',
+      }).success,
+    ).toBe(false)
+    // A too-short note fails; a substantive one passes.
+    expect(
+      candidateDecisionInputSchema.safeParse({
+        candidateId: CANDIDATE_ID,
+        decision: 'rejected',
+        reasonCode: 'chain',
+        note: 'chain',
+      }).success,
+    ).toBe(false)
+    // Defer needs no note.
+    expect(
+      candidateDecisionInputSchema.safeParse({ candidateId: CANDIDATE_ID, decision: 'deferred' })
+        .success,
+    ).toBe(true)
   })
 
   it('a plain defer with an optional note parses', () => {

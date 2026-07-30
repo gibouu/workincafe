@@ -81,7 +81,7 @@ describe('decideCandidate (transactional)', () => {
   it('rejects with a reason: appends the decision + snapshot and projects status', async () => {
     const { candidateId } = await queueOne()
     const result = await decideCandidate(
-      { candidateId, decision: 'rejected', reasonCode: 'chain', note: 'big chain' },
+      { candidateId, decision: 'rejected', reasonCode: 'chain', note: 'large chain location' },
       operatorId,
       handle.db,
     )
@@ -116,7 +116,12 @@ describe('decideCandidate (transactional)', () => {
       handle.db,
     )
     const second = await decideCandidate(
-      { candidateId, decision: 'rejected', reasonCode: 'permanently_closed' },
+      {
+        candidateId,
+        decision: 'rejected',
+        reasonCode: 'permanently_closed',
+        note: 'listed as permanently closed',
+      },
       operatorId,
       handle.db,
     )
@@ -130,7 +135,12 @@ describe('decideCandidate (transactional)', () => {
   it('a finalized candidate is not reviewable again', async () => {
     const { candidateId } = await queueOne()
     await decideCandidate(
-      { candidateId, decision: 'rejected', reasonCode: 'not_a_cafe' },
+      {
+        candidateId,
+        decision: 'rejected',
+        reasonCode: 'not_a_cafe',
+        note: 'this is a bank branch',
+      },
       operatorId,
       handle.db,
     )
@@ -151,6 +161,7 @@ describe('decideCandidate (transactional)', () => {
       {
         candidateId,
         decision: 'approved',
+        note: 'good study fit per my review',
         matchedGersId: gersId,
         name: 'Approve Match Cafe',
         slug,
@@ -212,6 +223,7 @@ describe('decideCandidate (transactional)', () => {
       {
         candidateId,
         decision: 'approved',
+        note: 'confirmed independently as study friendly',
         name: 'Manual Entry Cafe',
         slug,
         latitude: '43.7',
@@ -238,6 +250,7 @@ describe('decideCandidate (transactional)', () => {
       {
         candidateId: first.candidateId,
         decision: 'approved',
+        note: 'good study fit per my review',
         matchedGersId: firstGers,
         name: 'Collision Cafe Original',
         slug,
@@ -247,7 +260,14 @@ describe('decideCandidate (transactional)', () => {
     )
 
     const result = await decideCandidate(
-      { candidateId, decision: 'approved', matchedGersId: gersId, name: 'Collision Cafe', slug },
+      {
+        candidateId,
+        decision: 'approved',
+        note: 'good study fit per my review',
+        matchedGersId: gersId,
+        name: 'Collision Cafe',
+        slug,
+      },
       operatorId,
       handle.db,
     )
@@ -269,6 +289,7 @@ describe('decideCandidate (transactional)', () => {
       {
         candidateId: a.candidateId,
         decision: 'approved',
+        note: 'good study fit per my review',
         matchedGersId: gersId,
         name: 'Linked Once Cafe',
         slug: `linked-${randomUUID().slice(0, 8)}`,
@@ -281,6 +302,7 @@ describe('decideCandidate (transactional)', () => {
       {
         candidateId: b.candidateId,
         decision: 'approved',
+        note: 'good study fit per my review',
         matchedGersId: gersId,
         name: 'Linked Twice Cafe',
         slug: `linked2-${randomUUID().slice(0, 8)}`,
@@ -296,7 +318,12 @@ describe('structural boundaries', () => {
   it('candidate decisions are append-only at the database', async () => {
     const { candidateId } = await queueOne()
     await decideCandidate(
-      { candidateId, decision: 'rejected', reasonCode: 'not_a_cafe' },
+      {
+        candidateId,
+        decision: 'rejected',
+        reasonCode: 'not_a_cafe',
+        note: 'this is a bank branch',
+      },
       operatorId,
       handle.db,
     )
