@@ -48,6 +48,23 @@ Use the issue templates (New issue → choose a template):
 - **Scope change** — building something on the do-not-build list, or changing
   product scope.
 
+## Backlog (feature asks, bugs, ops tasks)
+
+Everything else is parked as a plain GitHub Issue — the open-issue list **is**
+the board. Labels:
+
+- `backlog` — parked ask; not scheduled, not approved.
+- `needs-decision` — cannot be built without a technical-lead ruling (and,
+  where the rules require it, a recorded decision) — the label marks the
+  gate, it never substitutes for it.
+- `ops` — operational task (runbooks, keys, imports); `bug` as usual.
+
+An issue is parking, never authority: nothing is built from an issue until it
+is picked up under an approved plan/slice, and an issue cannot approve what
+the precedence rules reserve for decisions. Where useful, record the
+**trigger** that would promote the item (e.g. "review queue runs dry before
+the launch target") so revisiting is a fact-check, not a debate.
+
 ## Pull requests
 
 - Branch `feat/<slug>` or `fix/<slug>` off `main`; PRs target protected `main`;
