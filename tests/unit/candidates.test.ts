@@ -175,3 +175,63 @@ describe('buildCandidateFeaturesV1', () => {
     expect(candidateFeaturesV1Schema.safeParse(tampered).success).toBe(false)
   })
 })
+
+describe('regression: FormData null fields (first production approve, 2026-08-02)', () => {
+  it('accepts the exact action-forwarded shapes where absent fields are null', () => {
+    // Approve form: no reasonCode/latitude/longitude inputs exist -> null.
+    expect(
+      candidateDecisionInputSchema.safeParse({
+        candidateId: CANDIDATE_ID,
+        decision: 'approved',
+        reasonCode: null,
+        note: 'reviews describe lots of laptop work; no-laptop policy on weekends',
+        matchedGersId: 'gers-1',
+        name: 'Cafe23',
+        slug: 'cafe23',
+        latitude: null,
+        longitude: null,
+      }).success,
+    ).toBe(true)
+    // Reject form: no matchedGersId/name/slug/latitude/longitude inputs -> null.
+    expect(
+      candidateDecisionInputSchema.safeParse({
+        candidateId: CANDIDATE_ID,
+        decision: 'rejected',
+        reasonCode: 'chain',
+        note: 'large chain location',
+        matchedGersId: null,
+        name: null,
+        slug: null,
+        latitude: null,
+        longitude: null,
+      }).success,
+    ).toBe(true)
+    // Defer form: everything optional absent -> null.
+    expect(
+      candidateDecisionInputSchema.safeParse({
+        candidateId: CANDIDATE_ID,
+        decision: 'deferred',
+        reasonCode: null,
+        note: null,
+        matchedGersId: null,
+        name: null,
+        slug: null,
+        latitude: null,
+        longitude: null,
+      }).success,
+    ).toBe(true)
+  })
+
+  it('null coordinates never coerce to 0 (label-quality guard)', () => {
+    const parsed = candidateDecisionInputSchema.parse({
+      candidateId: CANDIDATE_ID,
+      decision: 'rejected',
+      reasonCode: 'not_a_cafe',
+      note: 'this is a bank branch',
+      latitude: null,
+      longitude: null,
+    })
+    expect(parsed.latitude).toBeUndefined()
+    expect(parsed.longitude).toBeUndefined()
+  })
+})
