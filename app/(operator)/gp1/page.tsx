@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getCurrentOperator } from '@/lib/application/operators/current-operator'
 import { listReviewQueue } from '@/lib/application/candidates/list-review-queue'
+import { getLabelStats } from '@/lib/application/candidates/get-label-stats'
 import { listSeedingRuns } from '@/lib/application/candidates/list-seeding-runs'
 import { mapsOutboundUrl } from './maps-link'
 import { SeedingForm } from './seeding-form'
@@ -20,6 +21,7 @@ export default async function Gp1QueuePage() {
 
   const queue = await listReviewQueue()
   const runs = await listSeedingRuns()
+  const labels = await getLabelStats()
 
   return (
     <main>
@@ -62,6 +64,16 @@ export default async function Gp1QueuePage() {
           </tbody>
         </table>
       ) : null}
+
+      <h2>Label capture</h2>
+      <p className="empty-state">
+        Final decisions recorded: {labels.finalDecisions} — baseline (unassisted): {labels.baseline}{' '}
+        · assisted: {labels.assisted}
+        {labels.assisted > 0
+          ? ` · pre-read agreement: ${Math.round((labels.assistedAgreements / labels.assisted) * 100)}%`
+          : ''}
+        . Every decision is permanently marked baseline or assisted at write time.
+      </p>
 
       <h2>Run seeding</h2>
       <p className="empty-state">

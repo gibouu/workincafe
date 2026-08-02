@@ -133,14 +133,23 @@ export async function applyCandidateDecision(
         }
       }
 
+      // Sequencing transparency (27d): link the latest stored prediction —
+      // NULL means a baseline (unassisted) decision. Determined here, inside
+      // the transaction, never from client input.
+      const latestPrediction = await tx.execute<{ id: string }>(sql`
+        SELECT id FROM assist_predictions WHERE candidate_id = ${input.candidateId}
+        ORDER BY created_at DESC, id DESC LIMIT 1
+      `)
+      const assistedBy = latestPrediction.rows[0]?.id ?? null
       await tx.execute(sql`
         INSERT INTO candidate_decisions
           (candidate_id, decision, reason_code, note, matched_gers_id,
-           decided_by_operator_user_id, features, feature_set_version)
+           decided_by_operator_user_id, features, feature_set_version,
+           assisted_by_prediction_id)
         VALUES
           (${input.candidateId}, ${input.decision}, ${input.reasonCode ?? null},
            ${input.note ?? null}, ${input.matchedGersId ?? null}, ${actorUserId},
-           ${JSON.stringify(features)}::jsonb, ${FEATURE_SET_VERSION})
+           ${JSON.stringify(features)}::jsonb, ${FEATURE_SET_VERSION}, ${assistedBy})
       `)
       await tx.execute(sql`
         UPDATE gp1_candidates

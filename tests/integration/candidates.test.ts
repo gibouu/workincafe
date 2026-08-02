@@ -4,7 +4,13 @@ import { sql } from 'drizzle-orm'
 import type { DbHandle } from '@/lib/db/client'
 import { decideCandidate } from '@/lib/application/candidates/decide-candidate'
 import { insertProviderCallAttempt } from '@/lib/db/queries/accounting-mutations'
+import {
+  insertAssistPrediction,
+  selectLabelStats,
+  selectLatestPrediction,
+} from '@/lib/db/queries/assist-mutations'
 import { insertCandidates } from '@/lib/db/queries/candidate-mutations'
+import type { AssistBrief } from '@/lib/domain/assist'
 import { ingestOvertureExtract } from '@/lib/ingestion/overture-index'
 import { captureError, insertOperator, insertUser, openTestDb } from './helpers'
 
@@ -380,6 +386,116 @@ describe('provider call accounting (Decision 27)', () => {
     const upd = await captureError(() =>
       handle.db.execute(
         sql`UPDATE provider_call_attempts SET http_status = 500 WHERE candidate_id = ${candidateId}`,
+      ),
+    )
+    expect(upd.code).toBe('23001')
+  })
+})
+
+describe('stored predictions + sequencing transparency (Decision 27d)', () => {
+  const BRIEF: AssistBrief = {
+    brief: 'looks fine',
+    signals: [],
+    suggestedDecision: 'approved',
+    suggestedReasonCode: null,
+    confidence: 'medium',
+  }
+
+  it('an unassisted decision is permanently marked baseline (null link)', async () => {
+    const { candidateId } = await queueOne()
+    await decideCandidate(
+      {
+        candidateId,
+        decision: 'rejected',
+        reasonCode: 'not_a_cafe',
+        note: 'this is a bank branch',
+      },
+      operatorId,
+      handle.db,
+    )
+    const row = await handle.db.execute<{ assisted_by_prediction_id: string | null }>(
+      sql`SELECT assisted_by_prediction_id FROM candidate_decisions WHERE candidate_id = ${candidateId}`,
+    )
+    expect(row.rows[0].assisted_by_prediction_id).toBeNull()
+  })
+
+  it('a decision after a stored prediction links to it server-side (assisted)', async () => {
+    const { candidateId } = await queueOne()
+    const predictionId = await insertAssistPrediction(handle.db, {
+      candidateId,
+      brief: { ...BRIEF, suggestedDecision: 'rejected', suggestedReasonCode: 'chain' },
+      rubricVersion: 1,
+      model: 'claude-opus-4-8',
+    })
+    expect(await selectLatestPrediction(handle.db, candidateId)).toMatchObject({
+      id: predictionId,
+      suggestedDecision: 'rejected',
+    })
+    await decideCandidate(
+      {
+        candidateId,
+        decision: 'rejected',
+        reasonCode: 'chain',
+        note: 'agree, large chain location',
+      },
+      operatorId,
+      handle.db,
+    )
+    const row = await handle.db.execute<{ assisted_by_prediction_id: string | null }>(
+      sql`SELECT assisted_by_prediction_id FROM candidate_decisions WHERE candidate_id = ${candidateId}`,
+    )
+    expect(row.rows[0].assisted_by_prediction_id).toBe(predictionId)
+  })
+
+  it('label stats separate baseline from assisted and compute agreement', async () => {
+    const before = await selectLabelStats(handle.db)
+
+    const a = await queueOne()
+    await decideCandidate(
+      {
+        candidateId: a.candidateId,
+        decision: 'rejected',
+        reasonCode: 'not_a_cafe',
+        note: 'not a cafe at all',
+      },
+      operatorId,
+      handle.db,
+    )
+    const b = await queueOne()
+    await insertAssistPrediction(handle.db, {
+      candidateId: b.candidateId,
+      brief: { ...BRIEF, suggestedDecision: 'rejected', suggestedReasonCode: 'chain' },
+      rubricVersion: 1,
+      model: 'claude-opus-4-8',
+    })
+    await decideCandidate(
+      {
+        candidateId: b.candidateId,
+        decision: 'rejected',
+        reasonCode: 'chain',
+        note: 'agreed, chain location',
+      },
+      operatorId,
+      handle.db,
+    )
+
+    const after = await selectLabelStats(handle.db)
+    expect(after.baseline - before.baseline).toBe(1)
+    expect(after.assisted - before.assisted).toBe(1)
+    expect(after.assistedAgreements - before.assistedAgreements).toBe(1)
+  })
+
+  it('predictions are append-only at the database', async () => {
+    const { candidateId } = await queueOne()
+    await insertAssistPrediction(handle.db, {
+      candidateId,
+      brief: BRIEF,
+      rubricVersion: 1,
+      model: 'claude-opus-4-8',
+    })
+    const upd = await captureError(() =>
+      handle.db.execute(
+        sql`UPDATE assist_predictions SET confidence = 'high' WHERE candidate_id = ${candidateId}`,
       ),
     )
     expect(upd.code).toBe('23001')

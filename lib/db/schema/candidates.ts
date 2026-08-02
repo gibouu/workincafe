@@ -94,6 +94,38 @@ export const gp1Candidates = pgTable(
   ],
 )
 
+// Stored AI predictions (Decision 27d — Q5.3 AI-created derived values).
+// Deliberately ONLY the non-reconstructable enum triple + provenance stamps:
+// the prose brief and its signals are session-only and never persisted (they
+// are assessments over live Google content; storing them would edge toward a
+// retained summary). Append-only via trigger. The eval harness compares these
+// rows against candidate_decisions ONLY — Google content never enters any
+// evaluation (Decision 27 general conditions).
+export const assistPredictions = pgTable(
+  'assist_predictions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    candidateId: uuid('candidate_id')
+      .notNull()
+      .references(() => gp1Candidates.id, { onDelete: 'restrict' }),
+    suggestedDecision: text('suggested_decision', { enum: CANDIDATE_DECISIONS }).notNull(),
+    suggestedReasonCode: text('suggested_reason_code', { enum: CANDIDATE_REJECT_REASONS }),
+    confidence: text('confidence', { enum: ['low', 'medium', 'high'] }).notNull(),
+    rubricVersion: integer('rubric_version').notNull(),
+    model: text('model').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index('assist_predictions_candidate_idx').on(t.candidateId, t.createdAt),
+    check('assist_predictions_decision_valid', inList(t.suggestedDecision, CANDIDATE_DECISIONS)),
+    check(
+      'assist_predictions_reason_valid',
+      sql`${t.suggestedReasonCode} IS NULL OR ${inList(t.suggestedReasonCode, CANDIDATE_REJECT_REASONS)}`,
+    ),
+    check('assist_predictions_confidence_valid', inList(t.confidence, ['low', 'medium', 'high'])),
+  ],
+)
+
 export const candidateDecisions = pgTable(
   'candidate_decisions',
   {
@@ -116,6 +148,14 @@ export const candidateDecisions = pgTable(
     decidedAt: timestamp('decided_at', { withTimezone: true }).defaultNow().notNull(),
     features: jsonb('features').notNull(),
     featureSetVersion: integer('feature_set_version').notNull(),
+    // Sequencing transparency (27d): set server-side inside the decision
+    // transaction to the latest stored prediction for this candidate, or NULL
+    // when none existed — an unassisted (baseline) decision. Never trusted
+    // from the client.
+    assistedByPredictionId: uuid('assisted_by_prediction_id').references(
+      () => assistPredictions.id,
+      { onDelete: 'restrict' },
+    ),
   },
   (t) => [
     uniqueIndex('candidate_decisions_seq_key').on(t.seq),

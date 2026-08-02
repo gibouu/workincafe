@@ -34,6 +34,7 @@ describe('migration baseline', () => {
       'gp1_candidates',
       'candidate_decisions',
       'provider_call_attempts',
+      'assist_predictions',
       'operators',
       'curation_events',
       'user',

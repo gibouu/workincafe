@@ -223,3 +223,9 @@ a {
   padding-top: 0.5rem;
   margin-top: 0.5rem;
 }
+
+.op-baseline {
+  border-left: 3px solid color-mix(in srgb, currentColor 40%, transparent);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+}

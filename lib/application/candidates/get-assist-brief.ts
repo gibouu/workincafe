@@ -2,11 +2,16 @@ import type { AssistResult } from '@/lib/contracts/http/assist'
 import type { Db } from '@/lib/db/client'
 import { getDb } from '@/lib/db/connection'
 import { insertProviderCallAttempt } from '@/lib/db/queries/accounting-mutations'
+import { insertAssistPrediction } from '@/lib/db/queries/assist-mutations'
 import { selectCandidateById } from '@/lib/db/queries/candidate-queries'
-import { buildAssistSystemPrompt } from '@/lib/domain/assist'
+import { buildAssistSystemPrompt, RUBRIC_VERSION } from '@/lib/domain/assist'
 import type { OutboundAttempt } from '@/lib/domain/seeding-queries'
 import { serverEnv } from '@/lib/env/server'
-import { type AssistImage, runAssistInference } from '@/lib/integrations/anthropic/server/messages'
+import {
+  ASSIST_MODEL,
+  type AssistImage,
+  runAssistInference,
+} from '@/lib/integrations/anthropic/server/messages'
 import {
   fetchPhotoMedia,
   fetchPlaceAssistContent,
@@ -71,6 +76,17 @@ export async function getAssistBrief(
     account,
   )
   if (inference.status !== 'ok') return { status: 'failed' }
+
+  // Decision 27d: persist ONLY the non-reconstructable prediction triple (the
+  // prose brief stays session-only). This durable record is what makes the
+  // operator's next decision an "assisted" label and enables agreement
+  // measurement per rubric version.
+  await insertAssistPrediction(db, {
+    candidateId,
+    brief: inference.brief,
+    rubricVersion: RUBRIC_VERSION,
+    model: ASSIST_MODEL,
+  })
 
   return { status: 'ok', display: d, brief: inference.brief }
 }

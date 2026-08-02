@@ -29,6 +29,13 @@
       "when": 1785697065887,
       "tag": "0003_provider_call_accounting",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785697986445,
+      "tag": "0004_assist_predictions",
+      "breakpoints": true
     }
   ]
 }
