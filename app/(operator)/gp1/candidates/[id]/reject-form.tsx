@@ -47,8 +47,9 @@ export function RejectForm({ candidateId }: { candidateId: string }) {
         />
       </label>
       <p className="empty-state">
-        Your own words only — never paste Google review text or photo links. What did you observe,
-        and why did it decide this?
+        Your own overall judgment, in your own words — it may draw on everything you viewed, reviews
+        and photos included (Decision 27). Never quote or paraphrase review text, and never include
+        rating or review-count numbers.
       </p>
       {state.error ? <p className="op-error">{state.error}</p> : null}
       <button type="submit" disabled={pending}>
