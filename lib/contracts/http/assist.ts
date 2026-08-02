@@ -17,6 +17,13 @@ export interface DisplayReview {
 
 export interface PlaceDisplay {
   name: string
+  businessStatus: string | null
+  primaryType: string | null
+  types: string[]
+  latitude: number | null
+  longitude: number | null
+  /** Structured amenity facts Google actually provided — absent means unknown. */
+  facts: Array<{ label: string; value: boolean }>
   address: string | null
   rating: number | null
   userRatingCount: number | null

@@ -35,6 +35,17 @@ export function AssistPanel({ candidateId }: { candidateId: string }) {
               </span>
             ) : null}
           </h3>
+          {r.display.businessStatus && r.display.businessStatus !== 'OPERATIONAL' ? (
+            <p className="op-error">Business status: {r.display.businessStatus}</p>
+          ) : null}
+          {r.display.primaryType || r.display.facts.length > 0 ? (
+            <p className="empty-state">
+              {r.display.primaryType ? `Type: ${r.display.primaryType}` : ''}
+              {r.display.facts.length > 0
+                ? ` · ${r.display.facts.map((f) => `${f.label}: ${f.value ? 'yes' : 'no'}`).join(' · ')}`
+                : ''}
+            </p>
+          ) : null}
           <p className="empty-state">
             {r.display.address ?? ''} · Powered by Google ·{' '}
             {r.display.googleMapsUri ? (

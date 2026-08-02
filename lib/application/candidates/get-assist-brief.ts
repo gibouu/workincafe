@@ -60,8 +60,20 @@ export async function getAssistBrief(
   }
 
   const d = details.content.display
+  const factLines = [
+    d.businessStatus && d.businessStatus !== 'OPERATIONAL'
+      ? `Business status: ${d.businessStatus}`
+      : '',
+    d.primaryType ? `Listed type: ${d.primaryType} (${d.types.slice(0, 5).join(', ')})` : '',
+    d.facts.length
+      ? `Amenity facts (absent facts are UNKNOWN, not false): ${d.facts
+          .map((f) => `${f.label}=${f.value ? 'yes' : 'no'}`)
+          .join('; ')}`
+      : '',
+  ].filter(Boolean)
   const userText = [
     `Candidate venue: ${d.name}${d.address ? ` — ${d.address}` : ''}`,
+    factLines.length ? `\n${factLines.join('\n')}` : '',
     d.generativeSummary ? `\nPlace summary:\n${d.generativeSummary}` : '',
     d.reviewSummary ? `\nReview summary:\n${d.reviewSummary}` : '',
     d.reviews.length
