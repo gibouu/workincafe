@@ -146,6 +146,10 @@ export default async function CandidateReviewPage({
 
           <h2>Approve → draft café</h2>
           <ApproveForm
+            // Remount when the selected match changes so the name/slug state
+            // re-initializes from the Overture record (state-from-props does
+            // not update on prop change).
+            key={selected?.gersId ?? 'no-match'}
             candidateId={candidate.id}
             match={
               selected
