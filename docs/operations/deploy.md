@@ -126,6 +126,8 @@ that provides a Docker socket. On this machine that is **colima** (no Docker
 Desktop):
 
 ```
+# NOTE: the brew docker CLI is keg-only on this machine — put it on PATH first:
+export PATH="/opt/homebrew/opt/docker/bin:$PATH"
 colima start
 docker run -d --name wc-test-pg \
   -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=workincafe_test \
