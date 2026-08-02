@@ -76,7 +76,11 @@ export const CANDIDATE_REJECT_REASON_DEFINITIONS: Record<
   },
 }
 
-const blankToUndefined = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? undefined : v)
+// FormData yields '' for empty inputs and NULL for fields the submitting form
+// does not contain (the review page has three forms sharing one schema) —
+// normalize both to undefined so optional fields validate correctly.
+const blankToUndefined = (v: unknown) =>
+  v == null || (typeof v === 'string' && v.trim() === '') ? undefined : v
 export const CANDIDATE_NOTE_MAX_LENGTH = 2000
 // Final decisions (approve/reject) require a substantive note capturing the
 // operator's exact reasoning — the richest part of the label-capture design
