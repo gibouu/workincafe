@@ -33,6 +33,7 @@ describe('migration baseline', () => {
       'seeding_run_attempts',
       'gp1_candidates',
       'candidate_decisions',
+      'provider_call_attempts',
       'operators',
       'curation_events',
       'user',

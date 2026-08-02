@@ -22,6 +22,13 @@
       "when": 1785367824186,
       "tag": "0002_gp1_candidates",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785697065887,
+      "tag": "0003_provider_call_accounting",
+      "breakpoints": true
     }
   ]
 }

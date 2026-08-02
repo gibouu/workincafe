@@ -19,6 +19,7 @@ const useCases = vi.hoisted(() => ({
   setCafeHours: vi.fn(),
   decideCandidate: vi.fn(),
   startSeedingRun: vi.fn(),
+  getAssistBrief: vi.fn(),
 }))
 
 class RedirectSentinel extends Error {
@@ -49,6 +50,9 @@ vi.mock('@/lib/application/candidates/decide-candidate', () => ({
 }))
 vi.mock('@/lib/application/candidates/start-seeding-run', () => ({
   startSeedingRun: useCases.startSeedingRun,
+}))
+vi.mock('@/lib/application/candidates/get-assist-brief', () => ({
+  getAssistBrief: useCases.getAssistBrief,
 }))
 
 const ACTION_MODULES = [

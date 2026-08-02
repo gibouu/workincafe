@@ -14,6 +14,10 @@ const serverEnvSchema = z.object({
   // clear operator-facing message when it is absent. Production-only by
   // default; never exposed to the browser.
   GOOGLE_PLACES_SERVER_KEY: z.string().min(1).optional(),
+  // Anthropic API key (Decision 27c — editorial AI pre-read). Same
+  // feature-conditional posture: optional everywhere, the assist path fails
+  // closed without it, production-only by default.
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
 })
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>

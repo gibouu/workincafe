@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { sql } from 'drizzle-orm'
 import type { DbHandle } from '@/lib/db/client'
 import { decideCandidate } from '@/lib/application/candidates/decide-candidate'
+import { insertProviderCallAttempt } from '@/lib/db/queries/accounting-mutations'
 import { insertCandidates } from '@/lib/db/queries/candidate-mutations'
 import { ingestOvertureExtract } from '@/lib/ingestion/overture-index'
 import { captureError, insertOperator, insertUser, openTestDb } from './helpers'
@@ -353,5 +354,34 @@ describe('structural boundaries', () => {
       'seeding_run_id',
       'status',
     ])
+  })
+})
+
+describe('provider call accounting (Decision 27)', () => {
+  it('records attempts (success and failure) and is append-only', async () => {
+    const { candidateId } = await queueOne()
+    await insertProviderCallAttempt(handle.db, {
+      sku: 'places_details_pro_enterprise',
+      context: 'gp1_assist',
+      candidateId,
+      httpStatus: 200,
+    })
+    await insertProviderCallAttempt(handle.db, {
+      sku: 'anthropic_messages_assist',
+      context: 'gp1_assist',
+      candidateId,
+      httpStatus: null,
+    })
+    const rows = await handle.db.execute<{ n: number }>(
+      sql`SELECT count(*)::int AS n FROM provider_call_attempts WHERE candidate_id = ${candidateId}`,
+    )
+    expect(rows.rows[0].n).toBe(2)
+
+    const upd = await captureError(() =>
+      handle.db.execute(
+        sql`UPDATE provider_call_attempts SET http_status = 500 WHERE candidate_id = ${candidateId}`,
+      ),
+    )
+    expect(upd.code).toBe('23001')
   })
 })
