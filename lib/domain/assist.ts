@@ -10,6 +10,12 @@ import { CANDIDATE_REJECT_REASON_DEFINITIONS, CANDIDATE_REJECT_REASONS } from '.
 
 export const ASSIST_EVIDENCE_SOURCES = ['reviews', 'photos', 'summary'] as const
 
+// The rubric version stamps every stored prediction (27d) so agreement can be
+// measured per rubric revision. Bump on ANY change to the reject-reason
+// definitions or the assist system prompt — that is what makes rubric editing
+// empirical instead of taste-debating.
+export const RUBRIC_VERSION = 1
+
 export const assistBriefSchema = z.strictObject({
   brief: z.string().min(1).max(1200),
   signals: z

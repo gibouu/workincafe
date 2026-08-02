@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getCurrentOperator } from '@/lib/application/operators/current-operator'
 import { getCandidate } from '@/lib/application/candidates/get-candidate'
+import { getLatestPrediction } from '@/lib/application/candidates/get-label-stats'
 import { searchMatches } from '@/lib/application/candidates/search-matches'
 import { mapsOutboundUrl } from '../../maps-link'
 import { ApproveForm } from './approve-form'
@@ -17,6 +18,10 @@ export const dynamic = 'force-dynamic'
 // URL-committed, session-only state) and either approves with the selected
 // match (or manual fields), rejects with a reason, or defers.
 
+function reviewableStatus(status: string): boolean {
+  return status === 'pending' || status === 'deferred'
+}
+
 export default async function CandidateReviewPage({
   params,
   searchParams,
@@ -30,6 +35,10 @@ export default async function CandidateReviewPage({
   const { id } = await params
   const candidate = await getCandidate(id)
   if (!candidate) notFound()
+
+  const latestPrediction = reviewableStatus(candidate.status)
+    ? await getLatestPrediction(candidate.id)
+    : null
 
   const { q, match } = await searchParams
   const suggestions = q ? await searchMatches(q) : []
@@ -62,6 +71,18 @@ export default async function CandidateReviewPage({
         </p>
       ) : (
         <>
+          {latestPrediction === null ? (
+            <p className="op-baseline">
+              No pre-read has been run for this candidate — deciding now records a{' '}
+              <strong>baseline (unassisted)</strong> label.
+            </p>
+          ) : (
+            <p className="op-baseline">
+              A pre-read was run {latestPrediction.createdAt.slice(0, 16).replace('T', ' ')} —
+              deciding now records an <strong>assisted</strong> label linked to that prediction.
+            </p>
+          )}
+
           <h2>AI pre-read</h2>
           <p className="empty-state">
             Live-fetches this venue&apos;s details, reviews, and photos and asks the approved model
