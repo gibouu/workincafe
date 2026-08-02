@@ -12,8 +12,11 @@ import type { DisplayReview, PlaceDisplay } from '@/lib/contracts/http/assist'
 
 export const PLACE_DETAILS_SKU = 'places_details_pro_enterprise'
 export const PLACE_PHOTO_SKU = 'places_photo_media'
+// Hours remain deliberately excluded (outside the confirmed workflows). The
+// structured amenity/type/status facts below are judgment-relevant Places
+// fields approved for the same transient display + inference use.
 const FIELD_MASK =
-  'id,displayName,formattedAddress,rating,userRatingCount,googleMapsUri,reviews,photos,generativeSummary,reviewSummary'
+  'id,displayName,formattedAddress,rating,userRatingCount,googleMapsUri,reviews,photos,generativeSummary,reviewSummary,businessStatus,primaryTypeDisplayName,types,location,dineIn,takeout,outdoorSeating,restroom,goodForGroups,servesCoffee,liveMusic,goodForWatchingSports'
 
 const MAX_REVIEWS = 5
 const MAX_PHOTOS = 3
@@ -56,7 +59,35 @@ const detailsSchema = z.looseObject({
     )
     .nullish(),
   photos: z.array(z.looseObject({ name: z.string() })).nullish(),
+  businessStatus: z.string().nullish(),
+  primaryTypeDisplayName: z.looseObject({ text: z.string().optional() }).nullish(),
+  types: z.array(z.string()).nullish(),
+  location: z.looseObject({ latitude: z.number(), longitude: z.number() }).nullish(),
+  dineIn: z.boolean().nullish(),
+  takeout: z.boolean().nullish(),
+  outdoorSeating: z.boolean().nullish(),
+  restroom: z.boolean().nullish(),
+  goodForGroups: z.boolean().nullish(),
+  servesCoffee: z.boolean().nullish(),
+  liveMusic: z.boolean().nullish(),
+  goodForWatchingSports: z.boolean().nullish(),
 })
+
+// Tri-state discipline: a boolean Google did not provide is UNKNOWN — it is
+// omitted from facts entirely, never coerced to false (unknown ≠ negative).
+function collectFacts(p: z.infer<typeof detailsSchema>): Array<{ label: string; value: boolean }> {
+  const map: Array<[string, boolean | null | undefined]> = [
+    ['dine-in', p.dineIn],
+    ['takeout', p.takeout],
+    ['outdoor seating', p.outdoorSeating],
+    ['restroom', p.restroom],
+    ['good for groups', p.goodForGroups],
+    ['serves coffee', p.servesCoffee],
+    ['live music', p.liveMusic],
+    ['sports watching', p.goodForWatchingSports],
+  ]
+  return map.flatMap(([label, v]) => (typeof v === 'boolean' ? [{ label, value: v }] : []))
+}
 
 export interface PlaceAssistContent {
   display: PlaceDisplay
@@ -126,6 +157,12 @@ export async function fetchPlaceAssistContent(
     content: {
       display: {
         name: parsed.displayName?.text ?? '(name unavailable)',
+        businessStatus: parsed.businessStatus ?? null,
+        primaryType: parsed.primaryTypeDisplayName?.text ?? null,
+        types: parsed.types ?? [],
+        latitude: parsed.location?.latitude ?? null,
+        longitude: parsed.location?.longitude ?? null,
+        facts: collectFacts(parsed),
         address: parsed.formattedAddress ?? null,
         rating: parsed.rating ?? null,
         userRatingCount: parsed.userRatingCount ?? null,

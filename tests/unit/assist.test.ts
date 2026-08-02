@@ -72,6 +72,12 @@ describe('fetchPlaceAssistContent', () => {
           { text: { text: 'No author — must be dropped' } },
         ],
         photos: [{ name: 'places/p1/photos/x' }],
+        businessStatus: 'OPERATIONAL',
+        primaryTypeDisplayName: { text: 'Coffee shop' },
+        types: ['cafe', 'coffee_shop'],
+        location: { latitude: 43.65, longitude: -79.38 },
+        dineIn: true,
+        takeout: true,
         reviewSummary: {
           text: { text: 'People study here' },
           disclosureText: { text: 'Summarized with AI' },
@@ -91,6 +97,9 @@ describe('fetchPlaceAssistContent', () => {
     expect(init.cache).toBe('no-store')
     const mask = (init.headers as Record<string, string>)['X-Goog-FieldMask']
     expect(mask).toContain('reviews')
+    expect(mask).toContain('businessStatus')
+    expect(mask).toContain('dineIn')
+    expect(mask).toContain('types')
     expect(mask).not.toContain('Hours')
     expect(mask).not.toContain('opening')
 
@@ -101,6 +110,13 @@ describe('fetchPlaceAssistContent', () => {
     expect(result.content.display.reviews).toHaveLength(1)
     expect(result.content.display.reviews[0].authorName).toBe('A. Reviewer')
     expect(result.content.display.summaryDisclosure).toBe('Summarized with AI')
+    expect(result.content.display.primaryType).toBe('Coffee shop')
+    expect(result.content.display.latitude).toBe(43.65)
+    // Tri-state: only provided booleans appear; absent ones are unknown, not false.
+    expect(result.content.display.facts).toEqual([
+      { label: 'dine-in', value: true },
+      { label: 'takeout', value: true },
+    ])
     expect(attempts).toEqual([{ sku: PLACE_DETAILS_SKU, httpStatus: 200, resultsCount: 1 }])
   })
 
