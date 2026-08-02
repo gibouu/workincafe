@@ -5,6 +5,12 @@ This repository is under **requirement-first reconstruction** (see
 [`AGENTS.md`](AGENTS.md) before opening a pull request. These rules apply to
 human contributors and to coding agents equally.
 
+## Roles
+
+Technical lead (precedence-1 instruction holder and decision ratifier):
+**Cem Gunay**. Repository / Vercel / Google Cloud account owner: **gibouu**.
+Update this section when roles change.
+
 ## Authority and precedence
 
 Decisions are governed, not ad hoc. Highest wins:

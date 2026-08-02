@@ -25,7 +25,9 @@ GeoJSONSeq file (one GeoJSON Feature per line); no ingestion dependency lives
 in the repository. Record the Overture release you used — it becomes
 `--source-version`.
 
-With the official Overture CLI (`pipx install overturemaps`):
+With the official Overture CLI (installed on this machine in a dedicated venv:
+`~/.venvs/overturemaps/bin/overturemaps`; fresh setup alternative:
+`pipx install overturemaps`):
 
 ```bash
 overturemaps download \
