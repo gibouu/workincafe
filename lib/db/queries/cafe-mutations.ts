@@ -51,12 +51,28 @@ export async function setCafePublicationState(
   actorUserId: string,
 ): Promise<boolean> {
   return db.transaction(async (tx) => {
+    // Publication requires complete hours (technical-lead ruling 2026-08-02,
+    // source/15 — amends the earlier hours-optional stance): a place_hours row
+    // whose seven days are all known (open or closed; any 'unknown' blocks).
+    // Hiding is never gated.
+    const hoursGate =
+      target === 'published'
+        ? sql` AND EXISTS (
+            SELECT 1 FROM place_hours h
+            WHERE h.place_id = places.id
+              AND NOT EXISTS (
+                SELECT 1 FROM jsonb_each(h.schedule -> 'days') d
+                WHERE d.value ->> 'state' = 'unknown'
+              )
+          )`
+        : sql``
     const res = await tx.execute<{ id: string }>(sql`
       UPDATE places
       SET publication_state = ${target}, updated_at = now()
       WHERE id = ${placeId}
         AND record_state = 'active'
         AND publication_state IS DISTINCT FROM ${target}
+        ${hoursGate}
       RETURNING id
     `)
     if (res.rows.length === 0) return false

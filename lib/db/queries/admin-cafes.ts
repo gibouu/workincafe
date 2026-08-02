@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import type { PublicationState, RecordState } from '@/lib/domain/places'
 import type { Db } from '../client'
 import { places } from '../schema/places'
@@ -12,7 +12,18 @@ export interface AdminCafeRow {
   neighborhood: string | null
   publicationState: PublicationState
   recordState: RecordState
+  /** Publication gate (source/15): hours row present with all 7 days known. */
+  hoursComplete: boolean
 }
+
+const hoursCompleteSql = sql<boolean>`EXISTS (
+  SELECT 1 FROM place_hours h
+  WHERE h.place_id = ${places.id}
+    AND NOT EXISTS (
+      SELECT 1 FROM jsonb_each(h.schedule -> 'days') d
+      WHERE d.value ->> 'state' = 'unknown'
+    )
+)`
 
 const adminCafeColumns = {
   id: places.id,
@@ -21,6 +32,7 @@ const adminCafeColumns = {
   neighborhood: places.neighborhood,
   publicationState: places.publicationState,
   recordState: places.recordState,
+  hoursComplete: hoursCompleteSql,
 }
 
 export async function selectAllCafes(db: Db): Promise<AdminCafeRow[]> {
