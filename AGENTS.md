@@ -108,6 +108,19 @@ deviations require a new policy inquiry and recorded approval:
   signals create human review tasks only.
 - The GP-1 surface (`app/(operator)/gp1/`) is mapless: it never imports
   map components, the Maps loader, or the browser Maps key.
+- **Decision 27 (editorial AI assistance; written Google policy guidance in
+  `source/14`):** within the auth-gated operator surface only — live-fetched
+  Google content may be displayed to the operator (fully attributed) and
+  processed **session-only** by the approved no-training model provider
+  (Anthropic API) to assist human review; operator-authored review-informed
+  notes and **non-reconstructable derived signal values** (which are
+  WorkinCafe editorial content, not Google-derived data) may persist.
+  Everything above still holds: Google content itself never persists and
+  never reaches logs — now explicitly including model prompts/inputs on all
+  paths including error paths; models are never trained, tested, validated,
+  fine-tuned, **evaluated, or benchmarked** on Google content; meaningful
+  human review precedes every editorial action. Material expansion of these
+  workflows requires a new policy inquiry referencing the Decision 27 case.
 
 ## Canonical commands (available from Step 2B)
 
