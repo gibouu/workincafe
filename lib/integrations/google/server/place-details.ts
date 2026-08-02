@@ -17,7 +17,9 @@ const FIELD_MASK =
 
 const MAX_REVIEWS = 5
 const MAX_PHOTOS = 3
-const PHOTO_MAX_PX = 1024
+// 768px halves image tokens vs 1024px while keeping laptops/seating/signage
+// legible (operator cost ruling, 2026-08-02).
+const PHOTO_MAX_PX = 768
 
 const detailsSchema = z.looseObject({
   id: z.string().optional(),
