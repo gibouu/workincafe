@@ -16,6 +16,38 @@ export const ASSIST_EVIDENCE_SOURCES = ['reviews', 'photos', 'summary'] as const
 // empirical instead of taste-debating.
 export const RUBRIC_VERSION = 1
 
+// The rubric loop's mechanical trigger (docs/operations/rubric-loop.md). The
+// loop is dynamic by CADENCE, not by silent mutation: every revision is a
+// reviewed PR that bumps RUBRIC_VERSION and resets the marker below — so the
+// GP-1 surface can always show whether a distillation is due, and agreement
+// stays measurable per version.
+export const RUBRIC_BASELINE_TARGET = 20
+export const RUBRIC_DISTILLATION_INTERVAL = 15
+// Final-decision count at the time of the last distillation (0 = never run).
+// Updated in every distillation PR alongside RUBRIC_VERSION.
+export const RUBRIC_LAST_DISTILLED_AT_DECISIONS = 0
+
+export interface RubricLoopStatus {
+  version: number
+  nextDueAt: number
+  due: boolean
+  isFirstDistillation: boolean
+}
+
+/** Pure: is a rubric distillation due, given the number of final decisions? */
+export function rubricLoopStatus(finalDecisions: number): RubricLoopStatus {
+  const isFirst = RUBRIC_LAST_DISTILLED_AT_DECISIONS === 0
+  const nextDueAt = isFirst
+    ? RUBRIC_BASELINE_TARGET
+    : RUBRIC_LAST_DISTILLED_AT_DECISIONS + RUBRIC_DISTILLATION_INTERVAL
+  return {
+    version: RUBRIC_VERSION,
+    nextDueAt,
+    due: finalDecisions >= nextDueAt,
+    isFirstDistillation: isFirst,
+  }
+}
+
 export const assistBriefSchema = z.strictObject({
   brief: z.string().min(1).max(1200),
   signals: z
