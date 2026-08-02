@@ -50,6 +50,9 @@ append-only history makes every version's record permanent).
 ## Ground rules
 
 - Never edit the rubric outside a distillation PR; never edit it mid-baseline.
+  **One carve-out:** pre-use hotfixes are permitted while ZERO predictions
+  exist under the current rubric version (nothing measured means nothing
+  corrupted) — as a normal reviewed PR that says so explicitly.
 - `assist_predictions` / `candidate_decisions` are append-only — history
   cannot be rewritten to flatter a revision.
 - The baseline batch is sacred: rubric changes never touch unassisted
