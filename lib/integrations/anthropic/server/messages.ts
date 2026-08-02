@@ -14,8 +14,12 @@ import type { OutboundAttempt } from '@/lib/domain/seeding-queries'
 
 const MESSAGES_URL = 'https://api.anthropic.com/v1/messages'
 const ANTHROPIC_VERSION = '2023-06-01'
-// Default per current model guidance; a deliberate, reviewed edit to change.
-export const ASSIST_MODEL = 'claude-opus-4-8'
+// Deliberate, reviewed edits only. Sonnet 5 chosen 2026-08-02 (operator cost
+// ruling): rubric-guided classification sits well within Sonnet-tier
+// capability at ~1/3 the cost; predictions are stamped per model, so if the
+// agreement scorecard shows Sonnet lagging the operator, reverting to
+// claude-opus-4-8 is a one-line change validated by data.
+export const ASSIST_MODEL = 'claude-sonnet-5'
 export const ANTHROPIC_MESSAGES_SKU = 'anthropic_messages_assist'
 const MAX_TOKENS = 2000
 
@@ -64,7 +68,10 @@ export async function runAssistInference(
         max_tokens: MAX_TOKENS,
         thinking: { type: 'adaptive' },
         system: input.system,
-        output_config: { format: { type: 'json_schema', schema: assistBriefJsonSchema() } },
+        output_config: {
+          effort: 'medium',
+          format: { type: 'json_schema', schema: assistBriefJsonSchema() },
+        },
         messages: [{ role: 'user', content }],
       }),
     })
