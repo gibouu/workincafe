@@ -208,3 +208,15 @@ describe('runAssistInference', () => {
     expect(attempts).toEqual([{ sku: ANTHROPIC_MESSAGES_SKU, httpStatus: 529, resultsCount: null }])
   })
 })
+
+describe('rubricLoopStatus (the mechanical trigger)', () => {
+  it('first distillation comes due exactly when the baseline batch completes', async () => {
+    const { rubricLoopStatus, RUBRIC_BASELINE_TARGET } = await import('@/lib/domain/assist')
+    expect(rubricLoopStatus(0).due).toBe(false)
+    expect(rubricLoopStatus(RUBRIC_BASELINE_TARGET - 1).due).toBe(false)
+    const due = rubricLoopStatus(RUBRIC_BASELINE_TARGET)
+    expect(due.due).toBe(true)
+    expect(due.isFirstDistillation).toBe(true)
+    expect(due.nextDueAt).toBe(RUBRIC_BASELINE_TARGET)
+  })
+})

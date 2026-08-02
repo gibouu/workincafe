@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getCurrentOperator } from '@/lib/application/operators/current-operator'
 import { listReviewQueue } from '@/lib/application/candidates/list-review-queue'
 import { getLabelStats } from '@/lib/application/candidates/get-label-stats'
+import { rubricLoopStatus } from '@/lib/domain/assist'
 import { listSeedingRuns } from '@/lib/application/candidates/list-seeding-runs'
 import { mapsOutboundUrl } from './maps-link'
 import { SeedingForm } from './seeding-form'
@@ -22,6 +23,7 @@ export default async function Gp1QueuePage() {
   const queue = await listReviewQueue()
   const runs = await listSeedingRuns()
   const labels = await getLabelStats()
+  const rubric = rubricLoopStatus(labels.finalDecisions)
 
   return (
     <main>
@@ -74,6 +76,19 @@ export default async function Gp1QueuePage() {
           : ''}
         . Every decision is permanently marked baseline or assisted at write time.
       </p>
+      {rubric.due ? (
+        <p className="op-error">
+          Rubric distillation is due (rubric v{rubric.version};{' '}
+          {rubric.isFirstDistillation ? 'baseline batch complete' : 'interval reached'} at{' '}
+          {labels.finalDecisions} final decisions). Run the rubric loop —
+          docs/operations/rubric-loop.md.
+        </p>
+      ) : (
+        <p className="empty-state">
+          Rubric v{rubric.version} in effect · next distillation due at {rubric.nextDueAt} final
+          decisions.
+        </p>
+      )}
 
       <h2>Run seeding</h2>
       <p className="empty-state">
