@@ -53,10 +53,14 @@ export default async function AdminPage() {
                   {cafe.recordState === 'active' ? (
                     <div className="op-actions">
                       {cafe.publicationState !== 'published' ? (
-                        <form action={publishCafeAction}>
-                          <input type="hidden" name="placeId" value={cafe.id} />
-                          <button type="submit">Publish</button>
-                        </form>
+                        cafe.hoursComplete ? (
+                          <form action={publishCafeAction}>
+                            <input type="hidden" name="placeId" value={cafe.id} />
+                            <button type="submit">Publish</button>
+                          </form>
+                        ) : (
+                          <span className="empty-state">needs hours to publish</span>
+                        )
                       ) : null}
                       {cafe.publicationState !== 'hidden' ? (
                         <form action={hideCafeAction}>
