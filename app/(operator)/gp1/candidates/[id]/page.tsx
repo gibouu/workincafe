@@ -5,6 +5,7 @@ import { getCandidate } from '@/lib/application/candidates/get-candidate'
 import { searchMatches } from '@/lib/application/candidates/search-matches'
 import { mapsOutboundUrl } from '../../maps-link'
 import { ApproveForm } from './approve-form'
+import { AssistPanel } from './assist-panel'
 import { RejectForm } from './reject-form'
 import { DeferForm } from './defer-form'
 
@@ -61,6 +62,13 @@ export default async function CandidateReviewPage({
         </p>
       ) : (
         <>
+          <h2>AI pre-read</h2>
+          <p className="empty-state">
+            Live-fetches this venue&apos;s details, reviews, and photos and asks the approved model
+            for a session-only brief. Nothing is stored; you decide.
+          </p>
+          <AssistPanel candidateId={candidate.id} />
+
           <h2>Find the matching Overture record</h2>
           <p className="empty-state">
             Type the venue name as shown on Google Maps; suggestions come from our own matching

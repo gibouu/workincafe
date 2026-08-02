@@ -1,5 +1,5 @@
 {
-  "policy": "Decision 26 — docs/decisions/source/13-dependency-security-policy.md",
+  "policy": "Decision 26 \u2014 docs/decisions/source/13-dependency-security-policy.md",
   "note": "Every current `npm audit` advisory is dispositioned individually. No blanket/wildcard acceptance. Raw `npm audit` and `npm audit --omit=dev` output is always displayed and never suppressed; this register reviews findings, it does not hide them. Reconciled by tools/check-security-advisories.mjs (keyed by npmAuditId).",
   "reviewedBy": "technical lead",
   "reviewed": "2026-07-28",
@@ -13,7 +13,7 @@
       "vulnerableRange": "<=8.5.17",
       "severity": "high",
       "scope": "runtime-build",
-      "affectedFunction": "Path traversal via previous source-map auto-loading (attacker-controlled sourceMappingURL in a CSS comment) → arbitrary .map file disclosure.",
+      "affectedFunction": "Path traversal via previous source-map auto-loading (attacker-controlled sourceMappingURL in a CSS comment) \u2192 arbitrary .map file disclosure.",
       "reachability": "Not reachable: PostCSS runs only at build time over reviewed, repository-controlled CSS (Tailwind). No user/CMS/operator-authored/uploaded CSS, no runtime CSS-processing endpoint, no remote stylesheet piped through the build.",
       "mitigation": "Build input restricted to reviewed repo files + approved packages. Compliance test asserts no first-party module imports postcss and no approved route processes CSS.",
       "disposition": "accepted-residual-risk",
@@ -40,7 +40,7 @@
       "severity": "high",
       "scope": "runtime-build",
       "affectedFunction": "Arbitrary file read / information disclosure via attacker-controlled sourceMappingURL in CSS comments.",
-      "reachability": "Not reachable: same as GHSA-r28c-9q8g-f849 — only reviewed repository-controlled CSS is processed, at build time.",
+      "reachability": "Not reachable: same as GHSA-r28c-9q8g-f849 \u2014 only reviewed repository-controlled CSS is processed, at build time.",
       "mitigation": "Same CSS-boundary control + compliance test.",
       "disposition": "accepted-residual-risk",
       "decision": "Decision 26",
@@ -202,30 +202,6 @@
         "auth CLI run in a shared service",
         "auth moved to a production dependency",
         "a patched lodash release"
-      ],
-      "dateReviewed": "2026-07-28"
-    },
-    {
-      "ghsa": "GHSA-mh99-v99m-4gvg",
-      "npmAuditId": 1124334,
-      "package": "brace-expansion",
-      "path": "eslint-config-next > typescript-eslint > @typescript-eslint/* > minimatch > brace-expansion",
-      "installedVersion": "1.1.16",
-      "vulnerableRange": "<=5.0.7",
-      "severity": "high",
-      "scope": "development",
-      "affectedFunction": "DoS via unbounded expansion length causing an out-of-memory crash.",
-      "reachability": "Not reachable under enforced architecture: brace-expansion is used only by local ESLint tooling to process fixed, repository-controlled file/glob patterns. No user-supplied glob or brace expression reaches ESLint; ESLint is not network-exposed and not part of the deployed runtime.",
-      "mitigation": "Lint patterns fixed in repo config; ESLint is a dev dependency absent from the deployed runtime.",
-      "disposition": "not-reachable",
-      "decision": "Decision 26",
-      "compatibleStandardFix": false,
-      "compatibleStandardFixNote": "npm's fix = eslint@10.8.0 (breaking major, gated by Decision — eslint-config-next's bundled eslint-plugin-react caps at eslint ^9.7). eslint-config-next 16.2.12 is latest stable.",
-      "recheckTriggers": [
-        "lint/glob processing becomes remotely callable",
-        "untrusted patterns fed to ESLint",
-        "a stable eslint-config-next release resolving the path",
-        "adopting ESLint 10 via a new decision"
       ],
       "dateReviewed": "2026-07-28"
     }

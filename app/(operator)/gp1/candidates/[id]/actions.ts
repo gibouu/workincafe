@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { getCurrentOperator } from '@/lib/application/operators/current-operator'
 import { decideCandidate } from '@/lib/application/candidates/decide-candidate'
+import { getAssistBrief } from '@/lib/application/candidates/get-assist-brief'
+import type { AssistResult } from '@/lib/contracts/http/assist'
 
 // GP-1 review decision action (Decision 16a — thin, validated, authorized;
 // Decision 9 — human review; approval creates a draft, never a publication).
@@ -58,4 +60,38 @@ export async function decideCandidateAction(
     redirect(`/admin/cafes/${result.createdPlaceId}`)
   }
   redirect('/gp1')
+}
+
+// Decision 27b: the AI pre-read — operator-triggered only, session-only.
+// Neither the live Google content nor the model brief is ever persisted; the
+// serializable state below exists for this render only.
+
+export interface AssistFormState {
+  error?: string
+  result?: AssistResult
+}
+
+export async function runAssistAction(
+  _prev: AssistFormState,
+  formData: FormData,
+): Promise<AssistFormState> {
+  const operator = await getCurrentOperator()
+  if (!operator) redirect('/login')
+
+  const result = await getAssistBrief(String(formData.get('candidateId') ?? ''))
+  switch (result.status) {
+    case 'unavailable':
+      return {
+        error:
+          'AI pre-read is unavailable: the Google and/or Anthropic server keys are not configured in this environment.',
+      }
+    case 'not_found':
+      return { error: 'Candidate not found.' }
+    case 'failed':
+      return {
+        error:
+          'The pre-read could not be completed (attempts were accounted; nothing was retried). Try again if appropriate.',
+      }
+  }
+  return { result: { display: result.display, brief: result.brief } }
 }

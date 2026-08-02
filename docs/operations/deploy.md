@@ -58,6 +58,12 @@ web dashboards — not committed to the repo.
      come later with the map slice), API-restricted key, budget alert
      recommended. Seeding uses the Text Search IDs-only field mask
      (Essentials SKU).
+   - **`ANTHROPIC_API_KEY`** (Decision 27c — editorial AI pre-read): Anthropic
+     API key, **Production only**, same fail-closed posture as the Google key.
+     The assist path uses Place Details Pro/Enterprise SKU fields and photo
+     media (billable per candidate pre-read) plus one Anthropic Messages call
+     (`claude-opus-4-8`). Retain Anthropic's no-training/retention terms with
+     the Decision 27 compliance records.
 3. Keep the **registrar independent of Vercel** (Decision 20) — attach the
    `workin.cafe` domain later; do not transfer registration to Vercel.
 4. Deploy `main`. The first production build migrates Neon and goes live.
