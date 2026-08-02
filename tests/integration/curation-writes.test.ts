@@ -243,3 +243,112 @@ describe('setCafeHours (transactional)', () => {
     expect(await countEvents(placeId, 'hours_updated')).toBe(0)
   })
 })
+
+describe('setCafeHours with an OSM source (Decision 29)', () => {
+  // The (source, external_id) key is globally unique and the Tier 2 database
+  // is shared across this file — each test uses its own OSM element id.
+  const osmNode = (osmId: string) => ({
+    osmType: 'node' as const,
+    osmId,
+    observedAt: '2026-06-07T12:00:00Z',
+  })
+
+  it('saves as imported with an osm source ref, OSM observed_at, and operator verification', async () => {
+    const placeId = await insertPlace(handle.db)
+    const result = await setCafeHours(
+      { placeId, confidence: 'medium', schedule: openWeek(), osmSource: osmNode('111111') },
+      operatorId,
+      handle.db,
+    )
+    expect(result).toEqual({ status: 'saved' })
+
+    const row = await handle.db.execute<{
+      provenance_kind: string
+      source_ref_id: string | null
+      observed_at: string | Date | null
+      verified_by_operator_user_id: string
+      source: string
+      external_id: string
+    }>(sql`
+      SELECT h.provenance_kind, h.source_ref_id, h.observed_at,
+             h.verified_by_operator_user_id, r.source, r.external_id
+      FROM place_hours h JOIN place_source_refs r ON r.id = h.source_ref_id
+      WHERE h.place_id = ${placeId}
+    `)
+    expect(row.rows).toHaveLength(1)
+    expect(row.rows[0].provenance_kind).toBe('imported')
+    expect(row.rows[0].source).toBe('osm')
+    expect(row.rows[0].external_id).toBe('node/111111')
+    expect(new Date(row.rows[0].observed_at ?? 0).toISOString()).toBe('2026-06-07T12:00:00.000Z')
+    expect(row.rows[0].verified_by_operator_user_id).toBe(operatorId)
+    expect(await countEvents(placeId, 'hours_updated')).toBe(1)
+  })
+
+  it('a plain save afterwards returns to curator and clears the hours source ref', async () => {
+    const placeId = await insertPlace(handle.db)
+    const first = await setCafeHours(
+      { placeId, confidence: 'medium', schedule: openWeek(), osmSource: osmNode('222222') },
+      operatorId,
+      handle.db,
+    )
+    expect(first).toEqual({ status: 'saved' })
+    const result = await setCafeHours(
+      { placeId, confidence: 'high', schedule: openWeek() },
+      operatorId,
+      handle.db,
+    )
+    expect(result).toEqual({ status: 'saved' })
+    const rows = await handle.db.execute<{ provenance_kind: string; source_ref_id: string | null }>(
+      sql`SELECT provenance_kind, source_ref_id FROM place_hours WHERE place_id = ${placeId}`,
+    )
+    expect(rows.rows).toEqual([{ provenance_kind: 'curator', source_ref_id: null }])
+    // The identity reference itself remains (last-seen history), only the
+    // hours row's linkage is cleared.
+    const refs = await handle.db.execute<{ n: number }>(
+      sql`SELECT count(*)::int AS n FROM place_source_refs WHERE place_id = ${placeId} AND source = 'osm'`,
+    )
+    expect(refs.rows[0].n).toBe(1)
+  })
+
+  it('re-applying the same element to the same café reuses its source ref', async () => {
+    const placeId = await insertPlace(handle.db)
+    const first = await setCafeHours(
+      { placeId, confidence: 'medium', schedule: openWeek(), osmSource: osmNode('333333') },
+      operatorId,
+      handle.db,
+    )
+    expect(first).toEqual({ status: 'saved' })
+    const again = await setCafeHours(
+      { placeId, confidence: 'high', schedule: openWeek(), osmSource: osmNode('333333') },
+      operatorId,
+      handle.db,
+    )
+    expect(again).toEqual({ status: 'saved' })
+    const refs = await handle.db.execute<{ n: number }>(
+      sql`SELECT count(*)::int AS n FROM place_source_refs WHERE source = 'osm' AND external_id = 'node/333333'`,
+    )
+    expect(refs.rows[0].n).toBe(1)
+  })
+
+  it('rejects an OSM element already linked to a different café', async () => {
+    const placeA = await insertPlace(handle.db)
+    const placeB = await insertPlace(handle.db)
+    const osm = { osmType: 'way' as const, osmId: '789', observedAt: null }
+    await setCafeHours(
+      { placeId: placeA, confidence: 'medium', schedule: openWeek(), osmSource: osm },
+      operatorId,
+      handle.db,
+    )
+    const result = await setCafeHours(
+      { placeId: placeB, confidence: 'medium', schedule: openWeek(), osmSource: osm },
+      operatorId,
+      handle.db,
+    )
+    expect(result).toEqual({ status: 'osm_ref_conflict' })
+    const res = await handle.db.execute<{ n: number }>(
+      sql`SELECT count(*)::int AS n FROM place_hours WHERE place_id = ${placeB}`,
+    )
+    expect(res.rows[0].n).toBe(0)
+    expect(await countEvents(placeB, 'hours_updated')).toBe(0)
+  })
+})

@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getCurrentOperator } from '@/lib/application/operators/current-operator'
 import { recordAttributeObservation } from '@/lib/application/attributes/record-attribute-observation'
 import { setCafeHours } from '@/lib/application/hours/set-cafe-hours'
+import { lookupOsmHours, type OsmHoursCandidate } from '@/lib/application/hours/lookup-osm-hours'
 import { DAY_KEYS, HOURS_SCHEMA_VERSION, HOURS_TIME_ZONE } from '@/lib/domain/hours'
 import { dayStateField, HOURS_MAX_INTERVALS, intervalField } from './hours-fields'
 
@@ -70,6 +71,20 @@ function scheduleFromForm(formData: FormData): unknown {
   return { version: HOURS_SCHEMA_VERSION, timeZone: HOURS_TIME_ZONE, days }
 }
 
+// FormData.get() returns null for absent fields — only a fully-present OSM
+// reference (applied via the lookup panel's hidden fields) becomes osmSource.
+function osmSourceFromForm(formData: FormData): unknown {
+  const osmType = formData.get('osmType')
+  const osmId = formData.get('osmId')
+  if (osmType == null || osmId == null) return undefined
+  const observedAt = formData.get('osmObservedAt')
+  return {
+    osmType: String(osmType),
+    osmId: String(osmId),
+    observedAt: observedAt == null || String(observedAt) === '' ? null : String(observedAt),
+  }
+}
+
 export async function saveHoursAction(
   _prev: CurationFormState,
   formData: FormData,
@@ -83,13 +98,41 @@ export async function saveHoursAction(
       placeId,
       confidence: formData.get('confidence'),
       schedule: scheduleFromForm(formData),
+      osmSource: osmSourceFromForm(formData),
     },
     operator.userId,
   )
 
   if (result.status === 'invalid') return { error: result.message }
   if (result.status === 'not_found') return { error: 'Café not found or not an active record.' }
+  if (result.status === 'osm_ref_conflict')
+    return { error: 'That OSM element is already linked to another café — check for a duplicate.' }
 
   revalidatePath(`/admin/cafes/${placeId}`)
   return { saved: true }
+}
+
+// Decision 29: operator-triggered OSM hours lookup — session-only prefill
+// candidates from Overpass around the café's canonical coordinates. Free
+// service, single attempt, nothing persisted by the lookup itself.
+
+export interface OsmLookupState {
+  error?: string
+  candidates?: OsmHoursCandidate[]
+}
+
+export async function lookupOsmHoursAction(
+  _prev: OsmLookupState,
+  formData: FormData,
+): Promise<OsmLookupState> {
+  const operator = await getCurrentOperator()
+  if (!operator) redirect('/login')
+
+  const placeId = String(formData.get('placeId') ?? '')
+  const result = await lookupOsmHours(placeId)
+
+  if (result.status === 'not_found') return { error: 'Café not found or not an active record.' }
+  if (result.status === 'failed')
+    return { error: 'OSM lookup failed (Overpass unavailable) — try again later.' }
+  return { candidates: result.candidates }
 }

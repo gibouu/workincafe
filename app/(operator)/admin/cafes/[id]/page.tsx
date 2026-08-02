@@ -62,9 +62,9 @@ export default async function CafeCurationPage({ params }: { params: Promise<{ i
 
       <h2>Hours</h2>
       <p className="empty-state">
-        Facts only — never guess; verify from the venue&apos;s own site or in person. Publishing
-        requires all seven days known (open or closed — any unknown day blocks publication;
-        source/15).
+        Facts only — never guess; verify from the venue&apos;s own site or in person, or prefill
+        from the OSM lookup and confirm (source/16). Publishing requires all seven days known (open
+        or closed — any unknown day blocks publication; source/15).
       </p>
       <HoursForm placeId={cafe.id} initial={hours} />
     </main>

@@ -144,3 +144,6 @@ Decision 19 superseded 5-BK external backups and eliminated launch GitHub
 Actions. Decision 21 deferred all observability and analytics. Decision 22
 selected Vitest while explicitly not adopting Vite as an application
 framework. Decision 11 dissolved when Google became the basemap (GD-1).
+Decision 29 adopted OpenStreetMap as an hours-only, operator-confirmed
+prefill source (Overpass lookup + `osm` source kind); the §E rejection of
+an OSM canonical place-data layer stands unchanged.

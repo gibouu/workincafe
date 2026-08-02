@@ -5,14 +5,18 @@ import { setCafeHoursInputSchema } from '@/lib/domain/hours-input'
 
 // Use case: an authorized operator saves a café's structured weekly hours
 // (Decision 9 — official-venue/manual recording, facts only, `unknown` is
-// first-class and distinct from `closed`; hours are never required for
-// publication). The caller (a Server Action) must have already resolved an
-// active operator and passes its user id as the verifying operator. The write
-// pairs the hours upsert with its `hours_updated` curation event in one
-// transaction.
+// first-class and distinct from `closed`; publication requires all seven days
+// known, Decision 28). An OSM-applied save (Decision 29) carries `osmSource`
+// and persists as an operator-verified import with its OSM element reference.
+// The caller (a Server Action) must have already resolved an active operator
+// and passes its user id as the verifying operator. The write pairs the hours
+// upsert with its `hours_updated` curation event in one transaction.
 
 export type SetCafeHoursResult =
-  { status: 'saved' } | { status: 'invalid'; message: string } | { status: 'not_found' }
+  | { status: 'saved' }
+  | { status: 'invalid'; message: string }
+  | { status: 'not_found' }
+  | { status: 'osm_ref_conflict' }
 
 export async function setCafeHours(
   rawInput: unknown,
@@ -27,6 +31,6 @@ export async function setCafeHours(
     return { status: 'invalid', message }
   }
 
-  const saved = await upsertCafeHours(db, parsed.data, actorUserId)
-  return saved ? { status: 'saved' } : { status: 'not_found' }
+  const result = await upsertCafeHours(db, parsed.data, actorUserId)
+  return { status: result }
 }

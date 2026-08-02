@@ -64,3 +64,39 @@ describe('setCafeHoursInputSchema', () => {
     ).toBe(false)
   })
 })
+
+describe('setCafeHoursInputSchema osmSource (Decision 29)', () => {
+  const base = { placeId: PLACE_ID, confidence: 'medium', schedule: openMonday() }
+
+  it('accepts a valid OSM source with an edit timestamp', () => {
+    const res = setCafeHoursInputSchema.safeParse({
+      ...base,
+      osmSource: { osmType: 'node', osmId: '123456', observedAt: '2026-06-07T12:00:00Z' },
+    })
+    expect(res.success).toBe(true)
+  })
+
+  it('accepts a null edit timestamp and stays optional overall', () => {
+    expect(
+      setCafeHoursInputSchema.safeParse({
+        ...base,
+        osmSource: { osmType: 'way', osmId: '789', observedAt: null },
+      }).success,
+    ).toBe(true)
+    expect(setCafeHoursInputSchema.safeParse(base).success).toBe(true)
+  })
+
+  it('rejects bad element types, non-numeric ids, and bad timestamps', () => {
+    for (const osmSource of [
+      { osmType: 'relation', osmId: '123', observedAt: null },
+      { osmType: 'node', osmId: 'abc', observedAt: null },
+      { osmType: 'node', osmId: '', observedAt: null },
+      { osmType: 'node', osmId: '123', observedAt: 'yesterday' },
+    ]) {
+      expect(
+        setCafeHoursInputSchema.safeParse({ ...base, osmSource }).success,
+        JSON.stringify(osmSource),
+      ).toBe(false)
+    }
+  })
+})

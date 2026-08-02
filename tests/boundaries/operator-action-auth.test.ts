@@ -17,6 +17,7 @@ const useCases = vi.hoisted(() => ({
   setCafePublication: vi.fn(),
   recordAttributeObservation: vi.fn(),
   setCafeHours: vi.fn(),
+  lookupOsmHours: vi.fn(),
   decideCandidate: vi.fn(),
   startSeedingRun: vi.fn(),
   getAssistBrief: vi.fn(),
@@ -45,6 +46,9 @@ vi.mock('@/lib/application/attributes/record-attribute-observation', () => ({
   recordAttributeObservation: useCases.recordAttributeObservation,
 }))
 vi.mock('@/lib/application/hours/set-cafe-hours', () => ({ setCafeHours: useCases.setCafeHours }))
+vi.mock('@/lib/application/hours/lookup-osm-hours', () => ({
+  lookupOsmHours: useCases.lookupOsmHours,
+}))
 vi.mock('@/lib/application/candidates/decide-candidate', () => ({
   decideCandidate: useCases.decideCandidate,
 }))
