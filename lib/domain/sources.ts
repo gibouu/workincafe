@@ -16,6 +16,7 @@ export const SOURCE_KINDS = [
   'toronto_open_data',
   'dinesafe',
   'official_website',
+  'osm',
 ] as const
 export type SourceKind = (typeof SOURCE_KINDS)[number]
 
@@ -26,6 +27,7 @@ export const SOURCE_KIND_DEFINITIONS: Record<SourceKind, string> = {
   toronto_open_data: 'City of Toronto Open Data record identifier.',
   dinesafe: 'Toronto DineSafe establishment identifier (existence/licensing/status signal only).',
   official_website: 'The venue’s own official website, used as a canonical-fact source.',
+  osm: 'OpenStreetMap element reference (`node/<id>` or `way/<id>`) identifying the OSM venue an operator-confirmed hours import came from (Decision 29). ODbL: attribution is required wherever OSM-derived hours are displayed.',
 }
 
 export const EXTERNAL_ID_MAX_LENGTH = 255

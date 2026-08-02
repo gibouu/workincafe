@@ -1,0 +1,2 @@
+ALTER TABLE "place_source_refs" DROP CONSTRAINT "place_source_refs_source_valid";--> statement-breakpoint
+ALTER TABLE "place_source_refs" ADD CONSTRAINT "place_source_refs_source_valid" CHECK ("place_source_refs"."source" IN ('google_places', 'overture', 'toronto_open_data', 'dinesafe', 'official_website', 'osm'));
