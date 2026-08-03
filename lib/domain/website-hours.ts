@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import {
   DAY_KEYS,
   type DayKey,
@@ -184,3 +185,69 @@ export function extractWebsiteHours(html: string): WebsiteHoursExtraction {
 
   return { schedule: fromSpecs ?? fromStrings, foundStructuredHours: true }
 }
+
+// ——— Model-assisted fallback (Decision 30 amendment 30b) ———————————————————
+// When a page has no parseable structured markup, the visible page text may be
+// read by the approved inexpensive model as a PREFILL the operator verifies.
+// Free text is less definitive than markup, so the conventions differ on
+// silence: a day the text does not mention is `unknown` (never assumed
+// closed); the publication gate then surfaces the gap to the operator.
+
+const TAG_BLOCKS = /<(script|style|noscript|svg|template)[^>]*>[\s\S]*?<\/\1>/gi
+const HTML_COMMENTS = /<!--[\s\S]*?-->/g
+const BLOCK_BREAKS = /<\/(p|div|li|tr|h[1-6]|section|article|header|footer|table)>|<br\s*\/?>/gi
+const ALL_TAGS = /<[^>]+>/g
+const ENTITIES: Record<string, string> = {
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&quot;': '"',
+  '&#39;': "'",
+  '&nbsp;': ' ',
+  '&ndash;': '–',
+  '&mdash;': '—',
+}
+
+export const WEBSITE_TEXT_MAX_CHARS = 15_000
+
+/** Reduce fetched HTML to bounded visible text for model input. */
+export function htmlToVisibleText(html: string, maxChars: number = WEBSITE_TEXT_MAX_CHARS): string {
+  let text = html.replace(TAG_BLOCKS, ' ').replace(HTML_COMMENTS, ' ')
+  text = text.replace(BLOCK_BREAKS, '\n')
+  text = text.replace(ALL_TAGS, ' ')
+  for (const [entity, plain] of Object.entries(ENTITIES)) text = text.replaceAll(entity, plain)
+  text = text
+    .replace(/[ \t]+/g, ' ')
+    .replace(/ ?\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+  return text.length > maxChars ? text.slice(0, maxChars) : text
+}
+
+/** Model output contract: strict JSON, either not-found or a full days object
+ * (validated by wrapping into the versioned weekly schema). */
+export const websiteHoursModelOutputSchema = z.object({
+  found: z.boolean(),
+  days: z.unknown().optional(),
+})
+
+/** Wrap a model-emitted days object into a validated schedule, or null. */
+export function scheduleFromModelDays(days: unknown): WeeklyHoursV1 | null {
+  const candidate = { version: HOURS_SCHEMA_VERSION, timeZone: HOURS_TIME_ZONE, days }
+  const parsed = weeklyHoursV1Schema.safeParse(candidate)
+  return parsed.success ? parsed.data : null
+}
+
+export const WEBSITE_HOURS_EXTRACTION_SYSTEM_PROMPT = [
+  "You extract a caf\u00e9's weekly opening hours from the visible text of its own official website.",
+  'Output STRICT JSON only — no prose, no code fences. One of:',
+  '{"found": true, "days": {"monday": <day>, "tuesday": <day>, "wednesday": <day>, "thursday": <day>, "friday": <day>, "saturday": <day>, "sunday": <day>}}',
+  '{"found": false}',
+  'where <day> is {"state":"open","intervals":[{"opens":"HH:MM","closes":"HH:MM","closesDayOffset":0|1}]} or {"state":"closed"} or {"state":"unknown"}.',
+  'Rules (a human operator verifies this prefill; accuracy beats completeness):',
+  '- Report ONLY hours the text explicitly states. Never infer or guess.',
+  '- A day the text does not mention is {"state":"unknown"} — never assume closed.',
+  '- {"state":"closed"} only when the text says that day is closed.',
+  '- 24-hour times; "9pm" is "21:00". closesDayOffset is 1 only when closing falls past midnight (write 24:00 closes as "00:00" with offset 1).',
+  '- If hours are ambiguous, conflicting, or only seasonal/holiday, output {"found": false}.',
+].join('\n')
