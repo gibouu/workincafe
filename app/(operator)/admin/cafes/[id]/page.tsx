@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getCurrentOperator } from '@/lib/application/operators/current-operator'
 import { getCafeCuration } from '@/lib/application/places/get-cafe-curation'
+import { getCurationNextSteps } from '@/lib/application/places/get-curation-next-steps'
 import { ATTRIBUTE_KINDS } from '@/lib/domain/attributes'
 import { HoursForm } from './hours-form'
 import { ObservationForm } from './observation-form'
@@ -16,6 +17,7 @@ export default async function CafeCurationPage({ params }: { params: Promise<{ i
   const view = await getCafeCuration(id)
   if (!view) notFound()
   const { cafe, attributeDetails, hours } = view
+  const next = await getCurationNextSteps(cafe.id)
 
   return (
     <main>
@@ -67,6 +69,25 @@ export default async function CafeCurationPage({ params }: { params: Promise<{ i
         all seven days known (open or closed — any unknown day blocks publication; source/15).
       </p>
       <HoursForm placeId={cafe.id} initial={hours} websiteUrl={cafe.website} />
+
+      <h2>Continue</h2>
+      <p>
+        {next.nextCandidateId ? (
+          <Link href={`/gp1/candidates/${next.nextCandidateId}`}>
+            → Next pending candidate ({next.reviewableCount} in queue)
+          </Link>
+        ) : (
+          <span className="empty-state">Review queue is empty. </span>
+        )}
+        {'  '}
+        {next.nextHoursCafe ? (
+          <Link href={`/admin/cafes/${next.nextHoursCafe.id}`}>
+            → Next café needing hours: {next.nextHoursCafe.name} ({next.hoursIncompleteCount} left)
+          </Link>
+        ) : (
+          <span className="empty-state">No other cafés are blocked on hours.</span>
+        )}
+      </p>
     </main>
   )
 }

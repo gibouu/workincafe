@@ -64,3 +64,18 @@ export async function selectPlaceLookupInfo(
     .limit(1)
   return rows[0] ?? null
 }
+
+/** Next active café still blocked from publishing by incomplete hours
+ * (Decision 28 gate), excluding the current one, plus how many remain. */
+export async function selectNextCafeNeedingHours(
+  db: Db,
+  excludeId: string | null,
+): Promise<{ next: { id: string; name: string } | null; count: number }> {
+  const rows = await db
+    .select({ id: places.id, name: places.name })
+    .from(places)
+    .where(sql`${places.recordState} = 'active' AND NOT ${hoursCompleteSql}`)
+    .orderBy(places.name)
+  const remaining = rows.filter((r) => r.id !== excludeId)
+  return { next: remaining[0] ?? null, count: remaining.length }
+}
