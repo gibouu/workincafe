@@ -18,7 +18,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 describe('fetchNearbyOsmCafes', () => {
   it('POSTs an around query for cafés and coffee shops with no-store and a User-Agent', async () => {
     const fetchImpl = vi.fn(async () => jsonResponse({ elements: [] }))
-    const result = await fetchNearbyOsmCafes(43.65, -79.38, 100, fetchImpl)
+    const result = await fetchNearbyOsmCafes(43.65, -79.38, 100, null, fetchImpl)
     expect(result.status).toBe('ok')
     expect(fetchImpl).toHaveBeenCalledTimes(1)
     const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit]
@@ -56,7 +56,7 @@ describe('fetchNearbyOsmCafes', () => {
         ],
       }),
     )
-    const result = await fetchNearbyOsmCafes(43.65, -79.38, 100, fetchImpl)
+    const result = await fetchNearbyOsmCafes(43.65, -79.38, 100, null, fetchImpl)
     if (result.status !== 'ok') throw new Error('expected ok')
     expect(result.elements).toEqual([
       {
@@ -80,9 +80,25 @@ describe('fetchNearbyOsmCafes', () => {
     ])
   })
 
+  it('adds a wider same-name search when a name pattern is given', async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse({ elements: [] }))
+    await fetchNearbyOsmCafes(43.65, -79.38, 100, 'Cafe[^A-Za-z0-9]*23', fetchImpl)
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit]
+    const body = decodeURIComponent(String(init.body))
+    expect(body).toContain('"name"~"Cafe[^A-Za-z0-9]*23",i')
+    expect(body).toContain('around:750')
+  })
+
+  it('omits the name selector without a pattern', async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse({ elements: [] }))
+    await fetchNearbyOsmCafes(43.65, -79.38, 100, null, fetchImpl)
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit]
+    expect(decodeURIComponent(String(init.body))).not.toContain('"name"~')
+  })
+
   it('fails closed on a non-OK response without retrying', async () => {
     const fetchImpl = vi.fn(async () => jsonResponse({}, 429))
-    const result = await fetchNearbyOsmCafes(43.65, -79.38, 100, fetchImpl)
+    const result = await fetchNearbyOsmCafes(43.65, -79.38, 100, null, fetchImpl)
     expect(result).toEqual({ status: 'failed', httpStatus: 429 })
     expect(fetchImpl).toHaveBeenCalledTimes(1)
   })
@@ -91,7 +107,7 @@ describe('fetchNearbyOsmCafes', () => {
     const fetchImpl = vi.fn(async () => {
       throw new Error('boom')
     })
-    const result = await fetchNearbyOsmCafes(43.65, -79.38, 100, fetchImpl)
+    const result = await fetchNearbyOsmCafes(43.65, -79.38, 100, null, fetchImpl)
     expect(result).toEqual({ status: 'failed', httpStatus: null })
     expect(fetchImpl).toHaveBeenCalledTimes(1)
   })
@@ -101,7 +117,7 @@ describe('fetchNearbyOsmCafes', () => {
       async () =>
         new Response('not json', { status: 200, headers: { 'Content-Type': 'text/plain' } }),
     )
-    const result = await fetchNearbyOsmCafes(43.65, -79.38, 100, fetchImpl)
+    const result = await fetchNearbyOsmCafes(43.65, -79.38, 100, null, fetchImpl)
     expect(result).toEqual({ status: 'failed', httpStatus: 200 })
   })
 })

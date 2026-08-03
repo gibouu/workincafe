@@ -6,6 +6,10 @@ import { getCurrentOperator } from '@/lib/application/operators/current-operator
 import { recordAttributeObservation } from '@/lib/application/attributes/record-attribute-observation'
 import { setCafeHours } from '@/lib/application/hours/set-cafe-hours'
 import { lookupOsmHours, type OsmHoursCandidate } from '@/lib/application/hours/lookup-osm-hours'
+import {
+  lookupWebsiteHours,
+  type LookupWebsiteHoursResult,
+} from '@/lib/application/hours/lookup-website-hours'
 import { DAY_KEYS, HOURS_SCHEMA_VERSION, HOURS_TIME_ZONE } from '@/lib/domain/hours'
 import { dayStateField, HOURS_MAX_INTERVALS, intervalField } from './hours-fields'
 
@@ -135,4 +139,31 @@ export async function lookupOsmHoursAction(
   if (result.status === 'failed')
     return { error: 'OSM lookup failed (Overpass unavailable) — try again later.' }
   return { candidates: result.candidates }
+}
+
+// Decision 30: operator-triggered structured-data hours check against the
+// café's own recorded official website. One page fetch per click; extraction
+// is schema.org markup only; applying the prefill goes through the ordinary
+// curator save (the operator verified from the official source).
+
+export interface WebsiteHoursState {
+  error?: string
+  result?: Extract<LookupWebsiteHoursResult, { status: 'ok' }>
+}
+
+export async function lookupWebsiteHoursAction(
+  _prev: WebsiteHoursState,
+  formData: FormData,
+): Promise<WebsiteHoursState> {
+  const operator = await getCurrentOperator()
+  if (!operator) redirect('/login')
+
+  const placeId = String(formData.get('placeId') ?? '')
+  const result = await lookupWebsiteHours(placeId)
+
+  if (result.status === 'not_found') return { error: 'Café not found or not an active record.' }
+  if (result.status === 'no_website') return { error: 'No website is recorded for this café.' }
+  if (result.status === 'failed')
+    return { error: 'Could not fetch the website — open it directly and enter hours manually.' }
+  return { result }
 }

@@ -6,23 +6,27 @@ import { CONFIDENCE_LEVELS } from '@/lib/domain/provenance'
 import {
   type CurationFormState,
   lookupOsmHoursAction,
+  lookupWebsiteHoursAction,
   type OsmLookupState,
   saveHoursAction,
+  type WebsiteHoursState,
 } from './actions'
 import { dayStateField, HOURS_MAX_INTERVALS, intervalField } from './hours-fields'
 
 const INITIAL_SAVE: CurationFormState = {}
-const INITIAL_LOOKUP: OsmLookupState = {}
+const INITIAL_OSM: OsmLookupState = {}
+const INITIAL_WEB: WebsiteHoursState = {}
 
 type DayState = 'unknown' | 'closed' | 'open'
 type OsmCandidate = NonNullable<OsmLookupState['candidates']>[number]
 
-interface AppliedOsm {
-  osmType: 'node' | 'way'
-  osmId: string
-  observedAt: string | null
-  label: string
+// A prefill applied to the form. `osm` present → saves as an OSM-derived
+// import (Decision 29); absent (venue-website prefill, Decision 30) → the
+// ordinary curator save, since the operator verified from the official source.
+interface Applied {
   schedule: WeeklyHoursV1
+  label: string
+  osm: { osmType: 'node' | 'way'; osmId: string; observedAt: string | null } | null
 }
 
 // The form renders HOURS_MAX_INTERVALS slots per day; a parse that needs more
@@ -34,89 +38,170 @@ function fitsForm(schedule: WeeklyHoursV1): boolean {
   })
 }
 
+const MATCH_LABEL: Record<OsmCandidate['nameMatch'], string> = {
+  match: 'name match',
+  close: 'close name',
+  other: '',
+}
+
 export function HoursForm({
   placeId,
   initial,
+  websiteUrl,
 }: {
   placeId: string
   initial: WeeklyHoursV1 | null
+  websiteUrl: string | null
 }) {
-  const [lookup, lookupAction, lookupPending] = useActionState(lookupOsmHoursAction, INITIAL_LOOKUP)
-  const [applied, setApplied] = useState<AppliedOsm | null>(null)
+  const [osm, osmAction, osmPending] = useActionState(lookupOsmHoursAction, INITIAL_OSM)
+  const [web, webAction, webPending] = useActionState(lookupWebsiteHoursAction, INITIAL_WEB)
+  const [applied, setApplied] = useState<Applied | null>(null)
   const [applyCount, setApplyCount] = useState(0)
 
-  const apply = (c: OsmCandidate) => {
+  const applyOsm = (c: OsmCandidate) => {
     if (!c.schedule) return
     setApplied({
-      osmType: c.osmType,
-      osmId: c.osmId,
-      observedAt: c.lastEditedAt,
-      label: `${c.name ?? '(unnamed)'}${c.lastEditedAt ? `, edited ${c.lastEditedAt.slice(0, 10)}` : ''}`,
       schedule: c.schedule,
+      label: `OSM ${c.osmType}/${c.osmId} (${c.name ?? '(unnamed)'}${c.lastEditedAt ? `, edited ${c.lastEditedAt.slice(0, 10)}` : ''})`,
+      osm: { osmType: c.osmType, osmId: c.osmId, observedAt: c.lastEditedAt },
     })
     setApplyCount((n) => n + 1)
   }
 
+  const applyWebsite = () => {
+    const result = web.result
+    if (!result?.schedule) return
+    setApplied({
+      schedule: result.schedule,
+      label: `the venue website (${result.finalUrl})`,
+      osm: null,
+    })
+    setApplyCount((n) => n + 1)
+  }
+
+  const likely = osm.candidates?.filter((c) => c.nameMatch !== 'other') ?? []
+  const nearbyOnly = osm.candidates?.filter((c) => c.nameMatch === 'other') ?? []
+
+  const candidateRow = (c: OsmCandidate) => (
+    <tr key={`${c.osmType}/${c.osmId}`}>
+      <td>
+        {c.name ?? '(unnamed)'}
+        {MATCH_LABEL[c.nameMatch] ? (
+          <em className="empty-state"> · {MATCH_LABEL[c.nameMatch]}</em>
+        ) : null}
+      </td>
+      <td>{c.distanceMeters} m</td>
+      <td>{c.openingHours ?? '—'}</td>
+      <td>{c.lastEditedAt ? c.lastEditedAt.slice(0, 10) : '—'}</td>
+      <td>
+        {c.openingHours === null ? (
+          <span className="empty-state">no hours</span>
+        ) : c.schedule && fitsForm(c.schedule) ? (
+          <button type="button" onClick={() => applyOsm(c)}>
+            Apply
+          </button>
+        ) : (
+          <span className="empty-state">enter manually</span>
+        )}
+      </td>
+    </tr>
+  )
+
   return (
     <div>
-      <form className="op-form" action={lookupAction}>
+      <h3>Venue website</h3>
+      {websiteUrl ? (
+        <>
+          <form className="op-form" action={webAction}>
+            <input type="hidden" name="placeId" value={placeId} />
+            <button type="submit" disabled={webPending}>
+              {webPending ? 'Checking…' : 'Check website for hours (free)'}
+            </button>
+          </form>
+          <p className="empty-state">
+            <a href={websiteUrl} target="_blank" rel="noreferrer">
+              Open website ↗
+            </a>{' '}
+            — reads machine-readable schema.org hours only; never guesses from page text.
+          </p>
+          {web.error ? <p className="op-error">{web.error}</p> : null}
+          {web.result ? (
+            web.result.schedule ? (
+              <p>
+                Structured hours found on {new URL(web.result.finalUrl).hostname}.{' '}
+                <button type="button" onClick={applyWebsite}>
+                  Apply
+                </button>
+              </p>
+            ) : web.result.foundStructuredHours ? (
+              <p className="empty-state">
+                The site has structured hours in an unsupported format — open it and enter them
+                manually.
+              </p>
+            ) : (
+              <p className="empty-state">
+                No machine-readable hours on the site — open it and enter them manually.
+              </p>
+            )
+          ) : null}
+        </>
+      ) : (
+        <p className="empty-state">No website recorded for this café.</p>
+      )}
+
+      <h3>OpenStreetMap</h3>
+      <form className="op-form" action={osmAction}>
         <input type="hidden" name="placeId" value={placeId} />
-        <button type="submit" disabled={lookupPending}>
-          {lookupPending ? 'Looking up…' : 'Look up OSM hours (free)'}
+        <button type="submit" disabled={osmPending}>
+          {osmPending ? 'Looking up…' : 'Look up OSM hours (free)'}
         </button>
       </form>
-      {lookup.error ? <p className="op-error">{lookup.error}</p> : null}
-      {lookup.candidates ? (
-        lookup.candidates.length === 0 ? (
-          <p className="empty-state">No OSM cafés found within 100 m of this café.</p>
-        ) : (
-          <>
+      {osm.error ? <p className="op-error">{osm.error}</p> : null}
+      {osm.candidates ? (
+        <>
+          {likely.length === 0 ? (
+            <p className="empty-state">
+              This café was not found in OSM by name — only about a quarter of Toronto cafés carry
+              hours there. Use the website check or manual entry.
+            </p>
+          ) : (
             <table className="op-table">
               <thead>
                 <tr>
-                  <th>OSM venue</th>
+                  <th>Likely match</th>
                   <th>Distance</th>
                   <th>opening_hours</th>
                   <th>Edited</th>
                   <th></th>
                 </tr>
               </thead>
-              <tbody>
-                {lookup.candidates.map((c) => (
-                  <tr key={`${c.osmType}/${c.osmId}`}>
-                    <td>{c.name ?? '(unnamed)'}</td>
-                    <td>{c.distanceMeters} m</td>
-                    <td>{c.openingHours ?? '—'}</td>
-                    <td>{c.lastEditedAt ? c.lastEditedAt.slice(0, 10) : '—'}</td>
-                    <td>
-                      {c.openingHours === null ? (
-                        <span className="empty-state">no hours</span>
-                      ) : c.schedule && fitsForm(c.schedule) ? (
-                        <button type="button" onClick={() => apply(c)}>
-                          Apply
-                        </button>
-                      ) : (
-                        <span className="empty-state">enter manually</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+              <tbody>{likely.map(candidateRow)}</tbody>
             </table>
-            <p className="empty-state">
-              Hours data © OpenStreetMap contributors (ODbL) — prefill only; verify before saving.
-            </p>
-          </>
-        )
+          )}
+          {nearbyOnly.length > 0 ? (
+            <details>
+              <summary className="empty-state">
+                {nearbyOnly.length} nearby OSM venue(s) — different names, shown for reference only
+              </summary>
+              <table className="op-table">
+                <tbody>{nearbyOnly.map(candidateRow)}</tbody>
+              </table>
+            </details>
+          ) : null}
+          <p className="empty-state">
+            Hours data © OpenStreetMap contributors (ODbL) — prefill only; verify before saving.
+          </p>
+        </>
       ) : null}
+
       {/* Keyed remount so applying a prefill re-initializes the field state
           (state-from-props does not update on prop change). */}
       <HoursFields
         key={applyCount}
         placeId={placeId}
         schedule={applied?.schedule ?? initial ?? unknownWeeklyHours()}
-        osm={applied}
-        onClearOsm={() => {
+        applied={applied}
+        onClear={() => {
           setApplied(null)
           setApplyCount((n) => n + 1)
         }}
@@ -128,13 +213,13 @@ export function HoursForm({
 function HoursFields({
   placeId,
   schedule,
-  osm,
-  onClearOsm,
+  applied,
+  onClear,
 }: {
   placeId: string
   schedule: WeeklyHoursV1
-  osm: AppliedOsm | null
-  onClearOsm: () => void
+  applied: Applied | null
+  onClear: () => void
 }) {
   const [state, action, pending] = useActionState(saveHoursAction, INITIAL_SAVE)
   const [dayStates, setDayStates] = useState<Record<DayKey, DayState>>(
@@ -148,15 +233,22 @@ function HoursFields({
   return (
     <form className="op-form op-form-wide" action={action}>
       <input type="hidden" name="placeId" value={placeId} />
-      {osm ? (
+      {applied ? (
         <>
-          <input type="hidden" name="osmType" value={osm.osmType} />
-          <input type="hidden" name="osmId" value={osm.osmId} />
-          <input type="hidden" name="osmObservedAt" value={osm.observedAt ?? ''} />
+          {applied.osm ? (
+            <>
+              <input type="hidden" name="osmType" value={applied.osm.osmType} />
+              <input type="hidden" name="osmId" value={applied.osm.osmId} />
+              <input type="hidden" name="osmObservedAt" value={applied.osm.observedAt ?? ''} />
+            </>
+          ) : null}
           <p className="op-baseline">
-            Prefilled from OSM {osm.osmType}/{osm.osmId} ({osm.label}) — saves as an OSM-derived
-            import, verified by you. You can correct any field first.{' '}
-            <button type="button" onClick={onClearOsm}>
+            Prefilled from {applied.label} —{' '}
+            {applied.osm
+              ? 'saves as an OSM-derived import, verified by you.'
+              : 'verify against the site, then save (curator-verified).'}{' '}
+            You can correct any field first.{' '}
+            <button type="button" onClick={onClear}>
               Discard prefill
             </button>
           </p>
