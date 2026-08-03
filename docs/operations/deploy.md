@@ -64,6 +64,15 @@ web dashboards — not committed to the repo.
      media (billable per candidate pre-read) plus one Anthropic Messages call
      (`claude-opus-4-8`). Retain Anthropic's no-training/retention terms with
      the Decision 27 compliance records.
+   - **`NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY`** + **`NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID`**
+     (public map slice, Decisions 10/20): a **separate browser key** — never the
+     server key — with **Maps JavaScript API only** enabled and an HTTP-referrer
+     restriction to the production domain (`www.workin.cafe/*` + apex), plus a
+     Map ID (Google Cloud console → Map Management; Advanced Markers require
+     one). **Production only**; the home page fails closed to the list-only
+     experience when either is absent (never set a broadly unrestricted
+     `*.vercel.app` key — previews simply render no map, Decision 20). These
+     are `NEXT_PUBLIC_*` build-time values: after adding them, redeploy.
 3. Keep the **registrar independent of Vercel** (Decision 20) — attach the
    `workin.cafe` domain later; do not transfer registration to Vercel.
 4. Deploy `main`. The first production build migrates Neon and goes live.

@@ -229,3 +229,22 @@ a {
   padding: 0.4rem 0.75rem;
   font-size: 0.9rem;
 }
+
+/* Public map explorer (Decision 15 bounded feature) */
+.map-canvas {
+  width: 100%;
+  height: min(60vh, 640px);
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.5rem;
+}
+
+.map-explorer {
+  display: grid;
+  gap: 1rem;
+}
+
+.cafe-panel {
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}

@@ -143,6 +143,17 @@ run over run/attempt accounting tables (`lib/ingestion/gp1-seeding.ts`,
 `lib/db/queries/seeding-mutations.ts`); feature-conditional server credential
 (`lib/env/server.ts` — fail-closed when absent).
 
-Pending (later Step 4 slices): route handler (interactive client reads) · client
-island fetch · Maps browser adapter · semantic-search intersection · contextual
-Place-ID verification · flagged use case.
+Landed (Step 4 — public map pt.1): validated browser-safe public env
+(`lib/env/public.ts` — fail-closed Maps config); dependency-free official Maps
+bootstrap contained in the client adapter (24c-G4 —
+`lib/integrations/google/client/maps-loader.ts`, minimal ambient types in
+`maps-types.d.ts`, no `@types/google.maps`); declarative map canvas with the
+contained imperative boundary (`components/map/google-map-canvas.tsx` — props
+in, events out, no exposed map handle); bounded MapExplorer with URL-owned
+selection through the single typed codec (`components/map/map-explorer.tsx`,
+`lib/client-state/public-map-url.ts`); server-rendered selected-café panel
+(`components/map/cafe-panel.tsx`).
+
+Pending (later Step 4 slices): route handler (interactive client reads —
+viewport read after `idle`) · client island fetch · semantic-search
+intersection · contextual Place-ID verification · flagged use case.
