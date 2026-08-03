@@ -45,7 +45,32 @@ implemented the same day).
   are rejected rather than merged.
 - The fetched page is transient: never persisted, never logged.
 
+## Amendment 30b — model-assisted fallback (ratified 2026-08-03, in-session)
+
+When a venue page yields no parseable structured markup, **one inexpensive
+model pass may read the visible page text** and produce a prefill schedule:
+
+- Model: `claude-haiku-4-5` (operator cost ruling: lowest/cheapest tier —
+  bounded JSON transcription of visible text; the operator verifies every
+  prefill, so an extraction miss costs seconds, not correctness).
+- Same caller posture as the Decision 27 assist: hand-written fetch,
+  `no-store`, one accounting row per actual attempt
+  (`anthropic_messages_hours_extract`, `provider_call_attempts`), no
+  automatic retry, request/response bodies never logged; fail-closed when
+  `ANTHROPIC_API_KEY` is absent (structured-markup extraction and manual
+  entry keep working).
+- Free-text conventions are more cautious than markup: a day the text does
+  not mention prefills `unknown` (never assumed closed); ambiguous,
+  conflicting, or seasonal-only text yields nothing. The UI labels AI-read
+  prefills distinctly and the operator verifies before the ordinary curator
+  save. Amends ruling 1's "reported as open-the-site" for the no-markup
+  case only; everything else in this record stands.
+- The page text is venue-owned content — the Decision 27 Google-content
+  prohibitions are not implicated; the same no-training provider terms
+  apply.
+
 ## Amends
 
 - Decision 28 (source/15) sourcing note, as in ruling 2.
 - Decision 29 (source/16) lookup presentation, as in ruling 4.
+- Ruling 1 of this record, per amendment 30b (model-assisted fallback).

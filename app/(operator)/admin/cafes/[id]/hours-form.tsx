@@ -73,7 +73,7 @@ export function HoursForm({
     if (!result?.schedule) return
     setApplied({
       schedule: result.schedule,
-      label: `the venue website (${result.finalUrl})`,
+      label: `the venue website (${result.finalUrl}${result.source === 'ai' ? ', AI-read' : ''})`,
       osm: null,
     })
     setApplyCount((n) => n + 1)
@@ -122,25 +122,25 @@ export function HoursForm({
             <a href={websiteUrl} target="_blank" rel="noreferrer">
               Open website ↗
             </a>{' '}
-            — reads machine-readable schema.org hours only; never guesses from page text.
+            — reads the site&apos;s structured hours markup first; when there is none, one
+            inexpensive AI pass reads the visible page text (source/17 amendment 30b). Always verify
+            before saving.
           </p>
           {web.error ? <p className="op-error">{web.error}</p> : null}
           {web.result ? (
             web.result.schedule ? (
               <p>
-                Structured hours found on {new URL(web.result.finalUrl).hostname}.{' '}
+                {web.result.source === 'ai'
+                  ? `AI read hours from the page text on ${new URL(web.result.finalUrl).hostname} — verify each day against the site.`
+                  : `Structured hours found on ${new URL(web.result.finalUrl).hostname}.`}{' '}
                 <button type="button" onClick={applyWebsite}>
                   Apply
                 </button>
               </p>
-            ) : web.result.foundStructuredHours ? (
-              <p className="empty-state">
-                The site has structured hours in an unsupported format — open it and enter them
-                manually.
-              </p>
             ) : (
               <p className="empty-state">
-                No machine-readable hours on the site — open it and enter them manually.
+                Couldn&apos;t extract hours from the site automatically — open it and enter them
+                manually.
               </p>
             )
           ) : null}
