@@ -48,7 +48,9 @@ describe('runHoursExtraction', () => {
     const fetchImpl = vi.fn(async () =>
       modelResponse(JSON.stringify({ found: true, days: VALID_DAYS })),
     )
-    const onAttempt = vi.fn(async (_attempt: { httpStatus: number | null }) => {})
+    const onAttempt = vi.fn<(attempt: { httpStatus: number | null }) => Promise<void>>(
+      async () => {},
+    )
     const result = await runHoursExtraction('Mon-Fri 8-6', 'key', onAttempt, fetchImpl)
     if (result.status !== 'ok') throw new Error('expected ok')
     expect(result.schedule?.days.friday).toEqual({
