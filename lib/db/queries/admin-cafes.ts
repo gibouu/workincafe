@@ -12,6 +12,7 @@ export interface AdminCafeRow {
   neighborhood: string | null
   publicationState: PublicationState
   recordState: RecordState
+  website: string | null
   /** Publication gate (source/15): hours row present with all 7 days known. */
   hoursComplete: boolean
 }
@@ -32,6 +33,7 @@ const adminCafeColumns = {
   neighborhood: places.neighborhood,
   publicationState: places.publicationState,
   recordState: places.recordState,
+  website: places.website,
   hoursComplete: hoursCompleteSql,
 }
 
@@ -44,13 +46,19 @@ export async function selectCafeById(db: Db, id: string): Promise<AdminCafeRow |
   return rows[0] ?? null
 }
 
-/** Canonical coordinates of an active café (OSM hours lookup, Decision 29). */
-export async function selectPlaceCoords(
+/** Identity + coordinates + recorded website of an active café — the inputs
+ * the hours-source lookups need (Decisions 29/30). */
+export async function selectPlaceLookupInfo(
   db: Db,
   id: string,
-): Promise<{ latitude: number; longitude: number } | null> {
+): Promise<{ latitude: number; longitude: number; name: string; website: string | null } | null> {
   const rows = await db
-    .select({ latitude: places.latitude, longitude: places.longitude })
+    .select({
+      latitude: places.latitude,
+      longitude: places.longitude,
+      name: places.name,
+      website: places.website,
+    })
     .from(places)
     .where(sql`${places.id} = ${id} AND ${places.recordState} = 'active'`)
     .limit(1)

@@ -46,23 +46,38 @@ export type OverpassResult =
 
 type FetchLike = (url: string, init: RequestInit) => Promise<Response>
 
-function buildQuery(latitude: number, longitude: number, radiusMeters: number): string {
+// A name-matched element may sit outside the proximity radius when our
+// canonical coordinates and OSM's drift apart — search names wider.
+const NAME_RADIUS_METERS = 750
+
+function buildQuery(
+  latitude: number,
+  longitude: number,
+  radiusMeters: number,
+  namePattern: string | null,
+): string {
   const around = `(around:${radiusMeters},${latitude},${longitude})`
-  return (
-    `[out:json][timeout:${QUERY_TIMEOUT_S}];(` +
+  let selectors =
     `node["amenity"="cafe"]${around};` +
     `way["amenity"="cafe"]${around};` +
     `node["shop"="coffee"]${around};` +
-    `way["shop"="coffee"]${around};` +
-    `);out center meta;`
-  )
+    `way["shop"="coffee"]${around};`
+  if (namePattern !== null) {
+    const wide = `(around:${NAME_RADIUS_METERS},${latitude},${longitude})`
+    const name = `["name"~"${namePattern.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}",i]`
+    selectors += `node${name}${wide};way${name}${wide};`
+  }
+  return `[out:json][timeout:${QUERY_TIMEOUT_S}];(${selectors});out center meta;`
 }
 
-/** Live-fetch OSM café/coffee elements near a coordinate. */
+/** Live-fetch OSM café/coffee elements near a coordinate; `namePattern` (an
+ * OSM-safe regex, see `lib/domain/name-match.ts`) widens the search to
+ * same-named venues regardless of tagging. */
 export async function fetchNearbyOsmCafes(
   latitude: number,
   longitude: number,
   radiusMeters: number,
+  namePattern: string | null = null,
   fetchImpl: FetchLike = fetch,
 ): Promise<OverpassResult> {
   let response: Response
@@ -74,7 +89,7 @@ export async function fetchNearbyOsmCafes(
         'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': USER_AGENT,
       },
-      body: `data=${encodeURIComponent(buildQuery(latitude, longitude, radiusMeters))}`,
+      body: `data=${encodeURIComponent(buildQuery(latitude, longitude, radiusMeters, namePattern))}`,
     })
   } catch {
     return { status: 'failed', httpStatus: null }
