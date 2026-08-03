@@ -55,6 +55,15 @@ acceptable; accidental repository disorder is not.
   - [ ] Remaining slices (source/11 conceptual order, reorderable per 24b):
         public map (Google basemap) · name + semantic search ·
         enrichment / contextual / photos · hardening / verification / docs
+    - [x] Map pt.1 — Maps bootstrap adapter + declarative canvas + bounded
+          MapExplorer with URL-owned selection + server-rendered café panel;
+          fail-closed list-only without the browser key. Operational
+          prerequisite before the map renders: referrer-restricted browser
+          key (Maps JavaScript API only) + Map ID as
+          `NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_KEY` / `NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID`
+          in Vercel (production only) + redeploy (`docs/operations/deploy.md`)
+    - [ ] Map pt.2 — viewport Route Handler (GeoBounds contract) + client
+          island fetch after `idle` + list/viewport sync
 - [x] **Decision 27 (editorial AI assistance)** ratified #346 (record + verbatim
       Google policy response: `docs/decisions/source/14`; support case number
       still to be added). Implementation: 27a note guidance (#347) · 27b/27c/27f
