@@ -122,3 +122,20 @@ export async function selectOvertureSuggestions(
     alreadyLinkedPlaceId: r.already_linked_place_id,
   }))
 }
+
+/** Top of the review queue (same order as the GP-1 queue) + how many remain. */
+export async function selectNextReviewable(
+  db: Db,
+): Promise<{ nextCandidateId: string | null; reviewableCount: number }> {
+  const res = await db.execute<{ id: string; total: number }>(sql`
+    SELECT id, count(*) OVER ()::int AS total
+    FROM gp1_candidates
+    WHERE status IN ('pending', 'deferred')
+    ORDER BY entered_at ASC, id ASC
+    LIMIT 1
+  `)
+  return {
+    nextCandidateId: res.rows[0]?.id ?? null,
+    reviewableCount: res.rows[0]?.total ?? 0,
+  }
+}
