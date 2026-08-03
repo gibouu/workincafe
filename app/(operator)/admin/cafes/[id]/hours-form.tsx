@@ -229,6 +229,19 @@ function HoursFields({
         DayState
       >,
   )
+  // The second interval slot (split service hours) renders only on demand:
+  // Safari displays an empty time input with a gray example time ("12:30 PM"),
+  // so an always-present unused slot reads as data. Removing a split unmounts
+  // its inputs, so nothing from it is submitted.
+  const [splitDays, setSplitDays] = useState<Record<DayKey, boolean>>(
+    () =>
+      Object.fromEntries(
+        DAY_KEYS.map((d) => {
+          const day = schedule.days[d]
+          return [d, day.state === 'open' && day.intervals.length > 1]
+        }),
+      ) as Record<DayKey, boolean>,
+  )
 
   return (
     <form className="op-form op-form-wide" action={action}>
@@ -271,8 +284,9 @@ function HoursFields({
               <option value="closed">closed</option>
               <option value="open">open</option>
             </select>
-            {dayStates[day] === 'open'
-              ? Array.from({ length: HOURS_MAX_INTERVALS }, (_, i) => (
+            {dayStates[day] === 'open' ? (
+              <>
+                {Array.from({ length: splitDays[day] ? HOURS_MAX_INTERVALS : 1 }, (_, i) => (
                   <span className="op-hours-interval" key={i}>
                     <input
                       type="time"
@@ -296,8 +310,16 @@ function HoursFields({
                       past midnight
                     </label>
                   </span>
-                ))
-              : null}
+                ))}
+                <button
+                  type="button"
+                  className="op-hours-split"
+                  onClick={() => setSplitDays((prev) => ({ ...prev, [day]: !prev[day] }))}
+                >
+                  {splitDays[day] ? 'remove split' : '+ split hours'}
+                </button>
+              </>
+            ) : null}
           </fieldset>
         )
       })}
