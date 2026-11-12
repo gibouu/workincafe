@@ -1,6 +1,6 @@
 # WorkinCafe
 
-A Toronto café finder for students and remote workers — discover cafés suitable for
+A France & Canada café finder (Paris and Toronto first) for freelancers, remote workers and students — discover cafés suitable for
 studying or working, filtered by the conditions that matter (Wi-Fi, noise, power outlets,
 seating).
 

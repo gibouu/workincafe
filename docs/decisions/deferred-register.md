@@ -134,7 +134,9 @@ workflow would not permit automatic publication.
 **Product semantic invariants** (authoritative statement in
 `docs/product-scope.md`): unknown ≠ negative; provenance, confidence and
 freshness remain represented; observation history remains append-only;
-Toronto-only MVP; publication remains a curated WorkinCafe decision.
+Toronto-only MVP (SUPERSEDED by proposed Decision 31 once ratified: launch
+countries France and Canada; community input never silently overwrites curated
+state); publication remains a curated WorkinCafe decision.
 
 ## Supersession notes
 
