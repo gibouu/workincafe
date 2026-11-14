@@ -26,3 +26,7 @@
 /docs/testing/obligations.md    @cemgunay
 /.github/                       @cemgunay
 /tools/                         @cemgunay
+
+# Deploy cost (#388): the release schedule and what Vercel builds.
+/vercel.json                    @gibouu
+/.github/workflows/             @gibouu

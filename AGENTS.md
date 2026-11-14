@@ -135,6 +135,11 @@ before review on schema-changing PRs), `npm run db:generate` (no DB URL),
 verify green, plan followed or deviations flagged, owned doc tables
 updated, no unapproved dependencies, no boundary violations.
 
+**Deploying.** Production ships once a day at 16:10 UTC: `.github/workflows/release.yml`
+fast-forwards `production` to the newest commit of `main`; a merge builds nothing. For a
+preview, push a `preview/<slug>` branch (delete it when done) or run `vercel deploy`, never
+`--prod`.
+
 ## Where things go
 
 Target structure and lint-enforced dependency graph: `docs/architecture.md`.
